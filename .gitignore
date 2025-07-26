@@ -1,0 +1,12 @@
+# Ignore build results
+**/bin/
+**/obj/
+
+# Ignore auto-generated AssemblyInfo files (optional)
+**/*.AssemblyInfo.cs
+
+# Ignore user-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
