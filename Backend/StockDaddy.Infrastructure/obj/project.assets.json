@@ -1,0 +1,125 @@
+{
+  "version": 3,
+  "targets": {
+    "net9.0": {
+      "StockDaddy.Application/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "StockDaddy.Domain": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/StockDaddy.Application.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/StockDaddy.Application.dll": {}
+        }
+      },
+      "StockDaddy.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "compile": {
+          "bin/placeholder/StockDaddy.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/StockDaddy.Domain.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "StockDaddy.Application/1.0.0": {
+      "type": "project",
+      "path": "../StockDaddy.Application/StockDaddy.Application.csproj",
+      "msbuildProject": "../StockDaddy.Application/StockDaddy.Application.csproj"
+    },
+    "StockDaddy.Domain/1.0.0": {
+      "type": "project",
+      "path": "../StockDaddy.Domain/StockDaddy.Domain.csproj",
+      "msbuildProject": "../StockDaddy.Domain/StockDaddy.Domain.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net9.0": [
+      "StockDaddy.Application >= 1.0.0",
+      "StockDaddy.Domain >= 1.0.0"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\pixel\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "A:\\Projects\\StockDaddy\\Backend\\StockDaddy.Infrastructure\\StockDaddy.Infrastructure.csproj",
+      "projectName": "StockDaddy.Infrastructure",
+      "projectPath": "A:\\Projects\\StockDaddy\\Backend\\StockDaddy.Infrastructure\\StockDaddy.Infrastructure.csproj",
+      "packagesPath": "C:\\Users\\pixel\\.nuget\\packages\\",
+      "outputPath": "A:\\Projects\\StockDaddy\\Backend\\StockDaddy.Infrastructure\\obj\\",
+      "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
+      "configFilePaths": [
+        "C:\\Users\\pixel\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net9.0"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "projectReferences": {
+            "A:\\Projects\\StockDaddy\\Backend\\StockDaddy.Application\\StockDaddy.Application.csproj": {
+              "projectPath": "A:\\Projects\\StockDaddy\\Backend\\StockDaddy.Application\\StockDaddy.Application.csproj"
+            },
+            "A:\\Projects\\StockDaddy\\Backend\\StockDaddy.Domain\\StockDaddy.Domain.csproj": {
+              "projectPath": "A:\\Projects\\StockDaddy\\Backend\\StockDaddy.Domain\\StockDaddy.Domain.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.200"
+    },
+    "frameworks": {
+      "net9.0": {
+        "targetAlias": "net9.0",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}
