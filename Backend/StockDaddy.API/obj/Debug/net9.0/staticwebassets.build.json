@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "WVAsKKLW8Qgs0Hl2SvI770SqTN/x0vPfLkiHwirC08w=",
+  "Source": "StockDaddy.API",
+  "BasePath": "_content/StockDaddy.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

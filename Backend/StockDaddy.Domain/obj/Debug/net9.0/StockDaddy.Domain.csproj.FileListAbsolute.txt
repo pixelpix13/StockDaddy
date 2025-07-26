@@ -1,0 +1,12 @@
+A:\Projects\StockDaddy\Backend\StockDaddy.Domain\bin\Debug\net9.0\StockDaddy.Domain.deps.json
+A:\Projects\StockDaddy\backend\StockDaddy.Domain\bin\Debug\net9.0\StockDaddy.Domain.dll
+A:\Projects\StockDaddy\backend\StockDaddy.Domain\bin\Debug\net9.0\StockDaddy.Domain.pdb
+A:\Projects\StockDaddy\backend\StockDaddy.Domain\obj\Debug\net9.0\StockDaddy.Domain.GeneratedMSBuildEditorConfig.editorconfig
+A:\Projects\StockDaddy\backend\StockDaddy.Domain\obj\Debug\net9.0\StockDaddy.Domain.AssemblyInfoInputs.cache
+A:\Projects\StockDaddy\backend\StockDaddy.Domain\obj\Debug\net9.0\StockDaddy.Domain.AssemblyInfo.cs
+A:\Projects\StockDaddy\backend\StockDaddy.Domain\obj\Debug\net9.0\StockDaddy.Domain.csproj.CoreCompileInputs.cache
+A:\Projects\StockDaddy\backend\StockDaddy.Domain\obj\Debug\net9.0\StockDaddy.Domain.sourcelink.json
+A:\Projects\StockDaddy\backend\StockDaddy.Domain\obj\Debug\net9.0\StockDaddy.Domain.dll
+A:\Projects\StockDaddy\backend\StockDaddy.Domain\obj\Debug\net9.0\refint\StockDaddy.Domain.dll
+A:\Projects\StockDaddy\backend\StockDaddy.Domain\obj\Debug\net9.0\StockDaddy.Domain.pdb
+A:\Projects\StockDaddy\Backend\StockDaddy.Domain\obj\Debug\net9.0\ref\StockDaddy.Domain.dll
