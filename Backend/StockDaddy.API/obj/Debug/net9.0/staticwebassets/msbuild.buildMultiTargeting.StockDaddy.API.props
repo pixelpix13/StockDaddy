@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\StockDaddy.API.props" />
-</Project>
