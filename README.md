@@ -1,0 +1,2 @@
+# StockDaddy
+Inventory Manager
