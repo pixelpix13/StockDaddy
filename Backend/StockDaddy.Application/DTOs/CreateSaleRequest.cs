@@ -1,0 +1,10 @@
+namespace StockDaddy.Application.DTOs;
+public class CreateSaleRequest
+{
+    public Guid TenantId { get; set; }
+    public Guid? CustomerId { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string PaymentMethod { get; set; } = "";
+    public Guid SoldBy { get; set; }
+    public string? Notes { get; set; }
+}
