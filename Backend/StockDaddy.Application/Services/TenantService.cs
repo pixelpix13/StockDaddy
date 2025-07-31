@@ -41,7 +41,9 @@ public class TenantService
     {
         var tenant = new Tenant
         {
-            Name = request.Name
+            Name = request.Name,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(tenant);
@@ -53,8 +55,9 @@ public class TenantService
         if (tenant == null) return false;
 
         tenant.Name = request.Name;
-        await _repo.UpdateAsync(tenant);
+        tenant.UpdatedAt = DateTime.UtcNow;
 
+        await _repo.UpdateAsync(tenant);
         return true;
     }
 
