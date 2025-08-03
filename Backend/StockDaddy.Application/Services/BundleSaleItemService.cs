@@ -82,6 +82,11 @@ public class BundleSaleItemService
         var item = await _repo.GetByIdAsync(id);
         if (item == null) return false;
 
+        // Soft delete logic
+        item.IsDeleted = true;
+        item.DeletedAt = DateTime.UtcNow;
+        item.UpdatedAt = DateTime.UtcNow;
+
         await _repo.DeleteAsync(id);
         return true;
     }

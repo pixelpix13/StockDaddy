@@ -75,6 +75,10 @@ public class ProductImageService
         var image = await _repo.GetByIdAsync(id);
         if (image == null) return false;
 
+        image.IsDeleted = true;
+        image.DeletedAt = DateTime.UtcNow;  
+        image.UpdatedAt = DateTime.UtcNow;
+
         await _repo.DeleteAsync(id);
         return true;
     }

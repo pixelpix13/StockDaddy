@@ -78,6 +78,12 @@ public class TaxRegionService
         var region = await _repo.GetByIdAsync(id);
         if (region == null) return false;
 
+        // Soft delete logic
+        region.IsDeleted = true;
+        region.DeletedAt = DateTime.UtcNow;
+        region.UpdatedAt = DateTime.UtcNow;
+        
+
         await _repo.DeleteAsync(id);
         return true;
     }

@@ -91,6 +91,10 @@ public class ProductService
         var product = await _repo.GetByIdAsync(id);
         if (product == null) return false;
 
+        product.IsDeleted = true;
+        product.DeletedAt = DateTime.UtcNow;
+        product.UpdatedAt = DateTime.UtcNow;
+        
         await _repo.SoftDeleteAsync(id);
         return true;
     }

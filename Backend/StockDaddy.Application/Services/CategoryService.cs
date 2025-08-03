@@ -74,6 +74,11 @@ public class CategoryService
         var category = await _repo.GetByIdAsync(id);
         if (category == null) return false;
 
+        // Soft delete logic
+        category.IsDeleted = true;
+        category.DeletedAt = DateTime.UtcNow;
+        category.UpdatedAt = DateTime.UtcNow;
+        
         await _repo.DeleteAsync(id);
         return true;
     }

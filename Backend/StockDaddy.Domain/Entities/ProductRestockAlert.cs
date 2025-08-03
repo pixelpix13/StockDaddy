@@ -13,6 +13,8 @@ public class ProductRestockAlert
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? DeletedAt { get; set; } = null;    
+    public bool IsDeleted { get; set; } = false;
 
     // Navigation
     public Product? Product { get; set; }

@@ -90,6 +90,11 @@ public class ShipmentService
         var s = await _repo.GetByIdAsync(id);
         if (s == null) return false;
 
+        // Soft delete logic
+        s.IsDeleted = true;
+        s.DeletedAt = DateTime.UtcNow;
+        s.UpdatedAt = DateTime.UtcNow;
+
         await _repo.DeleteAsync(id);
         return true;
     }

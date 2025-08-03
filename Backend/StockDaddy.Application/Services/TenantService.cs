@@ -66,6 +66,12 @@ public class TenantService
         var tenant = await _repo.GetByIdAsync(id);
         if (tenant == null) return false;
 
+        // Soft delete logic
+        tenant.IsDeleted = true;
+        tenant.DeletedAt = DateTime.UtcNow;
+        tenant.UpdatedAt = DateTime.UtcNow;
+    
+
         await _repo.DeleteAsync(id);
         return true;
     }

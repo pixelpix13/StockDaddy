@@ -66,6 +66,11 @@ public class RoleService
         var role = await _repo.GetByIdAsync(id);
         if (role == null) return false;
 
+        // Soft delete logic
+        role.IsDeleted = true;
+        role.DeletedAt = DateTime.UtcNow;
+        role.UpdatedAt = DateTime.UtcNow;
+        
         await _repo.DeleteAsync(id);
         return true;
     }

@@ -79,6 +79,11 @@ public class GiftOptionService
         var option = await _repo.GetByIdAsync(id);
         if (option == null) return false;
 
+        // Soft delete logic
+        option.IsDeleted = true;
+        option.DeletedAt = DateTime.UtcNow;
+        option.UpdatedAt = DateTime.UtcNow;
+        
         await _repo.DeleteAsync(id);
         return true;
     }

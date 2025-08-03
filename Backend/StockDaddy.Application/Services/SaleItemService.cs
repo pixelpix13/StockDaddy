@@ -74,6 +74,11 @@ public class SaleItemService
         var existing = await _repo.GetByIdAsync(id);
         if (existing == null) return false;
 
+        // Soft delete logic
+        existing.IsDeleted = true;
+        existing.DeletedAt = DateTime.UtcNow;
+        existing.UpdatedAt = DateTime.UtcNow;
+        
         await _repo.DeleteAsync(id);
         return true;
     }

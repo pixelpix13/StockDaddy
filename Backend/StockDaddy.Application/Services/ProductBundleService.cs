@@ -48,7 +48,9 @@ public class ProductBundleService
             TenantId = request.TenantId,
             Name = request.Name,
             Description = request.Description,
-            Price = request.Price
+            Price = request.Price,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(bundle);
@@ -62,6 +64,7 @@ public class ProductBundleService
         bundle.Name = request.Name;
         bundle.Description = request.Description;
         bundle.Price = request.Price;
+        bundle.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(bundle);
         return true;
@@ -71,6 +74,9 @@ public class ProductBundleService
     {
         var bundle = await _repo.GetByIdAsync(id);
         if (bundle == null) return false;
+        bundle.IsDeleted = true;
+        bundle.DeletedAt = DateTime.UtcNow;
+        bundle.UpdatedAt = DateTime.UtcNow;
 
         await _repo.DeleteAsync(id);
         return true;

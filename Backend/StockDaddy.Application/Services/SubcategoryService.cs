@@ -77,6 +77,11 @@ public class SubcategoryService
         var sub = await _repo.GetByIdAsync(id);
         if (sub == null) return false;
 
+        // Soft delete logic
+        sub.IsDeleted = true;
+        sub.DeletedAt = DateTime.UtcNow;
+        sub.UpdatedAt = DateTime.UtcNow;
+        
         await _repo.DeleteAsync(id);
         return true;
     }

@@ -71,6 +71,10 @@ public class ProductTagService
         var tag = await _repo.GetByIdAsync(id);
         if (tag == null) return false;
 
+        tag.IsDeleted = true;
+        tag.DeletedAt = DateTime.UtcNow;
+        tag.UpdatedAt = DateTime.UtcNow;
+
         await _repo.DeleteAsync(id);
         return true;
     }

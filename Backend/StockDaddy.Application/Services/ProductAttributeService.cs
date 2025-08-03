@@ -75,6 +75,11 @@ public class ProductAttributeService
         var attr = await _repo.GetByIdAsync(id);
         if (attr == null) return false;
 
+        // Soft delete logic
+        attr.IsDeleted = true;
+        attr.DeletedAt = DateTime.UtcNow;
+        attr.UpdatedAt = DateTime.UtcNow;
+
         await _repo.DeleteAsync(id);
         return true;
     }

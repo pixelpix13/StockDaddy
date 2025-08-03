@@ -87,6 +87,11 @@ public class CustomerService
         var c = await _repo.GetByIdAsync(id);
         if (c == null) return false;
 
+        // Soft delete logic
+        c.IsDeleted = true;
+        c.DeletedAt = DateTime.UtcNow;
+        c.UpdatedAt = DateTime.UtcNow;
+
         await _repo.SoftDeleteAsync(id);
         return true;
     }

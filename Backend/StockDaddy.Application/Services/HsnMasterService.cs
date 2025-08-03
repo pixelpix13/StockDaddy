@@ -79,6 +79,11 @@ public class HsnMasterService
         var Hsn = await _repo.GetByIdAsync(id);
         if (Hsn == null) return false;
 
+        // Soft delete logic
+        Hsn.IsDeleted = true;
+        Hsn.DeletedAt = DateTime.UtcNow;
+        Hsn.UpdatedAt = DateTime.UtcNow;
+        
         await _repo.DeleteAsync(id);
         return true;
     }

@@ -87,6 +87,11 @@ public class PaymentService
         var p = await _repo.GetByIdAsync(id);
         if (p == null) return false;
 
+        // Soft delete logic
+        p.IsDeleted = true;
+        p.DeletedAt = DateTime.UtcNow;
+        p.UpdatedAt = DateTime.UtcNow;
+        
         await _repo.DeleteAsync(id);
         return true;
     }

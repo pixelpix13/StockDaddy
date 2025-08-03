@@ -106,6 +106,10 @@ public class ProductVariantService
         var variant = await _repo.GetByIdAsync(id);
         if (variant == null) return false;
 
+        variant.IsDeleted = true;
+        variant.DeletedAt = DateTime.UtcNow;
+        variant.UpdatedAt = DateTime.UtcNow;
+        
         await _repo.DeleteAsync(id);
         return true;
     }

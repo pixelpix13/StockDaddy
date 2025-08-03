@@ -80,6 +80,10 @@ public class ProductRestockAlertService
         var alert = await _repo.GetByIdAsync(id);
         if (alert == null) return false;
 
+        alert.IsDeleted = true;
+        alert.DeletedAt = DateTime.UtcNow;
+        alert.UpdatedAt = DateTime.UtcNow;
+
         await _repo.DeleteAsync(id);
         return true;
     }

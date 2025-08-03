@@ -89,6 +89,10 @@ public class UserService
         var user = await _repo.GetByIdAsync(id);
         if (user == null) return false;
 
+        user.IsDeleted = true;
+        user.DeletedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+
         await _repo.SoftDeleteAsync(id);
         return true;
     }
