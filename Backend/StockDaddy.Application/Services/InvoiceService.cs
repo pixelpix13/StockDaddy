@@ -89,6 +89,11 @@ public class InvoiceService
         var invoice = await _repo.GetByIdAsync(id);
         if (invoice == null) return false;
 
+        // Soft delete logic
+        invoice.IsDeleted = true;
+        invoice.DeletedAt = DateTime.UtcNow;
+        invoice.UpdatedAt = DateTime.UtcNow;
+
         await _repo.DeleteAsync(id);
         return true;
     }

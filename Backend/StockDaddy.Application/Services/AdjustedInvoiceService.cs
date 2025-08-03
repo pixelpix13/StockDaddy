@@ -78,6 +78,11 @@ public class AdjustedInvoiceService
         var x = await _repo.GetByIdAsync(id);
         if (x == null) return false;
 
+        // Soft delete logic
+        x.IsDeleted = true;
+        x.DeletedAt = DateTime.UtcNow;
+        x.UpdatedAt = DateTime.UtcNow;
+
         await _repo.DeleteAsync(id);
         return true;
     }

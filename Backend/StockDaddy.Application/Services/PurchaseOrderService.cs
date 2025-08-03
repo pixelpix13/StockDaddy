@@ -88,6 +88,10 @@ public class PurchaseOrderService
         var order = await _repo.GetByIdAsync(id);
         if (order == null) return false;
 
+        order.IsDeleted = true;
+        order.DeletedAt = DateTime.UtcNow;
+        order.UpdatedAt = DateTime.UtcNow;
+
         await _repo.DeleteAsync(id);
         return true;
     }

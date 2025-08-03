@@ -1,41 +1,72 @@
+using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.Interfaces;
+using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Infrastructure.Repositories;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// ===========================
+// 1. Add Application Services
+// ===========================
+builder.Services.AddControllers(); // Enables MVC API controllers
 
+// ===========================
+// 2. Configure DbContext
+// ===========================
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+
+// ===========================
+// 3. Register Repositories
+// ===========================
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// Repeat for other repositories:
+// builder.Services.AddScoped<IProductRepository, ProductRepository>();
+// builder.Services.AddScoped<ISaleRepository, SaleRepository>();
+// ...
+
+// ===========================
+// 4. Swagger (OpenAPI)
+// ===========================
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "StockDaddy API", Version = "v1" });
+});
+
+// ===========================
+// 5. CORS (Optional for React Frontend)
+// ===========================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy => policy.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader());
+});
+
+// ===========================
+// 6. Build App
+// ===========================
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ===========================
+// 7. Use Middleware
+// ===========================
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowAll"); // If using frontend like React
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.UseAuthorization();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

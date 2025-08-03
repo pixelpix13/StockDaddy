@@ -73,6 +73,11 @@ public class StoreService
         var store = await _repo.GetByIdAsync(id);
         if (store == null) return false;
 
+        // Soft delete logic
+        store.IsDeleted = true;
+        store.DeletedAt = DateTime.UtcNow;
+        store.UpdatedAt = DateTime.UtcNow;
+
         await _repo.DeleteAsync(id);
         return true;
     }

@@ -81,6 +81,10 @@ public class RefundService
     {
         var r = await _repo.GetByIdAsync(id);
         if (r == null) return false;
+        
+        r.IsDeleted = true;
+        r.DeletedAt = DateTime.UtcNow;
+        r.UpdatedAt = DateTime.UtcNow;
 
         await _repo.DeleteAsync(id);
         return true;

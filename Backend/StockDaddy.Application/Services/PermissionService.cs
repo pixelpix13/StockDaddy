@@ -72,6 +72,10 @@ public class PermissionService
         var p = await _repo.GetByIdAsync(id);
         if (p == null) return false;
 
+        p.IsDeleted = true;
+        p.DeletedAt = DateTime.UtcNow;
+        p.UpdatedAt = DateTime.UtcNow;
+
         await _repo.DeleteAsync(id);
         return true;
     }

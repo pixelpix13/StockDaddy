@@ -88,6 +88,12 @@ public class SaleService
         var sale = await _repo.GetByIdAsync(id);
         if (sale == null) return false;
 
+        // Soft delete logic
+        sale.IsDeleted = true;
+        sale.DeletedAt = DateTime.UtcNow;
+        sale.UpdatedAt = DateTime.UtcNow;
+        
+
         await _repo.DeleteAsync(id);
         return true;
     }

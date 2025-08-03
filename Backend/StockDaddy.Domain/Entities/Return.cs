@@ -10,6 +10,9 @@ public class Return
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; } = null;
+
 
     // Navigation
     public Sale? Sale { get; set; }

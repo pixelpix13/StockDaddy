@@ -83,6 +83,11 @@ public class IntegrationEventService
         var e = await _repo.GetByIdAsync(id);
         if (e == null) return false;
 
+        // Soft delete logic
+        e.IsDeleted = true;
+        e.DeletedAt = DateTime.UtcNow;
+        e.UpdatedAt = DateTime.UtcNow;
+        
         await _repo.DeleteAsync(id);
         return true;
     }
