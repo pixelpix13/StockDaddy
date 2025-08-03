@@ -13,9 +13,9 @@ public class CustomerService
         _repo = repo;
     }
 
-    public async Task<List<CustomerDto>> GetAllAsync(Guid tenantId)
+    public async Task<List<CustomerDto>> GetAllAsync()
     {
-        var customers = await _repo.GetAllAsync(tenantId);
+        var customers = await _repo.GetAllAsync();
         return customers.Select(c => new CustomerDto
         {
             Id = c.Id,
@@ -24,7 +24,10 @@ public class CustomerService
             Phone = c.Phone,
             Email = c.Email,
             Address = c.Address,
-            CreatedAt = c.CreatedAt
+            CreatedAt = c.CreatedAt,
+            UpdatedAt = c.UpdatedAt,
+            IsDeleted = c.IsDeleted,
+            DeletedAt = c.DeletedAt
         }).ToList();
     }
 
@@ -41,7 +44,10 @@ public class CustomerService
             Phone = c.Phone,
             Email = c.Email,
             Address = c.Address,
-            CreatedAt = c.CreatedAt
+            CreatedAt = c.CreatedAt,
+            UpdatedAt = c.UpdatedAt,
+            IsDeleted = c.IsDeleted,
+            DeletedAt = c.DeletedAt
         };
     }
 
@@ -53,7 +59,9 @@ public class CustomerService
             Name = request.Name,
             Phone = request.Phone,
             Email = request.Email,
-            Address = request.Address
+            Address = request.Address,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(c);
@@ -61,24 +69,25 @@ public class CustomerService
 
     public async Task<bool> UpdateAsync(Guid id, UpdateCustomerRequest request)
     {
-        var customer = await _repo.GetByIdAsync(id);
-        if (customer == null) return false;
+        var c = await _repo.GetByIdAsync(id);
+        if (c == null) return false;
 
-        customer.Name = request.Name;
-        customer.Phone = request.Phone;
-        customer.Email = request.Email;
-        customer.Address = request.Address;
+        c.Name = request.Name;
+        c.Phone = request.Phone;
+        c.Email = request.Email;
+        c.Address = request.Address;
+        c.UpdatedAt = DateTime.UtcNow;
 
-        await _repo.UpdateAsync(customer);
+        await _repo.UpdateAsync(c);
         return true;
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> SoftDeleteAsync(Guid id)
     {
         var c = await _repo.GetByIdAsync(id);
         if (c == null) return false;
 
-        await _repo.DeleteAsync(id);
+        await _repo.SoftDeleteAsync(id);
         return true;
     }
 }

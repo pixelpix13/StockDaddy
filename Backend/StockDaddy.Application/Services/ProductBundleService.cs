@@ -13,23 +13,10 @@ public class ProductBundleService
         _repo = repo;
     }
 
-    public async Task<ProductBundleDto?> GetByIdAsync(Guid id)
+    public async Task<List<ProductBundleDto>> GetAllAsync()
     {
-        var b = await _repo.GetByIdAsync(id);
-        return b == null ? null : new ProductBundleDto
-        {
-            Id = b.Id,
-            TenantId = b.TenantId,
-            Name = b.Name,
-            Description = b.Description,
-            Price = b.Price
-        };
-    }
-
-    public async Task<List<ProductBundleDto>> GetByTenantIdAsync(Guid tenantId)
-    {
-        var list = await _repo.GetByTenantIdAsync(tenantId);
-        return list.Select(b => new ProductBundleDto
+        var bundles = await _repo.GetAllAsync();
+        return bundles.Select(b => new ProductBundleDto
         {
             Id = b.Id,
             TenantId = b.TenantId,
@@ -39,37 +26,51 @@ public class ProductBundleService
         }).ToList();
     }
 
-    public async Task<Guid> CreateAsync(CreateProductBundleRequest req)
+    public async Task<ProductBundleDto?> GetByIdAsync(Guid id)
     {
-        var b = new ProductBundle
-        {
-            TenantId = req.TenantId,
-            Name = req.Name,
-            Description = req.Description,
-            Price = req.Price
-        };
+        var bundle = await _repo.GetByIdAsync(id);
+        if (bundle == null) return null;
 
-        await _repo.AddAsync(b);
-        return b.Id;
+        return new ProductBundleDto
+        {
+            Id = bundle.Id,
+            TenantId = bundle.TenantId,
+            Name = bundle.Name,
+            Description = bundle.Description,
+            Price = bundle.Price
+        };
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateProductBundleRequest req)
+    public async Task AddAsync(CreateProductBundleRequest request)
     {
-        var b = await _repo.GetByIdAsync(id);
-        if (b == null) return false;
+        var bundle = new ProductBundle
+        {
+            TenantId = request.TenantId,
+            Name = request.Name,
+            Description = request.Description,
+            Price = request.Price
+        };
 
-        if (!string.IsNullOrWhiteSpace(req.Name)) b.Name = req.Name;
-        if (!string.IsNullOrWhiteSpace(req.Description)) b.Description = req.Description;
-        if (req.Price.HasValue) b.Price = req.Price.Value;
+        await _repo.AddAsync(bundle);
+    }
 
-        await _repo.UpdateAsync(b);
+    public async Task<bool> UpdateAsync(Guid id, UpdateProductBundleRequest request)
+    {
+        var bundle = await _repo.GetByIdAsync(id);
+        if (bundle == null) return false;
+
+        bundle.Name = request.Name;
+        bundle.Description = request.Description;
+        bundle.Price = request.Price;
+
+        await _repo.UpdateAsync(bundle);
         return true;
     }
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var b = await _repo.GetByIdAsync(id);
-        if (b == null) return false;
+        var bundle = await _repo.GetByIdAsync(id);
+        if (bundle == null) return false;
 
         await _repo.DeleteAsync(id);
         return true;

@@ -13,56 +13,61 @@ public class BundleItemService
         _repo = repo;
     }
 
-    public async Task<BundleItemDto?> GetByIdAsync(Guid id)
+    public async Task<List<BundleItemDto>> GetAllAsync()
     {
-        var item = await _repo.GetByIdAsync(id);
-        return item == null ? null : new BundleItemDto
+        var items = await _repo.GetAllAsync();
+        return items.Select(i => new BundleItemDto
         {
-            Id = item.Id,
-            BundleId = item.BundleId,
-            ProductId = item.ProductId,
-            Quantity = item.Quantity,
-            EffectiveUnitPrice = item.EffectiveUnitPrice
-        };
-    }
-
-    public async Task<List<BundleItemDto>> GetByBundleIdAsync(Guid bundleId)
-    {
-        var list = await _repo.GetByBundleIdAsync(bundleId);
-        return list.Select(item => new BundleItemDto
-        {
-            Id = item.Id,
-            BundleId = item.BundleId,
-            ProductId = item.ProductId,
-            Quantity = item.Quantity,
-            EffectiveUnitPrice = item.EffectiveUnitPrice
+            Id = i.Id,
+            BundleId = i.BundleId,
+            ProductId = i.ProductId,
+            Quantity = i.Quantity,
+            EffectiveUnitPrice = i.EffectiveUnitPrice,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt
         }).ToList();
     }
 
-    public async Task<Guid> CreateAsync(CreateBundleItemRequest req)
+    public async Task<BundleItemDto?> GetByIdAsync(Guid id)
+    {
+        var i = await _repo.GetByIdAsync(id);
+        if (i == null) return null;
+
+        return new BundleItemDto
+        {
+            Id = i.Id,
+            BundleId = i.BundleId,
+            ProductId = i.ProductId,
+            Quantity = i.Quantity,
+            EffectiveUnitPrice = i.EffectiveUnitPrice,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt
+        };
+    }
+
+    public async Task AddAsync(CreateBundleItemRequest request)
     {
         var item = new BundleItem
         {
-            BundleId = req.BundleId,
-            ProductId = req.ProductId,
-            Quantity = req.Quantity,
-            EffectiveUnitPrice = req.EffectiveUnitPrice
+            BundleId = request.BundleId,
+            ProductId = request.ProductId,
+            Quantity = request.Quantity,
+            EffectiveUnitPrice = request.EffectiveUnitPrice,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(item);
-        return item.Id;
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateBundleItemRequest req)
+    public async Task<bool> UpdateAsync(Guid id, UpdateBundleItemRequest request)
     {
         var item = await _repo.GetByIdAsync(id);
         if (item == null) return false;
 
-        if (req.Quantity.HasValue)
-            item.Quantity = req.Quantity.Value;
-
-        if (req.EffectiveUnitPrice.HasValue)
-            item.EffectiveUnitPrice = req.EffectiveUnitPrice.Value;
+        item.Quantity = request.Quantity;
+        item.EffectiveUnitPrice = request.EffectiveUnitPrice;
+        item.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(item);
         return true;

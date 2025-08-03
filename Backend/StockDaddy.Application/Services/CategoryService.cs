@@ -13,19 +13,20 @@ public class CategoryService
         _repo = repo;
     }
 
-    // ✅ Get all categories by tenant
-    public async Task<List<CategoryDto>> GetByTenantAsync(Guid tenantId)
+    public async Task<List<CategoryDto>> GetAllAsync()
     {
-        var categories = await _repo.GetByTenantAsync(tenantId);
-
+        var categories = await _repo.GetAllAsync();
         return categories.Select(c => new CategoryDto
         {
             Id = c.Id,
-            Name = c.Name
+            StoreId = c.StoreId,
+            TenantId = c.TenantId,
+            Name = c.Name,
+            CreatedAt = c.CreatedAt,
+            UpdatedAt = c.UpdatedAt
         }).ToList();
     }
 
-    // ✅ Get a category by ID
     public async Task<CategoryDto?> GetByIdAsync(Guid id)
     {
         var category = await _repo.GetByIdAsync(id);
@@ -34,35 +35,40 @@ public class CategoryService
         return new CategoryDto
         {
             Id = category.Id,
-            Name = category.Name
+            StoreId = category.StoreId,
+            TenantId = category.TenantId,
+            Name = category.Name,
+            CreatedAt = category.CreatedAt,
+            UpdatedAt = category.UpdatedAt
         };
     }
 
-    // ✅ Create a new category for a tenant
     public async Task AddAsync(CreateCategoryRequest request)
     {
         var category = new Category
         {
+            StoreId = request.StoreId,
             TenantId = request.TenantId,
             Name = request.Name,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(category);
     }
 
-    // ✅ Update existing category
     public async Task<bool> UpdateAsync(Guid id, UpdateCategoryRequest request)
     {
         var category = await _repo.GetByIdAsync(id);
         if (category == null) return false;
 
         category.Name = request.Name;
+        category.UpdatedAt = DateTime.UtcNow;
+
         await _repo.UpdateAsync(category);
         return true;
     }
 
-    // ✅ Delete
     public async Task<bool> DeleteAsync(Guid id)
     {
         var category = await _repo.GetByIdAsync(id);

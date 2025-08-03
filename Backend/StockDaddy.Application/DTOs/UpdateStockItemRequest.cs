@@ -1,7 +1,9 @@
 namespace StockDaddy.Application.DTOs;
+using StockDaddy.Domain.Enums;
+
 public class UpdateStockItemRequest
 {
-    public Guid ProductId { get; set; }
     public int Quantity { get; set; }
-    public Guid UpdatedBy { get; set; }
+    public StockStatus Status { get; set; } = StockStatus.InStock;
+    public Guid? UpdatedBy { get; set; }
 }

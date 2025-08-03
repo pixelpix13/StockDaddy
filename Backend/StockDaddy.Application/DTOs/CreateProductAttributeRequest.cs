@@ -1,4 +1,5 @@
 namespace StockDaddy.Application.DTOs;
+
 public class CreateProductAttributeRequest
 {
     public Guid ProductId { get; set; }

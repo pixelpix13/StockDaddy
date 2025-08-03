@@ -4,9 +4,9 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IProductAttributeRepository
 {
+    Task<List<ProductAttribute>> GetAllAsync();
     Task<ProductAttribute?> GetByIdAsync(Guid id);
-    Task<List<ProductAttribute>> GetByProductIdAsync(Guid productId);
-    Task AddAsync(ProductAttribute attr);
-    Task UpdateAsync(ProductAttribute attr);
+    Task AddAsync(ProductAttribute attribute);
+    Task UpdateAsync(ProductAttribute attribute);
     Task DeleteAsync(Guid id);
 }

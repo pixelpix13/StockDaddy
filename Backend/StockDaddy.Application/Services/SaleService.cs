@@ -13,69 +13,76 @@ public class SaleService
         _repo = repo;
     }
 
-    public async Task<List<SaleDto>> GetAllAsync(Guid tenantId)
+    public async Task<List<SaleDto>> GetAllAsync()
     {
-        var sales = await _repo.GetAllAsync(tenantId);
+        var sales = await _repo.GetAllAsync();
         return sales.Select(s => new SaleDto
         {
             Id = s.Id,
             TenantId = s.TenantId,
+            StoreId = s.StoreId,
             CustomerId = s.CustomerId,
+            SoldBy = s.SoldBy,
             TotalAmount = s.TotalAmount,
             PaymentMethod = s.PaymentMethod,
-            SoldBy = s.SoldBy,
+            Notes = s.Notes,
             CreatedAt = s.CreatedAt,
-            Notes = s.Notes
+            UpdatedAt = s.UpdatedAt
         }).ToList();
     }
 
     public async Task<SaleDto?> GetByIdAsync(Guid id)
     {
-        var sale = await _repo.GetByIdAsync(id);
-        if (sale == null) return null;
+        var s = await _repo.GetByIdAsync(id);
+        if (s == null) return null;
 
         return new SaleDto
         {
-            Id = sale.Id,
-            TenantId = sale.TenantId,
-            CustomerId = sale.CustomerId,
-            TotalAmount = sale.TotalAmount,
-            PaymentMethod = sale.PaymentMethod,
-            SoldBy = sale.SoldBy,
-            CreatedAt = sale.CreatedAt,
-            Notes = sale.Notes
+            Id = s.Id,
+            TenantId = s.TenantId,
+            StoreId = s.StoreId,
+            CustomerId = s.CustomerId,
+            SoldBy = s.SoldBy,
+            TotalAmount = s.TotalAmount,
+            PaymentMethod = s.PaymentMethod,
+            Notes = s.Notes,
+            CreatedAt = s.CreatedAt,
+            UpdatedAt = s.UpdatedAt
         };
     }
 
-    public async Task<Guid> CreateAsync(CreateSaleRequest request)
+    public async Task AddAsync(CreateSaleRequest request)
     {
         var sale = new Sale
         {
             TenantId = request.TenantId,
+            StoreId = request.StoreId,
             CustomerId = request.CustomerId,
+            SoldBy = request.SoldBy,
             TotalAmount = request.TotalAmount,
             PaymentMethod = request.PaymentMethod,
-            SoldBy = request.SoldBy,
-            Notes = request.Notes
+            Notes = request.Notes,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(sale);
-        return sale.Id;
     }
+
     public async Task<bool> UpdateAsync(Guid id, UpdateSaleRequest request)
     {
         var sale = await _repo.GetByIdAsync(id);
         if (sale == null) return false;
 
-        sale.CustomerId = request.CustomerId;
         sale.TotalAmount = request.TotalAmount;
         sale.PaymentMethod = request.PaymentMethod;
         sale.Notes = request.Notes;
+        sale.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(sale);
         return true;
     }
-    // DELETE /sales/{id}
+
     public async Task<bool> DeleteAsync(Guid id)
     {
         var sale = await _repo.GetByIdAsync(id);

@@ -4,7 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IGiftOptionRepository
 {
-    Task<GiftOption?> GetBySaleIdAsync(Guid saleId);
+    Task<List<GiftOption>> GetAllAsync();
     Task<GiftOption?> GetByIdAsync(Guid id);
     Task AddAsync(GiftOption option);
     Task UpdateAsync(GiftOption option);

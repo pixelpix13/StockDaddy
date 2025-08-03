@@ -7,83 +7,75 @@ namespace StockDaddy.Application.Services;
 public class SubcategoryService
 {
     private readonly ISubcategoryRepository _repo;
-    private readonly ICategoryRepository _categoryRepo;
 
-    public SubcategoryService(ISubcategoryRepository repo, ICategoryRepository categoryRepo)
+    public SubcategoryService(ISubcategoryRepository repo)
     {
         _repo = repo;
-        _categoryRepo = categoryRepo;
     }
 
-    // ✅ Get all subcategories for a tenant
-    public async Task<List<SubcategoryDto>> GetByTenantAsync(Guid tenantId)
+    public async Task<List<SubcategoryDto>> GetAllAsync()
     {
-        var data = await _repo.GetByTenantAsync(tenantId);
-
-        var result = new List<SubcategoryDto>();
-        foreach (var sub in data)
+        var subcategories = await _repo.GetAllAsync();
+        return subcategories.Select(s => new SubcategoryDto
         {
-            var category = await _categoryRepo.GetByIdAsync(sub.CategoryId);
-            result.Add(new SubcategoryDto
-            {
-                Id = sub.Id,
-                Name = sub.Name,
-                CategoryId = sub.CategoryId,
-                TenantId = sub.TenantId,
-                CategoryName = category?.Name ?? "Unknown"
-            });
-        }
-
-        return result;
+            Id = s.Id,
+            StoreId = s.StoreId,
+            TenantId = s.TenantId,
+            CategoryId = s.CategoryId,
+            Name = s.Name,
+            CreatedAt = s.CreatedAt,
+            UpdatedAt = s.UpdatedAt
+        }).ToList();
     }
 
-    // ✅ Get one by ID
     public async Task<SubcategoryDto?> GetByIdAsync(Guid id)
     {
         var sub = await _repo.GetByIdAsync(id);
         if (sub == null) return null;
 
-        var category = await _categoryRepo.GetByIdAsync(sub.CategoryId);
         return new SubcategoryDto
         {
             Id = sub.Id,
-            Name = sub.Name,
-            CategoryId = sub.CategoryId,
+            StoreId = sub.StoreId,
             TenantId = sub.TenantId,
-            CategoryName = category?.Name ?? "Unknown"
+            CategoryId = sub.CategoryId,
+            Name = sub.Name,
+            CreatedAt = sub.CreatedAt,
+            UpdatedAt = sub.UpdatedAt
         };
     }
 
-    // ✅ Create
     public async Task AddAsync(CreateSubcategoryRequest request)
     {
-        var entity = new Subcategory
+        var sub = new Subcategory
         {
-            Name = request.Name,
+            StoreId = request.StoreId,
+            TenantId = request.TenantId,
             CategoryId = request.CategoryId,
-            TenantId = request.TenantId
+            Name = request.Name,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
-        await _repo.AddAsync(entity);
+
+        await _repo.AddAsync(sub);
     }
 
-    // ✅ Update
     public async Task<bool> UpdateAsync(Guid id, UpdateSubcategoryRequest request)
     {
-        var entity = await _repo.GetByIdAsync(id);
-        if (entity == null) return false;
+        var sub = await _repo.GetByIdAsync(id);
+        if (sub == null) return false;
 
-        entity.Name = request.Name;
-        entity.CategoryId = request.CategoryId;
+        sub.Name = request.Name;
+        sub.UpdatedAt = DateTime.UtcNow;
 
-        await _repo.UpdateAsync(entity);
+        await _repo.UpdateAsync(sub);
         return true;
     }
 
-    // ✅ Delete
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var entity = await _repo.GetByIdAsync(id);
-        if (entity == null) return false;
+        var sub = await _repo.GetByIdAsync(id);
+        if (sub == null) return false;
 
         await _repo.DeleteAsync(id);
         return true;
