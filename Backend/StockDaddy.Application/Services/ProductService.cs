@@ -19,26 +19,19 @@ public class ProductService
         return products.Select(p => new ProductDto
         {
             Id = p.Id,
+            TenantId = p.TenantId,
+            StoreId = p.StoreId,
+            SubcategoryId = p.SubcategoryId,
             Name = p.Name,
             Description = p.Description,
-            Quantity = p.Quantity,
-            CostPrice = p.CostPrice,
-            SellingPrice = p.SellingPrice
+            Unit = p.Unit,
+            CreatedAt = p.CreatedAt,
+            UpdatedAt = p.UpdatedAt,
+            IsDeleted = p.IsDeleted,
+            DeletedAt = p.DeletedAt
         }).ToList();
     }
 
-    public async Task AddAsync(CreateProductRequest request)
-    {
-        var product = new Product
-        {
-            Name = request.Name,
-            Description = request.Description,
-            Quantity = request.Quantity,
-            CostPrice = request.CostPrice,
-            SellingPrice = request.SellingPrice
-        };
-        await _repo.AddAsync(product);
-    }
     public async Task<ProductDto?> GetByIdAsync(Guid id)
     {
         var product = await _repo.GetByIdAsync(id);
@@ -47,35 +40,58 @@ public class ProductService
         return new ProductDto
         {
             Id = product.Id,
+            TenantId = product.TenantId,
+            StoreId = product.StoreId,
+            SubcategoryId = product.SubcategoryId,
             Name = product.Name,
             Description = product.Description,
-            Quantity = product.Quantity,
-            CostPrice = product.CostPrice,
-            SellingPrice = product.SellingPrice
+            Unit = product.Unit,
+            CreatedAt = product.CreatedAt,
+            UpdatedAt = product.UpdatedAt,
+            IsDeleted = product.IsDeleted,
+            DeletedAt = product.DeletedAt
         };
     }
+
+    public async Task AddAsync(CreateProductRequest request)
+    {
+        var product = new Product
+        {
+            TenantId = request.TenantId,
+            StoreId = request.StoreId,
+            SubcategoryId = request.SubcategoryId,
+            Name = request.Name,
+            Description = request.Description,
+            Unit = request.Unit,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _repo.AddAsync(product);
+    }
+
     public async Task<bool> UpdateAsync(Guid id, UpdateProductRequest request)
     {
         var product = await _repo.GetByIdAsync(id);
         if (product == null) return false;
 
+        product.StoreId = request.StoreId;
+        product.SubcategoryId = request.SubcategoryId;
         product.Name = request.Name;
         product.Description = request.Description;
-        product.Quantity = request.Quantity;
-        product.CostPrice = request.CostPrice;
-        product.SellingPrice = request.SellingPrice;
+        product.Unit = request.Unit;
+        product.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(product);
         return true;
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> SoftDeleteAsync(Guid id)
     {
         var product = await _repo.GetByIdAsync(id);
         if (product == null) return false;
 
-        await _repo.DeleteAsync(id);
+        await _repo.SoftDeleteAsync(id);
         return true;
     }
-
 }

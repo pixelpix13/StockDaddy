@@ -1,15 +1,22 @@
+using StockDaddy.Domain.Enums;
 namespace StockDaddy.Domain.Entities;
 
 public class StockItem
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid ProductId { get; set; }
+    public Guid? StoreId { get; set; }
     public int Quantity { get; set; }
-    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
-    public string Status { get; set; } = "in-stock"; // Could be Enum if needed
-    public Guid UpdatedBy { get; set; }
 
-    // Navigation
+    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+    public StockStatus Status { get; set; } = StockStatus.InStock;
+
+    public Guid? UpdatedBy { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
     public Product? Product { get; set; }
+    public Store? Store { get; set; }
     public User? UpdatedByUser { get; set; }
 }

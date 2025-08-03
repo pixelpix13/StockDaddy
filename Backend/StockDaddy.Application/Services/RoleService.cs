@@ -19,7 +19,8 @@ public class RoleService
         return roles.Select(r => new RoleDto
         {
             Id = r.Id,
-            Name = r.Name
+            Name = r.Name,
+            CreatedAt = r.CreatedAt
         }).ToList();
     }
 
@@ -31,7 +32,8 @@ public class RoleService
         return new RoleDto
         {
             Id = role.Id,
-            Name = role.Name
+            Name = role.Name,
+            CreatedAt = role.CreatedAt
         };
     }
 
@@ -39,8 +41,11 @@ public class RoleService
     {
         var role = new Role
         {
-            Name = request.Name
+            Name = request.Name,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
+
         await _repo.AddAsync(role);
     }
 
@@ -50,6 +55,8 @@ public class RoleService
         if (role == null) return false;
 
         role.Name = request.Name;
+        role.UpdatedAt = DateTime.UtcNow;
+
         await _repo.UpdateAsync(role);
         return true;
     }

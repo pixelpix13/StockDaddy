@@ -13,15 +13,17 @@ public class ProductImageService
         _repo = repo;
     }
 
-    public async Task<List<ProductImageDto>> GetAllByProductIdAsync(Guid productId)
+    public async Task<List<ProductImageDto>> GetAllAsync()
     {
-        var images = await _repo.GetAllByProductIdAsync(productId);
+        var images = await _repo.GetAllAsync();
         return images.Select(i => new ProductImageDto
         {
             Id = i.Id,
             ProductId = i.ProductId,
             ImageUrl = i.ImageUrl,
-            IsPrimary = i.IsPrimary
+            IsPrimary = i.IsPrimary,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt
         }).ToList();
     }
 
@@ -35,7 +37,9 @@ public class ProductImageService
             Id = image.Id,
             ProductId = image.ProductId,
             ImageUrl = image.ImageUrl,
-            IsPrimary = image.IsPrimary
+            IsPrimary = image.IsPrimary,
+            CreatedAt = image.CreatedAt,
+            UpdatedAt = image.UpdatedAt
         };
     }
 
@@ -45,7 +49,9 @@ public class ProductImageService
         {
             ProductId = request.ProductId,
             ImageUrl = request.ImageUrl,
-            IsPrimary = request.IsPrimary
+            IsPrimary = request.IsPrimary,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(image);
@@ -58,6 +64,7 @@ public class ProductImageService
 
         image.ImageUrl = request.ImageUrl;
         image.IsPrimary = request.IsPrimary;
+        image.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(image);
         return true;

@@ -1,10 +1,11 @@
-namespace StockDaddy.Application.Interfaces;    
 using StockDaddy.Domain.Entities;
+
+namespace StockDaddy.Application.Interfaces;
 
 public interface ISubcategoryRepository
 {
+    Task<List<Subcategory>> GetAllAsync();
     Task<Subcategory?> GetByIdAsync(Guid id);
-    Task<List<Subcategory>> GetByTenantAsync(Guid tenantId);
     Task AddAsync(Subcategory subcategory);
     Task UpdateAsync(Subcategory subcategory);
     Task DeleteAsync(Guid id);

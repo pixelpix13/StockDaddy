@@ -4,7 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IProductImageRepository
 {
-    Task<List<ProductImage>> GetAllByProductIdAsync(Guid productId);
+    Task<List<ProductImage>> GetAllAsync();
     Task<ProductImage?> GetByIdAsync(Guid id);
     Task AddAsync(ProductImage image);
     Task UpdateAsync(ProductImage image);

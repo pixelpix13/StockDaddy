@@ -1,6 +1,7 @@
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
+
 namespace StockDaddy.Application.Services;
 
 public class StockItemService
@@ -12,87 +13,80 @@ public class StockItemService
         _repo = repo;
     }
 
-    public async Task<StockItemDto?> GetByProductIdAsync(Guid productId)
-    {
-        var item = await _repo.GetByProductIdAsync(productId);
-        if (item == null) return null;
-
-        return new StockItemDto
-        {
-            Id = item.Id,
-            ProductId = item.ProductId,
-            Quantity = item.Quantity,
-            LastUpdated = item.LastUpdated,
-            Status = item.Status,
-            UpdatedBy = item.UpdatedBy
-        };
-    }
-
     public async Task<List<StockItemDto>> GetAllAsync()
     {
         var items = await _repo.GetAllAsync();
-        return items.Select(item => new StockItemDto
+        return items.Select(i => new StockItemDto
         {
-            Id = item.Id,
-            ProductId = item.ProductId,
-            Quantity = item.Quantity,
-            LastUpdated = item.LastUpdated,
-            Status = item.Status,
-            UpdatedBy = item.UpdatedBy
+            Id = i.Id,
+            ProductId = i.ProductId,
+            StoreId = i.StoreId,
+            Quantity = i.Quantity,
+            Status = i.Status,
+            LastUpdated = i.LastUpdated,
+            UpdatedBy = i.UpdatedBy,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt
         }).ToList();
     }
-    public async Task<bool> CreateStockItemAsync(CreateStockItemRequest request)
-    {
-        var existing = await _repo.GetByProductIdAsync(request.ProductId);
-        if (existing != null)
-            return false; // Already exists
 
+    public async Task<StockItemDto?> GetByIdAsync(Guid id)
+    {
+        var i = await _repo.GetByIdAsync(id);
+        if (i == null) return null;
+
+        return new StockItemDto
+        {
+            Id = i.Id,
+            ProductId = i.ProductId,
+            StoreId = i.StoreId,
+            Quantity = i.Quantity,
+            Status = i.Status,
+            LastUpdated = i.LastUpdated,
+            UpdatedBy = i.UpdatedBy,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt
+        };
+    }
+
+    public async Task AddAsync(CreateStockItemRequest request)
+    {
         var item = new StockItem
         {
             ProductId = request.ProductId,
+            StoreId = request.StoreId,
             Quantity = request.Quantity,
+            Status = request.Status,
             LastUpdated = DateTime.UtcNow,
-            Status = CalculateStatus(request.Quantity),
-            UpdatedBy = request.UpdatedBy
+            UpdatedBy = request.UpdatedBy,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(item);
+    }
+
+    public async Task<bool> UpdateAsync(Guid id, UpdateStockItemRequest request)
+    {
+        var item = await _repo.GetByIdAsync(id);
+        if (item == null) return false;
+
+        item.Quantity = request.Quantity;
+        item.Status = request.Status;
+        item.LastUpdated = DateTime.UtcNow;
+        item.UpdatedBy = request.UpdatedBy;
+        item.UpdatedAt = DateTime.UtcNow;
+
+        await _repo.UpdateAsync(item);
         return true;
     }
 
-    public async Task<bool> UpdateStockAsync(UpdateStockItemRequest request)
+    public async Task<bool> DeleteAsync(Guid id)
     {
-        var existing = await _repo.GetByProductIdAsync(request.ProductId);
+        var item = await _repo.GetByIdAsync(id);
+        if (item == null) return false;
 
-        if (existing == null)
-        {
-            var newItem = new StockItem
-            {
-                ProductId = request.ProductId,
-                Quantity = request.Quantity,
-                LastUpdated = DateTime.UtcNow,
-                Status = CalculateStatus(request.Quantity),
-                UpdatedBy = request.UpdatedBy
-            };
-            await _repo.AddAsync(newItem);
-        }
-        else
-        {
-            existing.Quantity = request.Quantity;
-            existing.LastUpdated = DateTime.UtcNow;
-            existing.Status = CalculateStatus(request.Quantity);
-            existing.UpdatedBy = request.UpdatedBy;
-
-            await _repo.UpdateAsync(existing);
-        }
-
+        await _repo.DeleteAsync(id);
         return true;
-    }
-
-    private static string CalculateStatus(int quantity)
-    {
-        if (quantity == 0) return "out-of-stock";
-        else if (quantity <= 5) return "low";
-        else return "in-stock";
     }
 }

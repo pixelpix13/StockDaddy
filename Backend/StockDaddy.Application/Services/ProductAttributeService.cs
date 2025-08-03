@@ -13,53 +13,58 @@ public class ProductAttributeService
         _repo = repo;
     }
 
-    public async Task<ProductAttributeDto?> GetByIdAsync(Guid id)
+    public async Task<List<ProductAttributeDto>> GetAllAsync()
     {
-        var attr = await _repo.GetByIdAsync(id);
-        return attr == null ? null : new ProductAttributeDto
+        var attributes = await _repo.GetAllAsync();
+        return attributes.Select(a => new ProductAttributeDto
         {
-            Id = attr.Id,
-            ProductId = attr.ProductId,
-            AttributeName = attr.AttributeName,
-            AttributeValue = attr.AttributeValue
-        };
-    }
-
-    public async Task<List<ProductAttributeDto>> GetByProductIdAsync(Guid productId)
-    {
-        var list = await _repo.GetByProductIdAsync(productId);
-        return list.Select(attr => new ProductAttributeDto
-        {
-            Id = attr.Id,
-            ProductId = attr.ProductId,
-            AttributeName = attr.AttributeName,
-            AttributeValue = attr.AttributeValue
+            Id = a.Id,
+            ProductId = a.ProductId,
+            AttributeName = a.AttributeName,
+            AttributeValue = a.AttributeValue,
+            CreatedAt = a.CreatedAt,
+            UpdatedAt = a.UpdatedAt
         }).ToList();
     }
 
-    public async Task<Guid> CreateAsync(CreateProductAttributeRequest req)
+    public async Task<ProductAttributeDto?> GetByIdAsync(Guid id)
+    {
+        var a = await _repo.GetByIdAsync(id);
+        if (a == null) return null;
+
+        return new ProductAttributeDto
+        {
+            Id = a.Id,
+            ProductId = a.ProductId,
+            AttributeName = a.AttributeName,
+            AttributeValue = a.AttributeValue,
+            CreatedAt = a.CreatedAt,
+            UpdatedAt = a.UpdatedAt
+        };
+    }
+
+    public async Task AddAsync(CreateProductAttributeRequest request)
     {
         var attr = new ProductAttribute
         {
-            ProductId = req.ProductId,
-            AttributeName = req.AttributeName,
-            AttributeValue = req.AttributeValue
+            ProductId = request.ProductId,
+            AttributeName = request.AttributeName,
+            AttributeValue = request.AttributeValue,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(attr);
-        return attr.Id;
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateProductAttributeRequest req)
+    public async Task<bool> UpdateAsync(Guid id, UpdateProductAttributeRequest request)
     {
         var attr = await _repo.GetByIdAsync(id);
         if (attr == null) return false;
 
-        if (req.AttributeName is not null)
-            attr.AttributeName = req.AttributeName;
-
-        if (req.AttributeValue is not null)
-            attr.AttributeValue = req.AttributeValue;
+        attr.AttributeName = request.AttributeName;
+        attr.AttributeValue = request.AttributeValue;
+        attr.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(attr);
         return true;

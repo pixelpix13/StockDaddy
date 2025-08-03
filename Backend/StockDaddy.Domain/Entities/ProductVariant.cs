@@ -3,17 +3,25 @@ namespace StockDaddy.Domain.Entities;
 public class ProductVariant
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ProductId { get; set; }
+    public Guid StoreId { get; set; }
+    public Guid HSNCodeId { get; set; } // FK to HSNMaster
 
-    public Guid ProductId { get; set; }  // FK
-    public string VariantName { get; set; } = "";
-    public string SkuCode { get; set; } = "";
-    
+    public string VariantName { get; set; } = string.Empty;
+    public string Barcode { get; set; } = string.Empty; // optional but unique
+    public string SkuCode { get; set; } = string.Empty;
+
     public decimal CostPrice { get; set; }
     public decimal MarginPercent { get; set; }
     public decimal TaxPercent { get; set; }
-
-    public decimal Price { get; set; }  // Final selling price
+    public decimal Price { get; set; }
     public int Quantity { get; set; }
 
-    public Product? Product { get; set; }  // Navigation property
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    public Product? Product { get; set; }
+    public Store? Store { get; set; }
+    public HsnMaster? HSNMaster { get; set; }
 }

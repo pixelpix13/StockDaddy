@@ -13,20 +13,25 @@ public class ProductVariantService
         _repo = repo;
     }
 
-    public async Task<List<ProductVariantDto>> GetAllByProductIdAsync(Guid productId)
+    public async Task<List<ProductVariantDto>> GetAllAsync()
     {
-        var variants = await _repo.GetAllByProductIdAsync(productId);
+        var variants = await _repo.GetAllAsync();
         return variants.Select(v => new ProductVariantDto
         {
             Id = v.Id,
             ProductId = v.ProductId,
+            StoreId = v.StoreId,
+            HSNCodeId = v.HSNCodeId,
             VariantName = v.VariantName,
+            Barcode = v.Barcode,
             SkuCode = v.SkuCode,
             CostPrice = v.CostPrice,
             MarginPercent = v.MarginPercent,
             TaxPercent = v.TaxPercent,
             Price = v.Price,
-            Quantity = v.Quantity
+            Quantity = v.Quantity,
+            CreatedAt = v.CreatedAt,
+            UpdatedAt = v.UpdatedAt
         }).ToList();
     }
 
@@ -39,33 +44,41 @@ public class ProductVariantService
         {
             Id = v.Id,
             ProductId = v.ProductId,
+            StoreId = v.StoreId,
+            HSNCodeId = v.HSNCodeId,
             VariantName = v.VariantName,
+            Barcode = v.Barcode,
             SkuCode = v.SkuCode,
             CostPrice = v.CostPrice,
             MarginPercent = v.MarginPercent,
             TaxPercent = v.TaxPercent,
             Price = v.Price,
-            Quantity = v.Quantity
+            Quantity = v.Quantity,
+            CreatedAt = v.CreatedAt,
+            UpdatedAt = v.UpdatedAt
         };
     }
 
     public async Task AddAsync(CreateProductVariantRequest request)
     {
-        var price = CalculateFinalPrice(request.CostPrice, request.MarginPercent, request.TaxPercent);
-
-        var entity = new ProductVariant
+        var variant = new ProductVariant
         {
             ProductId = request.ProductId,
+            StoreId = request.StoreId,
+            HSNCodeId = request.HSNCodeId,
             VariantName = request.VariantName,
+            Barcode = request.Barcode,
             SkuCode = request.SkuCode,
             CostPrice = request.CostPrice,
             MarginPercent = request.MarginPercent,
             TaxPercent = request.TaxPercent,
-            Price = price,
-            Quantity = request.Quantity
+            Price = request.Price,
+            Quantity = request.Quantity,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
-        await _repo.AddAsync(entity);
+        await _repo.AddAsync(variant);
     }
 
     public async Task<bool> UpdateAsync(Guid id, UpdateProductVariantRequest request)
@@ -74,12 +87,15 @@ public class ProductVariantService
         if (variant == null) return false;
 
         variant.VariantName = request.VariantName;
+        variant.Barcode = request.Barcode;
         variant.SkuCode = request.SkuCode;
         variant.CostPrice = request.CostPrice;
         variant.MarginPercent = request.MarginPercent;
         variant.TaxPercent = request.TaxPercent;
+        variant.Price = request.Price;
         variant.Quantity = request.Quantity;
-        variant.Price = CalculateFinalPrice(request.CostPrice, request.MarginPercent, request.TaxPercent);
+        variant.HSNCodeId = request.HSNCodeId;
+        variant.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(variant);
         return true;
@@ -92,12 +108,5 @@ public class ProductVariantService
 
         await _repo.DeleteAsync(id);
         return true;
-    }
-
-    private static decimal CalculateFinalPrice(decimal cost, decimal margin, decimal tax)
-    {
-        var marginAmt = cost * margin / 100;
-        var taxAmt = (cost + marginAmt) * tax / 100;
-        return cost + marginAmt + taxAmt;
     }
 }

@@ -1,4 +1,5 @@
 namespace StockDaddy.Application.DTOs;
+
 public class BundleItemDto
 {
     public Guid Id { get; set; }
@@ -6,4 +7,6 @@ public class BundleItemDto
     public Guid ProductId { get; set; }
     public int Quantity { get; set; }
     public decimal EffectiveUnitPrice { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

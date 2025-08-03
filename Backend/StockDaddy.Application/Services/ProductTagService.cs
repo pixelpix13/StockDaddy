@@ -13,14 +13,16 @@ public class ProductTagService
         _repo = repo;
     }
 
-    public async Task<List<ProductTagDto>> GetAllByProductIdAsync(Guid productId)
+    public async Task<List<ProductTagDto>> GetAllAsync()
     {
-        var tags = await _repo.GetAllByProductIdAsync(productId);
+        var tags = await _repo.GetAllAsync();
         return tags.Select(t => new ProductTagDto
         {
             Id = t.Id,
             ProductId = t.ProductId,
-            Tag = t.Tag
+            Tag = t.Tag,
+            CreatedAt = t.CreatedAt,
+            UpdatedAt = t.UpdatedAt
         }).ToList();
     }
 
@@ -33,7 +35,9 @@ public class ProductTagService
         {
             Id = tag.Id,
             ProductId = tag.ProductId,
-            Tag = tag.Tag
+            Tag = tag.Tag,
+            CreatedAt = tag.CreatedAt,
+            UpdatedAt = tag.UpdatedAt
         };
     }
 
@@ -42,7 +46,9 @@ public class ProductTagService
         var tag = new ProductTag
         {
             ProductId = request.ProductId,
-            Tag = request.Tag
+            Tag = request.Tag,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(tag);
@@ -54,8 +60,9 @@ public class ProductTagService
         if (tag == null) return false;
 
         tag.Tag = request.Tag;
-        await _repo.UpdateAsync(tag);
+        tag.UpdatedAt = DateTime.UtcNow;
 
+        await _repo.UpdateAsync(tag);
         return true;
     }
 

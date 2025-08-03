@@ -1,8 +1,6 @@
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace StockDaddy.Application.Services;
 
@@ -23,8 +21,13 @@ public class UserService
             Id = u.Id,
             TenantId = u.TenantId,
             RoleId = u.RoleId,
+            StoreId = u.StoreId,
             Username = u.Username,
-            Email = u.Email
+            Email = u.Email,
+            CreatedAt = u.CreatedAt,
+            UpdatedAt = u.UpdatedAt,
+            IsDeleted = u.IsDeleted,
+            DeletedAt = u.DeletedAt
         }).ToList();
     }
 
@@ -38,22 +41,28 @@ public class UserService
             Id = user.Id,
             TenantId = user.TenantId,
             RoleId = user.RoleId,
+            StoreId = user.StoreId,
             Username = user.Username,
-            Email = user.Email
+            Email = user.Email,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+            IsDeleted = user.IsDeleted,
+            DeletedAt = user.DeletedAt
         };
     }
 
     public async Task AddAsync(CreateUserRequest request)
     {
-        var hashedPassword = HashPassword(request.Password);
-
         var user = new User
         {
             TenantId = request.TenantId,
             RoleId = request.RoleId,
+            StoreId = request.StoreId,
             Username = request.Username,
             Email = request.Email,
-            PasswordHash = hashedPassword,
+            PasswordHash = request.PasswordHash,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(user);
@@ -64,30 +73,23 @@ public class UserService
         var user = await _repo.GetByIdAsync(id);
         if (user == null) return false;
 
+        user.RoleId = request.RoleId;
+        user.StoreId = request.StoreId;
         user.Username = request.Username;
         user.Email = request.Email;
-        user.RoleId = request.RoleId;
+        user.PasswordHash = request.PasswordHash;
         user.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(user);
         return true;
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> SoftDeleteAsync(Guid id)
     {
         var user = await _repo.GetByIdAsync(id);
         if (user == null) return false;
 
-        await _repo.DeleteAsync(id);
+        await _repo.SoftDeleteAsync(id);
         return true;
-    }
-
-    private static string HashPassword(string password)
-    {
-        // For now use SHA256 (not ideal in production; use BCrypt or ASP.NET Identity)
-        using var sha = SHA256.Create();
-        var bytes = Encoding.UTF8.GetBytes(password);
-        var hash = sha.ComputeHash(bytes);
-        return Convert.ToBase64String(hash);
     }
 }

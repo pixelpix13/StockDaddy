@@ -4,7 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IProductVariantRepository
 {
-    Task<List<ProductVariant>> GetAllByProductIdAsync(Guid productId);
+    Task<List<ProductVariant>> GetAllAsync();
     Task<ProductVariant?> GetByIdAsync(Guid id);
     Task AddAsync(ProductVariant variant);
     Task UpdateAsync(ProductVariant variant);

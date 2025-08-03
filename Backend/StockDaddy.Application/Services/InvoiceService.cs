@@ -13,22 +13,45 @@ public class InvoiceService
         _repo = repo;
     }
 
-    public async Task<InvoiceDto?> GetByIdAsync(Guid id)
+    public async Task<List<InvoiceDto>> GetAllAsync()
     {
-        var i = await _repo.GetByIdAsync(id);
-        return i == null ? null : new InvoiceDto
+        var invoices = await _repo.GetAllAsync();
+        return invoices.Select(i => new InvoiceDto
         {
             Id = i.Id,
             SaleId = i.SaleId,
             InvoiceNumber = i.InvoiceNumber,
             InvoiceDate = i.InvoiceDate,
             DueDate = i.DueDate,
+            StoreId = i.StoreId,
             Status = i.Status,
-            FileUrl = i.FileUrl
+            FileUrl = i.FileUrl,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt
+        }).ToList();
+    }
+
+    public async Task<InvoiceDto?> GetByIdAsync(Guid id)
+    {
+        var i = await _repo.GetByIdAsync(id);
+        if (i == null) return null;
+
+        return new InvoiceDto
+        {
+            Id = i.Id,
+            SaleId = i.SaleId,
+            InvoiceNumber = i.InvoiceNumber,
+            InvoiceDate = i.InvoiceDate,
+            DueDate = i.DueDate,
+            StoreId = i.StoreId,
+            Status = i.Status,
+            FileUrl = i.FileUrl,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt
         };
     }
 
-    public async Task<Guid> CreateAsync(CreateInvoiceRequest request)
+    public async Task AddAsync(CreateInvoiceRequest request)
     {
         var invoice = new Invoice
         {
@@ -36,12 +59,14 @@ public class InvoiceService
             InvoiceNumber = request.InvoiceNumber,
             InvoiceDate = request.InvoiceDate,
             DueDate = request.DueDate,
+            StoreId = request.StoreId,
+            Status = request.Status,
             FileUrl = request.FileUrl,
-            Status = "Unpaid"
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _repo.AddAsync(invoice);
-        return invoice.Id;
     }
 
     public async Task<bool> UpdateAsync(Guid id, UpdateInvoiceRequest request)
@@ -49,14 +74,11 @@ public class InvoiceService
         var invoice = await _repo.GetByIdAsync(id);
         if (invoice == null) return false;
 
-        if (request.DueDate.HasValue)
-            invoice.DueDate = request.DueDate.Value;
-
-        if (!string.IsNullOrWhiteSpace(request.Status))
-            invoice.Status = request.Status;
-
-        if (!string.IsNullOrWhiteSpace(request.FileUrl))
-            invoice.FileUrl = request.FileUrl;
+        invoice.InvoiceDate = request.InvoiceDate;
+        invoice.DueDate = request.DueDate;
+        invoice.Status = request.Status;
+        invoice.FileUrl = request.FileUrl;
+        invoice.UpdatedAt = DateTime.UtcNow;
 
         await _repo.UpdateAsync(invoice);
         return true;
