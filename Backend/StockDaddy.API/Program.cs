@@ -4,7 +4,6 @@ using StockDaddy.Application.Interfaces;
 using StockDaddy.Application.Services;
 using StockDaddy.Infrastructure.Persistence;
 using StockDaddy.Infrastructure.Repositories;
-using AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +22,7 @@ async Task MainAsync()
     // 2. Configure PostgreSQL DbContext
     // ===============================
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
     // ===============================
     // 3. Register Repositories
