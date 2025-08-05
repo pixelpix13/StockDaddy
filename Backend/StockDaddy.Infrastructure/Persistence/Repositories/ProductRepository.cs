@@ -1,4 +1,6 @@
+
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,37 +16,91 @@ public class ProductRepository : IProductRepository
         _context = context;
     }
 
-    public async Task<List<Product>> GetAllAsync()
+    public async Task<List<ProductDto>> GetAllAsync()
     {
         return await _context.Products
             .Where(p => !p.IsDeleted)
+            .Select(p => new ProductDto
+            {
+                Id = p.Id,
+                TenantId = p.TenantId,
+                StoreId = p.StoreId,
+                SubcategoryId = p.SubcategoryId,
+                Name = p.Name,
+                Description = p.Description,
+                Unit = p.Unit,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt,
+                IsDeleted = p.IsDeleted,
+                DeletedAt = p.DeletedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<Product?> GetByIdAsync(Guid id)
+    public async Task<ProductDto?> GetByIdAsync(int id)
     {
-        return await _context.Products
+        var p = await _context.Products
             .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+        if (p == null) return null;
+        return new ProductDto
+        {
+            Id = p.Id,
+            TenantId = p.TenantId,
+            StoreId = p.StoreId,
+            SubcategoryId = p.SubcategoryId,
+            Name = p.Name,
+            Description = p.Description,
+            Unit = p.Unit,
+            CreatedAt = p.CreatedAt,
+            UpdatedAt = p.UpdatedAt,
+            IsDeleted = p.IsDeleted,
+            DeletedAt = p.DeletedAt
+        };
     }
 
-    public async Task AddAsync(Product product)
+    public async Task AddAsync(CreateProductRequest product)
     {
-        await _context.Products.AddAsync(product);
+        var entity = new Product
+        {
+            TenantId = product.TenantId,
+            StoreId = product.StoreId,
+            SubcategoryId = product.SubcategoryId,
+            Name = product.Name,
+            Description = product.Description,
+            Unit = product.Unit,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.Products.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Product product)
+    public async Task UpdateAsync(int id, UpdateProductRequest product)
     {
-        _context.Products.Update(product);
+        var entity = await _context.Products.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+        if (entity == null) return;
+
+        entity.StoreId = product.StoreId;
+        entity.SubcategoryId = product.SubcategoryId;
+        entity.Name = product.Name;
+        entity.Description = product.Description;
+        entity.Unit = product.Unit;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        _context.Products.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task SoftDeleteAsync(Guid id)
+    public async Task SoftDeleteAsync(int id)
     {
-        var product = await _context.Products.FindAsync(id);
-        if (product == null) return;
+        var entity = await _context.Products.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+        if (entity == null) return;
 
-        _context.Products.Update(product); // service already sets soft delete flags
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.Products.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

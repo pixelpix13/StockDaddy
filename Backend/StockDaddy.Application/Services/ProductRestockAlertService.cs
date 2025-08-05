@@ -1,90 +1,48 @@
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
 
-namespace StockDaddy.Application.Services;
-
-public class ProductRestockAlertService
+namespace StockDaddy.Application.Services
 {
-    private readonly IProductRestockAlertRepository _repo;
-
-    public ProductRestockAlertService(IProductRestockAlertRepository repo)
+    public class ProductRestockAlertService
     {
-        _repo = repo;
-    }
+        private readonly IProductRestockAlertRepository _repo;
 
-    public async Task<List<ProductRestockAlertDto>> GetAllAsync()
-    {
-        var alerts = await _repo.GetAllAsync();
-        return alerts.Select(a => new ProductRestockAlertDto
+        public ProductRestockAlertService(IProductRestockAlertRepository repo)
         {
-            Id = a.Id,
-            ProductId = a.ProductId,
-            StoreId = a.StoreId,
-            VariantId = a.VariantId,
-            TriggeredAt = a.TriggeredAt,
-            Status = a.Status,
-            CreatedAt = a.CreatedAt,
-            UpdatedAt = a.UpdatedAt
-        }).ToList();
-    }
+            _repo = repo;
+        }
 
-    public async Task<ProductRestockAlertDto?> GetByIdAsync(Guid id)
-    {
-        var alert = await _repo.GetByIdAsync(id);
-        if (alert == null) return null;
-
-        return new ProductRestockAlertDto
+        public async Task<List<ProductRestockAlertDto>> GetAllAsync()
         {
-            Id = alert.Id,
-            ProductId = alert.ProductId,
-            StoreId = alert.StoreId,
-            VariantId = alert.VariantId,
-            TriggeredAt = alert.TriggeredAt,
-            Status = alert.Status,
-            CreatedAt = alert.CreatedAt,
-            UpdatedAt = alert.UpdatedAt
-        };
-    }
+            return await _repo.GetAllAsync();
+        }
 
-    public async Task AddAsync(CreateProductRestockAlertRequest request)
-    {
-        var alert = new ProductRestockAlert
+        public async Task<ProductRestockAlertDto?> GetByIdAsync(int id)
         {
-            ProductId = request.ProductId,
-            StoreId = request.StoreId,
-            VariantId = request.VariantId,
-            TriggeredAt = DateTime.UtcNow,
-            Status = request.Status,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            return await _repo.GetByIdAsync(id);
+        }
 
-        await _repo.AddAsync(alert);
-    }
+        public async Task<ProductRestockAlertDto> AddAsync(CreateProductRestockAlertRequest request)
+        {
+            await _repo.AddAsync(request);
+            var all = await _repo.GetAllAsync();
+            return all.OrderByDescending(a => a.Id).First();
+        }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateProductRestockAlertRequest request)
-    {
-        var alert = await _repo.GetByIdAsync(id);
-        if (alert == null) return false;
+        public async Task<ProductRestockAlertDto?> UpdateAsync(int id, UpdateProductRestockAlertRequest request)
+        {
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null) return null;
+            await _repo.UpdateAsync(id, request);
+            return await _repo.GetByIdAsync(id);
+        }
 
-        alert.Status = request.Status;
-        alert.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(alert);
-        return true;
-    }
-
-    public async Task<bool> DeleteAsync(Guid id)
-    {
-        var alert = await _repo.GetByIdAsync(id);
-        if (alert == null) return false;
-
-        alert.IsDeleted = true;
-        alert.DeletedAt = DateTime.UtcNow;
-        alert.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.DeleteAsync(id);
-        return true;
+        public async Task<bool> DeleteAsync(int id)
+        {
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null) return false;
+            await _repo.DeleteAsync(id);
+            return true;
+        }
     }
 }

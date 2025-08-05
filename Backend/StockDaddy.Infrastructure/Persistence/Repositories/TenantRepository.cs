@@ -1,4 +1,6 @@
+
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,37 +16,65 @@ public class TenantRepository : ITenantRepository
         _context = context;
     }
 
-    public async Task<List<Tenant>> GetAllAsync()
+    public async Task<List<TenantDto>> GetAllAsync()
     {
         return await _context.Tenants
             .Where(t => !t.IsDeleted)
+            .Select(t => new TenantDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                CreatedAt = t.CreatedAt,
+                UpdatedAt = t.UpdatedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<Tenant?> GetByIdAsync(Guid id)
+    public async Task<TenantDto?> GetByIdAsync(int id)
     {
         return await _context.Tenants
-            .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+            .Where(t => t.Id == id && !t.IsDeleted)
+            .Select(t => new TenantDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                CreatedAt = t.CreatedAt,
+                UpdatedAt = t.UpdatedAt
+            })
+            .FirstOrDefaultAsync();
     }
 
-    public async Task AddAsync(Tenant tenant)
+    public async Task AddAsync(CreateTenantRequest tenant)
     {
-        await _context.Tenants.AddAsync(tenant);
+        var entity = new Tenant
+        {
+            Name = tenant.Name,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.Tenants.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Tenant tenant)
+    public async Task UpdateAsync(int id, UpdateTenantRequest tenant)
     {
-        _context.Tenants.Update(tenant);
+        var entity = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+        if (entity == null) return;
+        entity.Name = tenant.Name;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.Tenants.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
-        var tenant = await _context.Tenants.FindAsync(id);
-        if (tenant == null) return;
-
-        _context.Tenants.Update(tenant);
+        var entity = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+        if (entity == null) return;
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.Tenants.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

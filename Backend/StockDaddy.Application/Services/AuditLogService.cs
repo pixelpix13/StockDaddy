@@ -15,60 +15,18 @@ public class AuditLogService
 
     public async Task<List<AuditLogDto>> GetAllAsync()
     {
-        var logs = await _repo.GetAllAsync();
-        return logs.Select(log => new AuditLogDto
-        {
-            Id = log.Id,
-            UserId = log.UserId,
-            StoreId = log.StoreId,
-            Action = log.Action,
-            TableName = log.TableName,
-            RecordId = log.RecordId,
-            OldData = log.OldData,
-            NewData = log.NewData,
-            Timestamp = log.Timestamp,
-            CreatedAt = log.CreatedAt,
-            UpdatedAt = log.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<AuditLogDto?> GetByIdAsync(Guid id)
+    public async Task<AuditLogDto?> GetByIdAsync(int id)
     {
-        var log = await _repo.GetByIdAsync(id);
-        if (log == null) return null;
-
-        return new AuditLogDto
-        {
-            Id = log.Id,
-            UserId = log.UserId,
-            StoreId = log.StoreId,
-            Action = log.Action,
-            TableName = log.TableName,
-            RecordId = log.RecordId,
-            OldData = log.OldData,
-            NewData = log.NewData,
-            Timestamp = log.Timestamp,
-            CreatedAt = log.CreatedAt,
-            UpdatedAt = log.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateAuditLogRequest request)
+    public async Task<AuditLogDto> AddAsync(CreateAuditLogRequest request)
     {
-        var log = new AuditLog
-        {
-            UserId = request.UserId,
-            StoreId = request.StoreId,
-            Action = request.Action,
-            TableName = request.TableName,
-            RecordId = request.RecordId,
-            OldData = request.OldData,
-            NewData = request.NewData,
-            Timestamp = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(log);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(log => log.Id).First();
     }
 }

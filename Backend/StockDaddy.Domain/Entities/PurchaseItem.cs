@@ -2,10 +2,10 @@ namespace StockDaddy.Domain.Entities;
 
 public class PurchaseItem
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public int Id { get; set; }
 
-    public Guid PurchaseOrderId { get; set; }
-    public Guid ProductVariantId { get; set; }
+    public int PurchaseOrderId { get; set; }
+    public int ProductVariantId { get; set; }
 
     public int Quantity { get; set; }
     public decimal UnitCost { get; set; }

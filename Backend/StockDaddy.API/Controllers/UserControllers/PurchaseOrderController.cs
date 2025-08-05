@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class PurchaseOrderController : ControllerBase
 
     // GET: api/purchaseorder/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var order = await _purchaseOrderRepository.GetByIdAsync(id);
             if (order == null)
                 return NotFound($"Purchase order with ID {id} not found.");
-
             return Ok(order);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class PurchaseOrderController : ControllerBase
 
     // POST: api/purchaseorder
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] PurchaseOrder order)
+    public async Task<IActionResult> Create([FromBody] CreatePurchaseOrderRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _purchaseOrderRepository.AddAsync(order);
-            return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
+            await _purchaseOrderRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class PurchaseOrderController : ControllerBase
 
     // PUT: api/purchaseorder/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] PurchaseOrder order)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdatePurchaseOrderRequest request)
     {
         try
         {
-            if (id != order.Id)
-                return BadRequest("ID in URL does not match the purchase order.");
-
             var existing = await _purchaseOrderRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Purchase order with ID {id} not found.");
 
-            await _purchaseOrderRepository.UpdateAsync(order);
+            await _purchaseOrderRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class PurchaseOrderController : ControllerBase
 
     // DELETE: api/purchaseorder/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

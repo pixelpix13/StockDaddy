@@ -1,12 +1,11 @@
-using StockDaddy.Domain.Entities;
-
+using StockDaddy.Application.DTOs;
 namespace StockDaddy.Application.Interfaces;
 
 public interface IPaymentRepository
 {
-    Task<List<Payment>> GetAllAsync();
-    Task<Payment?> GetByIdAsync(Guid id);
-    Task AddAsync(Payment payment);
-    Task UpdateAsync(Payment payment);
-    Task DeleteAsync(Guid id);
+    Task<List<PaymentDto>> GetAllAsync();
+    Task<PaymentDto?> GetByIdAsync(int id);
+    Task AddAsync(CreatePaymentRequest payment);
+    Task UpdateAsync(int id, UpdatePaymentRequest payment);
+    Task DeleteAsync(int id);
 }

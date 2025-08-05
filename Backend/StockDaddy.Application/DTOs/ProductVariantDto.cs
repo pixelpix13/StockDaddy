@@ -2,10 +2,10 @@ namespace StockDaddy.Application.DTOs;
 
 public class ProductVariantDto
 {
-    public Guid Id { get; set; }
-    public Guid ProductId { get; set; }
-    public Guid StoreId { get; set; }
-    public Guid HSNCodeId { get; set; }
+    public int Id { get; set; }
+    public int ProductId { get; set; }
+    public int StoreId { get; set; }
+    public int HSNCodeId { get; set; }
 
     public string VariantName { get; set; } = string.Empty;
     public string Barcode { get; set; } = string.Empty;

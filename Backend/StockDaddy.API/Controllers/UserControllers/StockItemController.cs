@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class StockItemController : ControllerBase
 
     // GET: api/stockitem/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var item = await _stockItemRepository.GetByIdAsync(id);
             if (item == null)
                 return NotFound($"Stock item with ID {id} not found.");
-
             return Ok(item);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class StockItemController : ControllerBase
 
     // POST: api/stockitem
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] StockItem item)
+    public async Task<IActionResult> Create([FromBody] CreateStockItemRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _stockItemRepository.AddAsync(item);
-            return CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
+            await _stockItemRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class StockItemController : ControllerBase
 
     // PUT: api/stockitem/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] StockItem item)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateStockItemRequest request)
     {
         try
         {
-            if (id != item.Id)
-                return BadRequest("ID in URL does not match the stock item object.");
-
             var existing = await _stockItemRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Stock item with ID {id} not found.");
 
-            await _stockItemRepository.UpdateAsync(item);
+            await _stockItemRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class StockItemController : ControllerBase
 
     // DELETE: api/stockitem/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

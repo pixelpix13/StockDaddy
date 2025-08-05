@@ -1,12 +1,13 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
+
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface ISupplierRepository
 {
-    Task<List<Supplier>> GetAllAsync();
-    Task<Supplier?> GetByIdAsync(Guid id);
-    Task AddAsync(Supplier supplier);
-    Task UpdateAsync(Supplier supplier);
-    Task DeleteAsync(Guid id); // Soft delete
+    Task<List<SupplierDto>> GetAllAsync();
+    Task<SupplierDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateSupplierRequest supplier);
+    Task UpdateAsync(int id, UpdateSupplierRequest supplier);
+    Task DeleteAsync(int id); // Soft delete
 }

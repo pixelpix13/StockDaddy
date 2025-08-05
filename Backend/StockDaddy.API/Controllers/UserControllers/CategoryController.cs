@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class CategoryController : ControllerBase
 
     // GET: api/category/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var category = await _categoryRepo.GetByIdAsync(id);
             if (category == null)
                 return NotFound($"Category with ID {id} not found.");
-
             return Ok(category);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class CategoryController : ControllerBase
 
     // POST: api/category
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Category category)
+    public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _categoryRepo.AddAsync(category);
-            return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
+            await _categoryRepo.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class CategoryController : ControllerBase
 
     // PUT: api/category/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Category category)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request)
     {
         try
         {
-            if (id != category.Id)
-                return BadRequest("ID in URL and body do not match.");
-
             var existing = await _categoryRepo.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Category with ID {id} not found.");
 
-            await _categoryRepo.UpdateAsync(category);
+            await _categoryRepo.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class CategoryController : ControllerBase
 
     // DELETE: api/category/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> SoftDelete(Guid id)
+    public async Task<IActionResult> SoftDelete(int id)
     {
         try
         {

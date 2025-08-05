@@ -15,79 +15,33 @@ public class IntegrationEventService
 
     public async Task<List<IntegrationEventDto>> GetAllAsync()
     {
-        var events = await _repo.GetAllAsync();
-        return events.Select(e => new IntegrationEventDto
-        {
-            Id = e.Id,
-            StoreId = e.StoreId,
-            EventType = e.EventType,
-            Payload = e.Payload,
-            TriggeredBy = e.TriggeredBy,
-            TriggeredAt = e.TriggeredAt,
-            Delivered = e.Delivered,
-            CreatedAt = e.CreatedAt,
-            UpdatedAt = e.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<IntegrationEventDto?> GetByIdAsync(Guid id)
+    public async Task<IntegrationEventDto?> GetByIdAsync(int id)
     {
-        var e = await _repo.GetByIdAsync(id);
-        if (e == null) return null;
-
-        return new IntegrationEventDto
-        {
-            Id = e.Id,
-            StoreId = e.StoreId,
-            EventType = e.EventType,
-            Payload = e.Payload,
-            TriggeredBy = e.TriggeredBy,
-            TriggeredAt = e.TriggeredAt,
-            Delivered = e.Delivered,
-            CreatedAt = e.CreatedAt,
-            UpdatedAt = e.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateIntegrationEventRequest request)
+    public async Task<IntegrationEventDto> AddAsync(CreateIntegrationEventRequest request)
     {
-        var e = new IntegrationEvent
-        {
-            StoreId = request.StoreId,
-            EventType = request.EventType,
-            Payload = request.Payload,
-            TriggeredBy = request.TriggeredBy,
-            TriggeredAt = DateTime.UtcNow,
-            Delivered = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(e);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(e => e.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateIntegrationEventRequest request)
+    public async Task<IntegrationEventDto?> UpdateAsync(int id, UpdateIntegrationEventRequest request)
     {
-        var e = await _repo.GetByIdAsync(id);
-        if (e == null) return false;
-
-        e.Delivered = request.Delivered;
-        e.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(e);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var e = await _repo.GetByIdAsync(id);
-        if (e == null) return false;
-
-        // Soft delete logic
-        e.IsDeleted = true;
-        e.DeletedAt = DateTime.UtcNow;
-        e.UpdatedAt = DateTime.UtcNow;
-        
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

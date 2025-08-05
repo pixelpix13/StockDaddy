@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class ProductAttributeController : ControllerBase
 
     // GET: api/productattribute/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var attr = await _productAttributeRepository.GetByIdAsync(id);
             if (attr == null)
                 return NotFound($"Product attribute with ID {id} not found.");
-
             return Ok(attr);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class ProductAttributeController : ControllerBase
 
     // POST: api/productattribute
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ProductAttribute attribute)
+    public async Task<IActionResult> Create([FromBody] CreateProductAttributeRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _productAttributeRepository.AddAsync(attribute);
-            return CreatedAtAction(nameof(GetById), new { id = attribute.Id }, attribute);
+            await _productAttributeRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class ProductAttributeController : ControllerBase
 
     // PUT: api/productattribute/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] ProductAttribute attribute)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductAttributeRequest request)
     {
         try
         {
-            if (id != attribute.Id)
-                return BadRequest("ID in URL does not match ID in body.");
-
             var existing = await _productAttributeRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Product attribute with ID {id} not found.");
 
-            await _productAttributeRepository.UpdateAsync(attribute);
+            await _productAttributeRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class ProductAttributeController : ControllerBase
 
     // DELETE: api/productattribute/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

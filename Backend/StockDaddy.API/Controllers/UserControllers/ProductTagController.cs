@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class ProductTagController : ControllerBase
 
     // GET: api/producttag/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var tag = await _productTagRepository.GetByIdAsync(id);
             if (tag == null)
                 return NotFound($"Tag with ID {id} not found.");
-
             return Ok(tag);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class ProductTagController : ControllerBase
 
     // POST: api/producttag
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ProductTag tag)
+    public async Task<IActionResult> Create([FromBody] CreateProductTagRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _productTagRepository.AddAsync(tag);
-            return CreatedAtAction(nameof(GetById), new { id = tag.Id }, tag);
+            await _productTagRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class ProductTagController : ControllerBase
 
     // PUT: api/producttag/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] ProductTag tag)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductTagRequest request)
     {
         try
         {
-            if (id != tag.Id)
-                return BadRequest("ID in URL does not match ID in body.");
-
             var existing = await _productTagRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Tag with ID {id} not found.");
 
-            await _productTagRepository.UpdateAsync(tag);
+            await _productTagRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class ProductTagController : ControllerBase
 
     // DELETE: api/producttag/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

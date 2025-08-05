@@ -1,10 +1,9 @@
-using StockDaddy.Domain.Entities;
-
+using StockDaddy.Application.DTOs;
 namespace StockDaddy.Application.Interfaces;
 
 public interface IAuditLogRepository
 {
-    Task<List<AuditLog>> GetAllAsync();
-    Task<AuditLog?> GetByIdAsync(Guid id);
-    Task AddAsync(AuditLog auditLog);
+    Task<List<AuditLogDto>> GetAllAsync();
+    Task<AuditLogDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateAuditLogRequest auditLog);
 }

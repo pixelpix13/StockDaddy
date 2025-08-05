@@ -1,12 +1,12 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface IGiftOptionRepository
 {
-    Task<List<GiftOption>> GetAllAsync();
-    Task<GiftOption?> GetByIdAsync(Guid id);
-    Task AddAsync(GiftOption option);
-    Task UpdateAsync(GiftOption option);
-    Task DeleteAsync(Guid id);
+    Task<List<GiftOptionDto>> GetAllAsync();
+    Task<GiftOptionDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateGiftOptionRequest option);
+    Task UpdateAsync(int id, UpdateGiftOptionRequest option);
+    Task DeleteAsync(int id);
 }

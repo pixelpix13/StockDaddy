@@ -15,75 +15,33 @@ public class GiftOptionService
 
     public async Task<List<GiftOptionDto>> GetAllAsync()
     {
-        var options = await _repo.GetAllAsync();
-        return options.Select(o => new GiftOptionDto
-        {
-            Id = o.Id,
-            SaleId = o.SaleId,
-            IsWrapped = o.IsWrapped,
-            WrapType = o.WrapType,
-            Message = o.Message,
-            CreatedAt = o.CreatedAt,
-            UpdatedAt = o.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<GiftOptionDto?> GetByIdAsync(Guid id)
+    public async Task<GiftOptionDto?> GetByIdAsync(int id)
     {
-        var o = await _repo.GetByIdAsync(id);
-        if (o == null) return null;
-
-        return new GiftOptionDto
-        {
-            Id = o.Id,
-            SaleId = o.SaleId,
-            IsWrapped = o.IsWrapped,
-            WrapType = o.WrapType,
-            Message = o.Message,
-            CreatedAt = o.CreatedAt,
-            UpdatedAt = o.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateGiftOptionRequest request)
+    public async Task<GiftOptionDto> AddAsync(CreateGiftOptionRequest request)
     {
-        var option = new GiftOption
-        {
-            SaleId = request.SaleId,
-            IsWrapped = request.IsWrapped,
-            WrapType = request.WrapType,
-            Message = request.Message,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(option);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(o => o.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateGiftOptionRequest request)
+    public async Task<GiftOptionDto?> UpdateAsync(int id, UpdateGiftOptionRequest request)
     {
-        var option = await _repo.GetByIdAsync(id);
-        if (option == null) return false;
-
-        option.IsWrapped = request.IsWrapped;
-        option.WrapType = request.WrapType;
-        option.Message = request.Message;
-        option.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(option);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var option = await _repo.GetByIdAsync(id);
-        if (option == null) return false;
-
-        // Soft delete logic
-        option.IsDeleted = true;
-        option.DeletedAt = DateTime.UtcNow;
-        option.UpdatedAt = DateTime.UtcNow;
-        
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

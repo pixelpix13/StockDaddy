@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,41 +15,70 @@ public class ProductImageRepository : IProductImageRepository
         _context = context;
     }
 
-    public async Task<List<ProductImage>> GetAllAsync()
+    public async Task<List<ProductImageDto>> GetAllAsync()
     {
         return await _context.ProductImages
-            .Where(i => !i.IsDeleted) // if soft delete is added
+            .Where(i => !i.IsDeleted)
+            .Select(i => new ProductImageDto
+            {
+                Id = i.Id,
+                ProductId = i.ProductId,
+                ImageUrl = i.ImageUrl,
+                IsPrimary = i.IsPrimary,
+                CreatedAt = i.CreatedAt,
+                UpdatedAt = i.UpdatedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<ProductImage?> GetByIdAsync(Guid id)
+    public async Task<ProductImageDto?> GetByIdAsync(int id)
     {
-        return await _context.ProductImages
-            .FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+        var i = await _context.ProductImages.FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+        if (i == null) return null;
+        return new ProductImageDto
+        {
+            Id = i.Id,
+            ProductId = i.ProductId,
+            ImageUrl = i.ImageUrl,
+            IsPrimary = i.IsPrimary,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt
+        };
     }
 
-    public async Task AddAsync(ProductImage image)
+    public async Task AddAsync(CreateProductImageRequest image)
     {
-        await _context.ProductImages.AddAsync(image);
+        var entity = new ProductImage
+        {
+            ProductId = image.ProductId,
+            ImageUrl = image.ImageUrl,
+            IsPrimary = image.IsPrimary,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.ProductImages.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(ProductImage image)
+    public async Task UpdateAsync(int id, UpdateProductImageRequest image)
     {
-        _context.ProductImages.Update(image);
+        var entity = await _context.ProductImages.FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+        if (entity == null) return;
+
+        entity.ImageUrl = image.ImageUrl;
+        entity.IsPrimary = image.IsPrimary;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        _context.ProductImages.Update(entity);
         await _context.SaveChangesAsync();
     }
-
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
-        var image = await _context.ProductImages.FindAsync(id);
-        if (image == null) return;
+        var entity = await _context.ProductImages.FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+        if (entity == null) return;
 
-        image.IsDeleted = true;
-        image.DeletedAt = DateTime.UtcNow;
-        image.UpdatedAt = DateTime.UtcNow;
-
-        _context.ProductImages.Update(image);
+        _context.ProductImages.Remove(entity);
         await _context.SaveChangesAsync();
     }
 }

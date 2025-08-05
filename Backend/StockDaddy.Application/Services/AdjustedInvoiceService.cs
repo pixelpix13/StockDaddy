@@ -13,77 +13,37 @@ public class AdjustedInvoiceService
         _repo = repo;
     }
 
+
     public async Task<List<AdjustedInvoiceDto>> GetAllAsync()
     {
-        var items = await _repo.GetAllAsync();
-        return items.Select(x => new AdjustedInvoiceDto
-        {
-            Id = x.Id,
-            InvoiceId = x.InvoiceId,
-            AdjustedTotalAmount = x.AdjustedTotalAmount,
-            AdjustmentReason = x.AdjustmentReason,
-            AdjustedBy = x.AdjustedBy,
-            AdjustedAt = x.AdjustedAt,
-            IsVisibleToCustomer = x.IsVisibleToCustomer
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<AdjustedInvoiceDto?> GetByIdAsync(Guid id)
-    {
-        var x = await _repo.GetByIdAsync(id);
-        if (x == null) return null;
 
-        return new AdjustedInvoiceDto
-        {
-            Id = x.Id,
-            InvoiceId = x.InvoiceId,
-            AdjustedTotalAmount = x.AdjustedTotalAmount,
-            AdjustmentReason = x.AdjustmentReason,
-            AdjustedBy = x.AdjustedBy,
-            AdjustedAt = x.AdjustedAt,
-            IsVisibleToCustomer = x.IsVisibleToCustomer
-        };
+    public async Task<AdjustedInvoiceDto?> GetByIdAsync(int id)
+    {
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateAdjustedInvoiceRequest request)
-    {
-        var x = new AdjustedInvoice
-        {
-            InvoiceId = request.InvoiceId,
-            AdjustedTotalAmount = request.AdjustedTotalAmount,
-            AdjustmentReason = request.AdjustmentReason,
-            AdjustedBy = request.AdjustedBy,
-            AdjustedAt = DateTime.UtcNow,
-            IsVisibleToCustomer = request.IsVisibleToCustomer
-        };
 
-        await _repo.AddAsync(x);
+    public async Task<AdjustedInvoiceDto> AddAsync(CreateAdjustedInvoiceRequest request)
+    {
+        await _repo.AddAsync(request);
+        // Ideally, repository should return the created DTO. For now, fetch the latest for this invoice/user.
+        var all = await _repo.GetAllAsync();
+        return all.LastOrDefault(x => x.InvoiceId == request.InvoiceId && x.AdjustedBy == request.AdjustedBy && x.AdjustedTotalAmount == request.AdjustedTotalAmount && x.AdjustmentReason == request.AdjustmentReason) ?? new AdjustedInvoiceDto();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateAdjustedInvoiceRequest request)
+
+    public async Task<AdjustedInvoiceDto?> UpdateAsync(int id, UpdateAdjustedInvoiceRequest request)
     {
-        var x = await _repo.GetByIdAsync(id);
-        if (x == null) return false;
-
-        x.AdjustedTotalAmount = request.AdjustedTotalAmount;
-        x.AdjustmentReason = request.AdjustmentReason;
-        x.IsVisibleToCustomer = request.IsVisibleToCustomer;
-
-        await _repo.UpdateAsync(x);
-        return true;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+
+    public async Task DeleteAsync(int id)
     {
-        var x = await _repo.GetByIdAsync(id);
-        if (x == null) return false;
-
-        // Soft delete logic
-        x.IsDeleted = true;
-        x.DeletedAt = DateTime.UtcNow;
-        x.UpdatedAt = DateTime.UtcNow;
-
         await _repo.DeleteAsync(id);
-        return true;
     }
 }

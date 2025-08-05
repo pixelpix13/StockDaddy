@@ -15,66 +15,33 @@ public class ProductTagService
 
     public async Task<List<ProductTagDto>> GetAllAsync()
     {
-        var tags = await _repo.GetAllAsync();
-        return tags.Select(t => new ProductTagDto
-        {
-            Id = t.Id,
-            ProductId = t.ProductId,
-            Tag = t.Tag,
-            CreatedAt = t.CreatedAt,
-            UpdatedAt = t.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<ProductTagDto?> GetByIdAsync(Guid id)
+    public async Task<ProductTagDto?> GetByIdAsync(int id)
     {
-        var tag = await _repo.GetByIdAsync(id);
-        if (tag == null) return null;
-
-        return new ProductTagDto
-        {
-            Id = tag.Id,
-            ProductId = tag.ProductId,
-            Tag = tag.Tag,
-            CreatedAt = tag.CreatedAt,
-            UpdatedAt = tag.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateProductTagRequest request)
+    public async Task<ProductTagDto> AddAsync(CreateProductTagRequest request)
     {
-        var tag = new ProductTag
-        {
-            ProductId = request.ProductId,
-            Tag = request.Tag,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(tag);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(t => t.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateProductTagRequest request)
+    public async Task<ProductTagDto?> UpdateAsync(int id, UpdateProductTagRequest request)
     {
-        var tag = await _repo.GetByIdAsync(id);
-        if (tag == null) return false;
-
-        tag.Tag = request.Tag;
-        tag.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(tag);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var tag = await _repo.GetByIdAsync(id);
-        if (tag == null) return false;
-
-        tag.IsDeleted = true;
-        tag.DeletedAt = DateTime.UtcNow;
-        tag.UpdatedAt = DateTime.UtcNow;
-
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

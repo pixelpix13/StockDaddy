@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class ProductVariantController : ControllerBase
 
     // GET: api/productvariant/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var variant = await _productVariantRepository.GetByIdAsync(id);
             if (variant == null)
                 return NotFound($"Product variant with ID {id} not found.");
-
             return Ok(variant);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class ProductVariantController : ControllerBase
 
     // POST: api/productvariant
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ProductVariant variant)
+    public async Task<IActionResult> Create([FromBody] CreateProductVariantRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _productVariantRepository.AddAsync(variant);
-            return CreatedAtAction(nameof(GetById), new { id = variant.Id }, variant);
+            await _productVariantRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class ProductVariantController : ControllerBase
 
     // PUT: api/productvariant/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] ProductVariant variant)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductVariantRequest request)
     {
         try
         {
-            if (id != variant.Id)
-                return BadRequest("ID in URL does not match ID in request body.");
-
             var existing = await _productVariantRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Product variant with ID {id} not found.");
 
-            await _productVariantRepository.UpdateAsync(variant);
+            await _productVariantRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class ProductVariantController : ControllerBase
 
     // DELETE: api/productvariant/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

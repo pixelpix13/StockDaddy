@@ -2,10 +2,10 @@ namespace StockDaddy.Application.DTOs;
 
 public class ProductRestockAlertDto
 {
-    public Guid Id { get; set; }
-    public Guid ProductId { get; set; }
-    public Guid StoreId { get; set; }
-    public Guid VariantId { get; set; }
+    public int Id { get; set; }
+    public int ProductId { get; set; }
+    public int StoreId { get; set; }
+    public int VariantId { get; set; }
 
     public DateTime TriggeredAt { get; set; }
     public string Status { get; set; } = string.Empty;

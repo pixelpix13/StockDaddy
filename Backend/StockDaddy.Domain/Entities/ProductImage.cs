@@ -2,8 +2,8 @@ namespace StockDaddy.Domain.Entities;
 
 public class ProductImage
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid ProductId { get; set; }
+    public int Id { get; set; }
+    public int ProductId { get; set; }
 
     public string ImageUrl { get; set; } = string.Empty;
     public bool IsPrimary { get; set; }

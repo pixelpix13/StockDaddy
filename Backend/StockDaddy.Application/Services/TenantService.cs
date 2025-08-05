@@ -15,62 +15,35 @@ public class TenantService
 
     public async Task<List<TenantDto>> GetAllAsync()
     {
-        var tenants = await _repo.GetAllAsync();
-        return tenants.Select(t => new TenantDto
-        {
-            Id = t.Id,
-            Name = t.Name,
-            CreatedAt = t.CreatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<TenantDto?> GetByIdAsync(Guid id)
+    public async Task<TenantDto?> GetByIdAsync(int id)
+    {
+        return await _repo.GetByIdAsync(id);
+    }
+
+    public async Task<TenantDto?> AddAsync(CreateTenantRequest request)
+    {
+        await _repo.AddAsync(request);
+        // Optionally, fetch the created tenant (e.g., by unique name or by returning from repo)
+        // For now, return null as placeholder if repo does not return the created tenant
+        return null;
+    }
+
+    public async Task<TenantDto?> UpdateAsync(int id, UpdateTenantRequest request)
     {
         var tenant = await _repo.GetByIdAsync(id);
         if (tenant == null) return null;
 
-        return new TenantDto
-        {
-            Id = tenant.Id,
-            Name = tenant.Name,
-            CreatedAt = tenant.CreatedAt
-        };
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateTenantRequest request)
-    {
-        var tenant = new Tenant
-        {
-            Name = request.Name,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(tenant);
-    }
-
-    public async Task<bool> UpdateAsync(Guid id, UpdateTenantRequest request)
+    public async Task<bool> DeleteAsync(int id)
     {
         var tenant = await _repo.GetByIdAsync(id);
         if (tenant == null) return false;
-
-        tenant.Name = request.Name;
-        tenant.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(tenant);
-        return true;
-    }
-
-    public async Task<bool> DeleteAsync(Guid id)
-    {
-        var tenant = await _repo.GetByIdAsync(id);
-        if (tenant == null) return false;
-
-        // Soft delete logic
-        tenant.IsDeleted = true;
-        tenant.DeletedAt = DateTime.UtcNow;
-        tenant.UpdatedAt = DateTime.UtcNow;
-    
 
         await _repo.DeleteAsync(id);
         return true;

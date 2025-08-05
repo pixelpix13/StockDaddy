@@ -1,12 +1,12 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface IPurchaseItemRepository
 {
-    Task<List<PurchaseItem>> GetAllAsync();
-    Task<PurchaseItem?> GetByIdAsync(Guid id);
-    Task AddAsync(PurchaseItem item);
-    Task UpdateAsync(PurchaseItem item);
-    Task DeleteAsync(Guid id);
+    Task<List<PurchaseItemDto>> GetAllAsync();
+    Task<PurchaseItemDto?> GetByIdAsync(int id);
+    Task AddAsync(CreatePurchaseItemRequest item);
+    Task UpdateAsync(int id, UpdatePurchaseItemRequest item);
+    Task DeleteAsync(int id);
 }

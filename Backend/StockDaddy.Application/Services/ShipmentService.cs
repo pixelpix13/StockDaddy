@@ -15,85 +15,36 @@ public class ShipmentService
 
     public async Task<List<ShipmentDto>> GetAllAsync()
     {
-        var shipments = await _repo.GetAllAsync();
-        return shipments.Select(s => new ShipmentDto
-        {
-            Id = s.Id,
-            SaleId = s.SaleId,
-            StoreId = s.StoreId,
-            CourierName = s.CourierName,
-            TrackingNumber = s.TrackingNumber,
-            ShippedDate = s.ShippedDate,
-            EstimatedArrival = s.EstimatedArrival,
-            Status = s.Status,
-            CreatedAt = s.CreatedAt,
-            UpdatedAt = s.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<ShipmentDto?> GetByIdAsync(Guid id)
+    public async Task<ShipmentDto?> GetByIdAsync(int id)
+    {
+        return await _repo.GetByIdAsync(id);
+    }
+
+    public async Task<ShipmentDto?> AddAsync(CreateShipmentRequest request)
+    {
+        await _repo.AddAsync(request);
+        // Optionally, fetch the created shipment (e.g., by unique fields or by returning from repo)
+        // For now, return null as placeholder if repo does not return the created shipment
+        return null;
+    }
+
+    public async Task<ShipmentDto?> UpdateAsync(int id, UpdateShipmentRequest request)
     {
         var s = await _repo.GetByIdAsync(id);
         if (s == null) return null;
 
-        return new ShipmentDto
-        {
-            Id = s.Id,
-            SaleId = s.SaleId,
-            StoreId = s.StoreId,
-            CourierName = s.CourierName,
-            TrackingNumber = s.TrackingNumber,
-            ShippedDate = s.ShippedDate,
-            EstimatedArrival = s.EstimatedArrival,
-            Status = s.Status,
-            CreatedAt = s.CreatedAt,
-            UpdatedAt = s.UpdatedAt
-        };
+        await _repo.UpdateAsync(id, request);
+        // Fetch and return the updated shipment
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateShipmentRequest request)
-    {
-        var s = new Shipment
-        {
-            SaleId = request.SaleId,
-            StoreId = request.StoreId,
-            CourierName = request.CourierName,
-            TrackingNumber = request.TrackingNumber,
-            ShippedDate = request.ShippedDate,
-            EstimatedArrival = request.EstimatedArrival,
-            Status = request.Status,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(s);
-    }
-
-    public async Task<bool> UpdateAsync(Guid id, UpdateShipmentRequest request)
+    public async Task<bool> DeleteAsync(int id)
     {
         var s = await _repo.GetByIdAsync(id);
         if (s == null) return false;
-
-        s.CourierName = request.CourierName;
-        s.TrackingNumber = request.TrackingNumber;
-        s.ShippedDate = request.ShippedDate;
-        s.EstimatedArrival = request.EstimatedArrival;
-        s.Status = request.Status;
-        s.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(s);
-        return true;
-    }
-
-    public async Task<bool> DeleteAsync(Guid id)
-    {
-        var s = await _repo.GetByIdAsync(id);
-        if (s == null) return false;
-
-        // Soft delete logic
-        s.IsDeleted = true;
-        s.DeletedAt = DateTime.UtcNow;
-        s.UpdatedAt = DateTime.UtcNow;
 
         await _repo.DeleteAsync(id);
         return true;

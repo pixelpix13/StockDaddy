@@ -15,85 +15,33 @@ public class InvoiceService
 
     public async Task<List<InvoiceDto>> GetAllAsync()
     {
-        var invoices = await _repo.GetAllAsync();
-        return invoices.Select(i => new InvoiceDto
-        {
-            Id = i.Id,
-            SaleId = i.SaleId,
-            InvoiceNumber = i.InvoiceNumber,
-            InvoiceDate = i.InvoiceDate,
-            DueDate = i.DueDate,
-            StoreId = i.StoreId,
-            Status = i.Status,
-            FileUrl = i.FileUrl,
-            CreatedAt = i.CreatedAt,
-            UpdatedAt = i.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<InvoiceDto?> GetByIdAsync(Guid id)
+    public async Task<InvoiceDto?> GetByIdAsync(int id)
     {
-        var i = await _repo.GetByIdAsync(id);
-        if (i == null) return null;
-
-        return new InvoiceDto
-        {
-            Id = i.Id,
-            SaleId = i.SaleId,
-            InvoiceNumber = i.InvoiceNumber,
-            InvoiceDate = i.InvoiceDate,
-            DueDate = i.DueDate,
-            StoreId = i.StoreId,
-            Status = i.Status,
-            FileUrl = i.FileUrl,
-            CreatedAt = i.CreatedAt,
-            UpdatedAt = i.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateInvoiceRequest request)
+    public async Task<InvoiceDto> AddAsync(CreateInvoiceRequest request)
     {
-        var invoice = new Invoice
-        {
-            SaleId = request.SaleId,
-            InvoiceNumber = request.InvoiceNumber,
-            InvoiceDate = request.InvoiceDate,
-            DueDate = request.DueDate,
-            StoreId = request.StoreId,
-            Status = request.Status,
-            FileUrl = request.FileUrl,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(invoice);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(i => i.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateInvoiceRequest request)
+    public async Task<InvoiceDto?> UpdateAsync(int id, UpdateInvoiceRequest request)
     {
-        var invoice = await _repo.GetByIdAsync(id);
-        if (invoice == null) return false;
-
-        invoice.InvoiceDate = request.InvoiceDate;
-        invoice.DueDate = request.DueDate;
-        invoice.Status = request.Status;
-        invoice.FileUrl = request.FileUrl;
-        invoice.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(invoice);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var invoice = await _repo.GetByIdAsync(id);
-        if (invoice == null) return false;
-
-        // Soft delete logic
-        invoice.IsDeleted = true;
-        invoice.DeletedAt = DateTime.UtcNow;
-        invoice.UpdatedAt = DateTime.UtcNow;
-
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

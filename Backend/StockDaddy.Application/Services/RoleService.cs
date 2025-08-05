@@ -15,62 +15,34 @@ public class RoleService
 
     public async Task<List<RoleDto>> GetAllAsync()
     {
+        return await _repo.GetAllAsync();
+    }
+
+    public async Task<RoleDto?> GetByIdAsync(int id)
+    {
+        return await _repo.GetByIdAsync(id);
+    }
+
+    public async Task<RoleDto> AddAsync(CreateRoleRequest request)
+    {
+        await _repo.AddAsync(request);
+        // Assuming the repository returns the created RoleDto, otherwise fetch the latest
         var roles = await _repo.GetAllAsync();
-        return roles.Select(r => new RoleDto
-        {
-            Id = r.Id,
-            Name = r.Name,
-            CreatedAt = r.CreatedAt
-        }).ToList();
+        return roles.OrderByDescending(r => r.Id).First();
     }
 
-    public async Task<RoleDto?> GetByIdAsync(Guid id)
+    public async Task<RoleDto?> UpdateAsync(int id, UpdateRoleRequest request)
     {
-        var role = await _repo.GetByIdAsync(id);
-        if (role == null) return null;
-
-        return new RoleDto
-        {
-            Id = role.Id,
-            Name = role.Name,
-            CreatedAt = role.CreatedAt
-        };
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateRoleRequest request)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var role = new Role
-        {
-            Name = request.Name,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(role);
-    }
-
-    public async Task<bool> UpdateAsync(Guid id, UpdateRoleRequest request)
-    {
-        var role = await _repo.GetByIdAsync(id);
-        if (role == null) return false;
-
-        role.Name = request.Name;
-        role.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(role);
-        return true;
-    }
-
-    public async Task<bool> DeleteAsync(Guid id)
-    {
-        var role = await _repo.GetByIdAsync(id);
-        if (role == null) return false;
-
-        // Soft delete logic
-        role.IsDeleted = true;
-        role.DeletedAt = DateTime.UtcNow;
-        role.UpdatedAt = DateTime.UtcNow;
-        
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

@@ -15,70 +15,33 @@ public class ProductImageService
 
     public async Task<List<ProductImageDto>> GetAllAsync()
     {
-        var images = await _repo.GetAllAsync();
-        return images.Select(i => new ProductImageDto
-        {
-            Id = i.Id,
-            ProductId = i.ProductId,
-            ImageUrl = i.ImageUrl,
-            IsPrimary = i.IsPrimary,
-            CreatedAt = i.CreatedAt,
-            UpdatedAt = i.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<ProductImageDto?> GetByIdAsync(Guid id)
+    public async Task<ProductImageDto?> GetByIdAsync(int id)
     {
-        var image = await _repo.GetByIdAsync(id);
-        if (image == null) return null;
-
-        return new ProductImageDto
-        {
-            Id = image.Id,
-            ProductId = image.ProductId,
-            ImageUrl = image.ImageUrl,
-            IsPrimary = image.IsPrimary,
-            CreatedAt = image.CreatedAt,
-            UpdatedAt = image.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateProductImageRequest request)
+    public async Task<ProductImageDto> AddAsync(CreateProductImageRequest request)
     {
-        var image = new ProductImage
-        {
-            ProductId = request.ProductId,
-            ImageUrl = request.ImageUrl,
-            IsPrimary = request.IsPrimary,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(image);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(i => i.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateProductImageRequest request)
+    public async Task<ProductImageDto?> UpdateAsync(int id, UpdateProductImageRequest request)
     {
-        var image = await _repo.GetByIdAsync(id);
-        if (image == null) return false;
-
-        image.ImageUrl = request.ImageUrl;
-        image.IsPrimary = request.IsPrimary;
-        image.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(image);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var image = await _repo.GetByIdAsync(id);
-        if (image == null) return false;
-
-        image.IsDeleted = true;
-        image.DeletedAt = DateTime.UtcNow;  
-        image.UpdatedAt = DateTime.UtcNow;
-
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

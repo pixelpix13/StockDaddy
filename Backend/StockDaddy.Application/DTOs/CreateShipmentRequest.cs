@@ -4,8 +4,8 @@ namespace StockDaddy.Application.DTOs;
 
 public class CreateShipmentRequest
 {
-    public Guid SaleId { get; set; }
-    public Guid StoreId { get; set; }
+    public int SaleId { get; set; }
+    public int StoreId { get; set; }
 
     public string CourierName { get; set; } = string.Empty;
     public string TrackingNumber { get; set; } = string.Empty;

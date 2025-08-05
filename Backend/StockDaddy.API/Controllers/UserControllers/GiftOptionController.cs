@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,7 +32,7 @@ public class GiftOptionController : ControllerBase
 
     // GET: api/giftoption/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
@@ -49,15 +49,15 @@ public class GiftOptionController : ControllerBase
 
     // POST: api/giftoption
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] GiftOption option)
+    public async Task<IActionResult> Create([FromBody] CreateGiftOptionRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _giftOptionRepo.AddAsync(option);
-            return CreatedAtAction(nameof(GetById), new { id = option.Id }, option);
+            await _giftOptionRepo.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -67,18 +67,15 @@ public class GiftOptionController : ControllerBase
 
     // PUT: api/giftoption/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] GiftOption option)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateGiftOptionRequest request)
     {
         try
         {
-            if (id != option.Id)
-                return BadRequest("ID mismatch between route and body");
-
             var existing = await _giftOptionRepo.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Gift option with ID {id} not found.");
 
-            await _giftOptionRepo.UpdateAsync(option);
+            await _giftOptionRepo.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -89,7 +86,7 @@ public class GiftOptionController : ControllerBase
 
     // DELETE: api/giftoption/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

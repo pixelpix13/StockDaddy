@@ -15,69 +15,33 @@ public class ProductBundleService
 
     public async Task<List<ProductBundleDto>> GetAllAsync()
     {
-        var bundles = await _repo.GetAllAsync();
-        return bundles.Select(b => new ProductBundleDto
-        {
-            Id = b.Id,
-            TenantId = b.TenantId,
-            Name = b.Name,
-            Description = b.Description,
-            Price = b.Price
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<ProductBundleDto?> GetByIdAsync(Guid id)
+    public async Task<ProductBundleDto?> GetByIdAsync(int id)
     {
-        var bundle = await _repo.GetByIdAsync(id);
-        if (bundle == null) return null;
-
-        return new ProductBundleDto
-        {
-            Id = bundle.Id,
-            TenantId = bundle.TenantId,
-            Name = bundle.Name,
-            Description = bundle.Description,
-            Price = bundle.Price
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateProductBundleRequest request)
+    public async Task<ProductBundleDto> AddAsync(CreateProductBundleRequest request)
     {
-        var bundle = new ProductBundle
-        {
-            TenantId = request.TenantId,
-            Name = request.Name,
-            Description = request.Description,
-            Price = request.Price,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(bundle);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(b => b.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateProductBundleRequest request)
+    public async Task<ProductBundleDto?> UpdateAsync(int id, UpdateProductBundleRequest request)
     {
-        var bundle = await _repo.GetByIdAsync(id);
-        if (bundle == null) return false;
-
-        bundle.Name = request.Name;
-        bundle.Description = request.Description;
-        bundle.Price = request.Price;
-        bundle.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(bundle);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var bundle = await _repo.GetByIdAsync(id);
-        if (bundle == null) return false;
-        bundle.IsDeleted = true;
-        bundle.DeletedAt = DateTime.UtcNow;
-        bundle.UpdatedAt = DateTime.UtcNow;
-
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

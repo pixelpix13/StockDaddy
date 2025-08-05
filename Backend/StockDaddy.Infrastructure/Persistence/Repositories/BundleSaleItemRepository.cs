@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,41 +15,81 @@ public class BundleSaleItemRepository : IBundleSaleItemRepository
         _context = context;
     }
 
-    public async Task<List<BundleSaleItem>> GetAllAsync()
+    public async Task<List<BundleSaleItemDto>> GetAllAsync()
     {
         return await _context.BundleSaleItems
             .Where(i => !i.IsDeleted)
+            .Select(i => new BundleSaleItemDto
+            {
+                Id = i.Id,
+                SaleId = i.SaleId,
+                BundleId = i.BundleId,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                TotalPrice = i.TotalPrice,
+                CreatedAt = i.CreatedAt,
+                UpdatedAt = i.UpdatedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<BundleSaleItem?> GetByIdAsync(Guid id)
+    public async Task<BundleSaleItemDto?> GetByIdAsync(int id)
     {
-        return await _context.BundleSaleItems
-            .FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+        var i = await _context.BundleSaleItems.FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+        if (i == null) return null;
+        return new BundleSaleItemDto
+        {
+            Id = i.Id,
+            SaleId = i.SaleId,
+            BundleId = i.BundleId,
+            Quantity = i.Quantity,
+            UnitPrice = i.UnitPrice,
+            TotalPrice = i.TotalPrice,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt
+        };
     }
 
-    public async Task AddAsync(BundleSaleItem item)
+    public async Task AddAsync(CreateBundleSaleItemRequest item)
     {
-        await _context.BundleSaleItems.AddAsync(item);
+        var entity = new BundleSaleItem
+        {
+            SaleId = item.SaleId,
+            BundleId = item.BundleId,
+            Quantity = item.Quantity,
+            UnitPrice = item.UnitPrice,
+            TotalPrice = item.TotalPrice,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.BundleSaleItems.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(BundleSaleItem item)
+    public async Task UpdateAsync(int id, UpdateBundleSaleItemRequest item)
     {
-        _context.BundleSaleItems.Update(item);
+        var entity = await _context.BundleSaleItems.FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+        if (entity == null) return;
+
+        entity.Quantity = item.Quantity;
+        entity.UnitPrice = item.UnitPrice;
+        entity.TotalPrice = item.TotalPrice;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        _context.BundleSaleItems.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
-        var item = await _context.BundleSaleItems.FindAsync(id);
-        if (item == null) return;
+        var entity = await _context.BundleSaleItems.FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+        if (entity == null) return;
 
-        item.IsDeleted = true;
-        item.DeletedAt = DateTime.UtcNow;
-        item.UpdatedAt = DateTime.UtcNow;
-
-        _context.BundleSaleItems.Update(item);
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.BundleSaleItems.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

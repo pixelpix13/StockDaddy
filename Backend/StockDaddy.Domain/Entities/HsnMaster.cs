@@ -2,7 +2,7 @@ namespace StockDaddy.Domain.Entities;
 
 public class HsnMaster
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public int Id { get; set; }
     public string HSNCode { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public decimal CGSTPercent { get; set; }

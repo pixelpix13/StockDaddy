@@ -5,5 +5,5 @@ public class UpdateStockItemRequest
 {
     public int Quantity { get; set; }
     public StockStatus Status { get; set; } = StockStatus.InStock;
-    public Guid? UpdatedBy { get; set; }
+    public int? UpdatedBy { get; set; }
 }

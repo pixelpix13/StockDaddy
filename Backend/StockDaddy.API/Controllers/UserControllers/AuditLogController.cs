@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -17,7 +17,7 @@ public class AuditLogController : ControllerBase
 
     // GET: api/AuditLog
     [HttpGet]
-    public async Task<ActionResult<List<AuditLog>>> GetAll()
+    public async Task<ActionResult<List<AuditLogDto>>> GetAll()
     {
         var logs = await _auditLogRepository.GetAllAsync();
         return Ok(logs);
@@ -25,7 +25,7 @@ public class AuditLogController : ControllerBase
 
     // GET: api/AuditLog/{id}
     [HttpGet("{id}")]
-    public async Task<ActionResult<AuditLog>> GetById(Guid id)
+    public async Task<ActionResult<AuditLogDto>> GetById(int id)
     {
         var log = await _auditLogRepository.GetByIdAsync(id);
         if (log == null)
@@ -36,13 +36,13 @@ public class AuditLogController : ControllerBase
 
     // POST: api/AuditLog
     [HttpPost]
-    public async Task<ActionResult> Add(AuditLog auditLog)
+    public async Task<ActionResult> Add([FromBody] CreateAuditLogRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        await _auditLogRepository.AddAsync(auditLog);
-        return CreatedAtAction(nameof(GetById), new { id = auditLog.Id }, auditLog);
+        await _auditLogRepository.AddAsync(request);
+        return Ok();
     }
 }
     

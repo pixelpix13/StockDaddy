@@ -1,12 +1,11 @@
-using StockDaddy.Domain.Entities;
-
+using StockDaddy.Application.DTOs;
 namespace StockDaddy.Application.Interfaces;
 
 public interface IProductTagRepository
 {
-    Task<List<ProductTag>> GetAllAsync();
-    Task<ProductTag?> GetByIdAsync(Guid id);
-    Task AddAsync(ProductTag tag);
-    Task UpdateAsync(ProductTag tag);
-    Task DeleteAsync(Guid id);
+    Task<List<ProductTagDto>> GetAllAsync();
+    Task<ProductTagDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateProductTagRequest tag);
+    Task UpdateAsync(int id, UpdateProductTagRequest tag);
+    Task DeleteAsync(int id);
 }

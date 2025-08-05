@@ -1,12 +1,12 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface IProductVariantRepository
 {
-    Task<List<ProductVariant>> GetAllAsync();
-    Task<ProductVariant?> GetByIdAsync(Guid id);
-    Task AddAsync(ProductVariant variant);
-    Task UpdateAsync(ProductVariant variant);
-    Task DeleteAsync(Guid id);
+    Task<List<ProductVariantDto>> GetAllAsync();
+    Task<ProductVariantDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateProductVariantRequest variant);
+    Task UpdateAsync(int id, UpdateProductVariantRequest variant);
+    Task DeleteAsync(int id);
 }

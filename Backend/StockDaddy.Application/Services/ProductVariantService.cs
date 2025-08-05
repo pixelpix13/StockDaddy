@@ -15,101 +15,33 @@ public class ProductVariantService
 
     public async Task<List<ProductVariantDto>> GetAllAsync()
     {
-        var variants = await _repo.GetAllAsync();
-        return variants.Select(v => new ProductVariantDto
-        {
-            Id = v.Id,
-            ProductId = v.ProductId,
-            StoreId = v.StoreId,
-            HSNCodeId = v.HSNCodeId,
-            VariantName = v.VariantName,
-            Barcode = v.Barcode,
-            SkuCode = v.SkuCode,
-            CostPrice = v.CostPrice,
-            MarginPercent = v.MarginPercent,
-            TaxPercent = v.TaxPercent,
-            Price = v.Price,
-            Quantity = v.Quantity,
-            CreatedAt = v.CreatedAt,
-            UpdatedAt = v.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<ProductVariantDto?> GetByIdAsync(Guid id)
+    public async Task<ProductVariantDto?> GetByIdAsync(int id)
     {
-        var v = await _repo.GetByIdAsync(id);
-        if (v == null) return null;
-
-        return new ProductVariantDto
-        {
-            Id = v.Id,
-            ProductId = v.ProductId,
-            StoreId = v.StoreId,
-            HSNCodeId = v.HSNCodeId,
-            VariantName = v.VariantName,
-            Barcode = v.Barcode,
-            SkuCode = v.SkuCode,
-            CostPrice = v.CostPrice,
-            MarginPercent = v.MarginPercent,
-            TaxPercent = v.TaxPercent,
-            Price = v.Price,
-            Quantity = v.Quantity,
-            CreatedAt = v.CreatedAt,
-            UpdatedAt = v.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateProductVariantRequest request)
+    public async Task<ProductVariantDto> AddAsync(CreateProductVariantRequest request)
     {
-        var variant = new ProductVariant
-        {
-            ProductId = request.ProductId,
-            StoreId = request.StoreId,
-            HSNCodeId = request.HSNCodeId,
-            VariantName = request.VariantName,
-            Barcode = request.Barcode,
-            SkuCode = request.SkuCode,
-            CostPrice = request.CostPrice,
-            MarginPercent = request.MarginPercent,
-            TaxPercent = request.TaxPercent,
-            Price = request.Price,
-            Quantity = request.Quantity,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(variant);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(v => v.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateProductVariantRequest request)
+    public async Task<ProductVariantDto?> UpdateAsync(int id, UpdateProductVariantRequest request)
     {
-        var variant = await _repo.GetByIdAsync(id);
-        if (variant == null) return false;
-
-        variant.VariantName = request.VariantName;
-        variant.Barcode = request.Barcode;
-        variant.SkuCode = request.SkuCode;
-        variant.CostPrice = request.CostPrice;
-        variant.MarginPercent = request.MarginPercent;
-        variant.TaxPercent = request.TaxPercent;
-        variant.Price = request.Price;
-        variant.Quantity = request.Quantity;
-        variant.HSNCodeId = request.HSNCodeId;
-        variant.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(variant);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var variant = await _repo.GetByIdAsync(id);
-        if (variant == null) return false;
-
-        variant.IsDeleted = true;
-        variant.DeletedAt = DateTime.UtcNow;
-        variant.UpdatedAt = DateTime.UtcNow;
-        
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

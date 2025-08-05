@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,41 +15,80 @@ public class AdjustedInvoiceRepository : IAdjustedInvoiceRepository
         _context = context;
     }
 
-    public async Task<List<AdjustedInvoice>> GetAllAsync()
+    public async Task<List<AdjustedInvoiceDto>> GetAllAsync()
     {
         return await _context.AdjustedInvoices
             .Where(ai => !ai.IsDeleted)
+            .Select(ai => new AdjustedInvoiceDto
+            {
+                Id = ai.Id,
+                InvoiceId = ai.InvoiceId,
+                AdjustedTotalAmount = ai.AdjustedTotalAmount,
+                AdjustmentReason = ai.AdjustmentReason,
+                AdjustedBy = ai.AdjustedBy,
+                AdjustedAt = ai.AdjustedAt,
+                IsVisibleToCustomer = ai.IsVisibleToCustomer
+            })
             .ToListAsync();
     }
 
-    public async Task<AdjustedInvoice?> GetByIdAsync(Guid id)
+    public async Task<AdjustedInvoiceDto?> GetByIdAsync(int id)
     {
-        return await _context.AdjustedInvoices
-            .FirstOrDefaultAsync(ai => ai.Id == id && !ai.IsDeleted);
+        var ai = await _context.AdjustedInvoices.FirstOrDefaultAsync(ai => ai.Id == id && !ai.IsDeleted);
+        if (ai == null) return null;
+        return new AdjustedInvoiceDto
+        {
+            Id = ai.Id,
+            InvoiceId = ai.InvoiceId,
+            AdjustedTotalAmount = ai.AdjustedTotalAmount,
+            AdjustmentReason = ai.AdjustmentReason,
+            AdjustedBy = ai.AdjustedBy,
+            AdjustedAt = ai.AdjustedAt,
+            IsVisibleToCustomer = ai.IsVisibleToCustomer
+        };
     }
 
-    public async Task AddAsync(AdjustedInvoice invoice)
+    public async Task AddAsync(CreateAdjustedInvoiceRequest invoice)
     {
-        await _context.AdjustedInvoices.AddAsync(invoice);
+        var entity = new AdjustedInvoice
+        {
+            InvoiceId = invoice.InvoiceId,
+            AdjustedTotalAmount = invoice.AdjustedTotalAmount,
+            AdjustmentReason = invoice.AdjustmentReason,
+            AdjustedBy = invoice.AdjustedBy,
+            AdjustedAt = DateTime.UtcNow,
+            IsVisibleToCustomer = invoice.IsVisibleToCustomer,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.AdjustedInvoices.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(AdjustedInvoice invoice)
+    public async Task UpdateAsync(int id, UpdateAdjustedInvoiceRequest invoice)
     {
-        _context.AdjustedInvoices.Update(invoice);
+        var entity = await _context.AdjustedInvoices.FirstOrDefaultAsync(ai => ai.Id == id && !ai.IsDeleted);
+        if (entity == null) return;
+
+        entity.AdjustedTotalAmount = invoice.AdjustedTotalAmount;
+        entity.AdjustmentReason = invoice.AdjustmentReason;
+        entity.IsVisibleToCustomer = invoice.IsVisibleToCustomer;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        _context.AdjustedInvoices.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
-        var invoice = await _context.AdjustedInvoices.FindAsync(id);
-        if (invoice == null) return;
+        var entity = await _context.AdjustedInvoices.FirstOrDefaultAsync(ai => ai.Id == id && !ai.IsDeleted);
+        if (entity == null) return;
 
-        invoice.IsDeleted = true;
-        invoice.DeletedAt = DateTime.UtcNow;
-        invoice.UpdatedAt = DateTime.UtcNow;
-
-        _context.AdjustedInvoices.Update(invoice);
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.AdjustedInvoices.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

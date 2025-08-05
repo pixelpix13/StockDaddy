@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class IntegrationEventController : ControllerBase
 
     // GET: api/integrationevent/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var e = await _eventRepo.GetByIdAsync(id);
             if (e == null)
                 return NotFound($"Event with ID {id} not found.");
-
             return Ok(e);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class IntegrationEventController : ControllerBase
 
     // POST: api/integrationevent
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] IntegrationEvent e)
+    public async Task<IActionResult> Create([FromBody] CreateIntegrationEventRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _eventRepo.AddAsync(e);
-            return CreatedAtAction(nameof(GetById), new { id = e.Id }, e);
+            await _eventRepo.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class IntegrationEventController : ControllerBase
 
     // PUT: api/integrationevent/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] IntegrationEvent e)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateIntegrationEventRequest request)
     {
         try
         {
-            if (id != e.Id)
-                return BadRequest("Event ID mismatch between URL and payload.");
-
             var existing = await _eventRepo.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Event with ID {id} not found.");
 
-            await _eventRepo.UpdateAsync(e);
+            await _eventRepo.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class IntegrationEventController : ControllerBase
 
     // DELETE: api/integrationevent/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

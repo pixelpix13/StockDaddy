@@ -1,12 +1,11 @@
-using StockDaddy.Domain.Entities;
-
+using StockDaddy.Application.DTOs;
 namespace StockDaddy.Application.Interfaces;
 
 public interface IProductRestockAlertRepository
 {
-    Task<List<ProductRestockAlert>> GetAllAsync();
-    Task<ProductRestockAlert?> GetByIdAsync(Guid id);
-    Task AddAsync(ProductRestockAlert alert);
-    Task UpdateAsync(ProductRestockAlert alert);
-    Task DeleteAsync(Guid id);
+    Task<List<ProductRestockAlertDto>> GetAllAsync();
+    Task<ProductRestockAlertDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateProductRestockAlertRequest alert);
+    Task UpdateAsync(int id, UpdateProductRestockAlertRequest alert);
+    Task DeleteAsync(int id);
 }

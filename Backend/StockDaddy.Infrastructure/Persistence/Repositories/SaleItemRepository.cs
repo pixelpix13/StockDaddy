@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,37 +15,70 @@ public class SaleItemRepository : ISaleItemRepository
         _context = context;
     }
 
-    public async Task<List<SaleItem>> GetAllBySaleIdAsync(Guid saleId)
+    public async Task<List<SaleItemDto>> GetAllBySaleIdAsync(int saleId)
     {
         return await _context.SaleItems
             .Where(i => i.SaleId == saleId && !i.IsDeleted)
+            .Select(i => new SaleItemDto
+            {
+                Id = i.Id,
+                SaleId = i.SaleId,
+                ProductVariantId = i.ProductVariantId,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                TotalPrice = i.TotalPrice
+            })
             .ToListAsync();
     }
 
-    public async Task<SaleItem?> GetByIdAsync(Guid id)
+    public async Task<SaleItemDto?> GetByIdAsync(int id)
     {
         return await _context.SaleItems
-            .FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+            .Where(i => i.Id == id && !i.IsDeleted)
+            .Select(i => new SaleItemDto
+            {
+                Id = i.Id,
+                SaleId = i.SaleId,
+                ProductVariantId = i.ProductVariantId,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                TotalPrice = i.TotalPrice
+            })
+            .FirstOrDefaultAsync();
     }
 
-    public async Task AddAsync(SaleItem item)
+    public async Task AddAsync(CreateSaleItemRequest item)
     {
-        await _context.SaleItems.AddAsync(item);
+        var entity = new SaleItem
+        {
+            SaleId = item.SaleId,
+            ProductVariantId = item.ProductVariantId,
+            Quantity = item.Quantity,
+            UnitPrice = item.UnitPrice,
+            TotalPrice = item.UnitPrice * item.Quantity,
+            IsDeleted = false
+        };
+        await _context.SaleItems.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(SaleItem item)
+    public async Task UpdateAsync(int id, UpdateSaleItemRequest item)
     {
-        _context.SaleItems.Update(item);
+        var entity = await _context.SaleItems.FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+        if (entity == null) return;
+        entity.Quantity = item.Quantity;
+        entity.UnitPrice = item.UnitPrice;
+        entity.TotalPrice = item.UnitPrice * item.Quantity;
+        _context.SaleItems.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
-        var item = await _context.SaleItems.FindAsync(id);
-        if (item == null) return;
-
-        _context.SaleItems.Update(item);
+        var entity = await _context.SaleItems.FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+        if (entity == null) return;
+        entity.IsDeleted = true;
+        _context.SaleItems.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

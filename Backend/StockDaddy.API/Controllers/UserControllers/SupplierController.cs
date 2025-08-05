@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class SupplierController : ControllerBase
 
     // GET: api/supplier/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var supplier = await _supplierRepository.GetByIdAsync(id);
             if (supplier == null)
                 return NotFound($"Supplier with ID {id} not found.");
-
             return Ok(supplier);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class SupplierController : ControllerBase
 
     // POST: api/supplier
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Supplier supplier)
+    public async Task<IActionResult> Create([FromBody] CreateSupplierRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _supplierRepository.AddAsync(supplier);
-            return CreatedAtAction(nameof(GetById), new { id = supplier.Id }, supplier);
+            await _supplierRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class SupplierController : ControllerBase
 
     // PUT: api/supplier/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Supplier supplier)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateSupplierRequest request)
     {
         try
         {
-            if (id != supplier.Id)
-                return BadRequest("ID in URL does not match the supplier object.");
-
             var existing = await _supplierRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Supplier with ID {id} not found.");
 
-            await _supplierRepository.UpdateAsync(supplier);
+            await _supplierRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class SupplierController : ControllerBase
 
     // DELETE: api/supplier/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

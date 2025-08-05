@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,37 +15,64 @@ public class RoleRepository : IRoleRepository
         _context = context;
     }
 
-    public async Task<List<Role>> GetAllAsync()
+    public async Task<List<RoleDto>> GetAllAsync()
     {
         return await _context.Roles
             .Where(r => !r.IsDeleted)
+            .Select(r => new RoleDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                CreatedAt = r.CreatedAt,
+                UpdatedAt = r.UpdatedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<Role?> GetByIdAsync(Guid id)
+    public async Task<RoleDto?> GetByIdAsync(int id)
     {
         return await _context.Roles
-            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+            .Where(r => r.Id == id && !r.IsDeleted)
+            .Select(r => new RoleDto
+            {
+                Id = r.Id,
+                Name = r.Name,
+                CreatedAt = r.CreatedAt,
+                UpdatedAt = r.UpdatedAt
+            })
+            .FirstOrDefaultAsync();
     }
 
-    public async Task AddAsync(Role role)
+    public async Task AddAsync(CreateRoleRequest role)
     {
-        await _context.Roles.AddAsync(role);
+        var entity = new Role
+        {
+            Name = role.Name,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.Roles.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Role role)
+    public async Task UpdateAsync(int id, UpdateRoleRequest role)
     {
-        _context.Roles.Update(role);
+        var entity = await _context.Roles.FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+        if (entity == null) return;
+        entity.Name = role.Name;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.Roles.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
-        var role = await _context.Roles.FindAsync(id);
-        if (role == null) return;
-
-        _context.Roles.Update(role);
+        var entity = await _context.Roles.FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+        if (entity == null) return;
+        entity.IsDeleted = true;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.Roles.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,7 +32,7 @@ public class HsnMasterController : ControllerBase
 
     // GET: api/hsnmaster/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
@@ -49,15 +49,15 @@ public class HsnMasterController : ControllerBase
 
     // POST: api/hsnmaster
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] HsnMaster hsn)
+    public async Task<IActionResult> Create([FromBody] CreateHsnMasterRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _hsnRepo.AddAsync(hsn);
-            return CreatedAtAction(nameof(GetById), new { id = hsn.Id }, hsn);
+            await _hsnRepo.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -67,18 +67,15 @@ public class HsnMasterController : ControllerBase
 
     // PUT: api/hsnmaster/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] HsnMaster hsn)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateHsnMasterRequest request)
     {
         try
         {
-            if (id != hsn.Id)
-                return BadRequest("ID mismatch between route and body");
-
             var existing = await _hsnRepo.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"HSN with ID {id} not found.");
 
-            await _hsnRepo.UpdateAsync(hsn);
+            await _hsnRepo.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -89,7 +86,7 @@ public class HsnMasterController : ControllerBase
 
     // DELETE: api/hsnmaster/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

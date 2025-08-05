@@ -15,67 +15,33 @@ public class PermissionService
 
     public async Task<List<PermissionDto>> GetAllAsync()
     {
-        var permissions = await _repo.GetAllAsync();
-        return permissions.Select(p => new PermissionDto
-        {
-            Id = p.Id,
-            Module = p.Module,
-            Action = p.Action,
-            CreatedAt = p.CreatedAt,
-            UpdatedAt = p.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<PermissionDto?> GetByIdAsync(Guid id)
+    public async Task<PermissionDto?> GetByIdAsync(int id)
     {
-        var p = await _repo.GetByIdAsync(id);
-        if (p == null) return null;
-
-        return new PermissionDto
-        {
-            Id = p.Id,
-            Module = p.Module,
-            Action = p.Action,
-            CreatedAt = p.CreatedAt,
-            UpdatedAt = p.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreatePermissionRequest request)
+    public async Task<PermissionDto> AddAsync(CreatePermissionRequest request)
     {
-        var p = new Permission
-        {
-            Module = request.Module,
-            Action = request.Action,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(p);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(p => p.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdatePermissionRequest request)
+    public async Task<PermissionDto?> UpdateAsync(int id, UpdatePermissionRequest request)
     {
-        var p = await _repo.GetByIdAsync(id);
-        if (p == null) return false;
-
-        p.Module = request.Module;
-        p.Action = request.Action;
-        p.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(p);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var p = await _repo.GetByIdAsync(id);
-        if (p == null) return false;
-
-        p.IsDeleted = true;
-        p.DeletedAt = DateTime.UtcNow;
-        p.UpdatedAt = DateTime.UtcNow;
-
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

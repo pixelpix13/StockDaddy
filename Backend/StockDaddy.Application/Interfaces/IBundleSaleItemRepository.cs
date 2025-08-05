@@ -1,12 +1,13 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
+
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface IBundleSaleItemRepository
 {
-    Task<List<BundleSaleItem>> GetAllAsync();
-    Task<BundleSaleItem?> GetByIdAsync(Guid id);
-    Task AddAsync(BundleSaleItem item);
-    Task UpdateAsync(BundleSaleItem item);
-    Task DeleteAsync(Guid id);
+    Task<List<BundleSaleItemDto>> GetAllAsync();
+    Task<BundleSaleItemDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateBundleSaleItemRequest item);
+    Task UpdateAsync(int id, UpdateBundleSaleItemRequest item);
+    Task DeleteAsync(int id);
 }

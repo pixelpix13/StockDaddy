@@ -4,10 +4,10 @@ namespace StockDaddy.Application.DTOs;
 
 public class PurchaseOrderDto
 {
-    public Guid Id { get; set; }
-    public Guid TenantId { get; set; }
-    public Guid SupplierId { get; set; }
-    public Guid StoreId { get; set; }
+    public int Id { get; set; }
+    public int TenantId { get; set; }
+    public int SupplierId { get; set; }
+    public int StoreId { get; set; }
 
     public DateTime OrderDate { get; set; }
     public DateTime ExpectedDelivery { get; set; }

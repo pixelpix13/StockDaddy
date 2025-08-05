@@ -2,9 +2,9 @@ namespace StockDaddy.Domain.Entities;
 
 public class ProductAttribute
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public int Id { get; set; }
 
-    public Guid ProductId { get; set; }
+    public int ProductId { get; set; }
     public string AttributeName { get; set; } = string.Empty;
     public string AttributeValue { get; set; } = string.Empty;
 

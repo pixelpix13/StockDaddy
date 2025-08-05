@@ -2,8 +2,8 @@ namespace StockDaddy.Application.DTOs;
 
 public class StoreDto
 {
-    public Guid Id { get; set; }
-    public Guid TenantId { get; set; }
+    public int Id { get; set; }
+    public int TenantId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }

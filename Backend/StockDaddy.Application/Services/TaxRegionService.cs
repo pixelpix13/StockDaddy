@@ -1,3 +1,4 @@
+using System.Globalization;
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
@@ -15,74 +16,36 @@ public class TaxRegionService
 
     public async Task<List<TaxRegionDto>> GetAllAsync()
     {
-        var regions = await _repo.GetAllAsync();
-        return regions.Select(r => new TaxRegionDto
-        {
-            Id = r.Id,
-            TenantId = r.TenantId,
-            StoreId = r.StoreId,
-            RegionName = r.RegionName,
-            TaxPercent = r.TaxPercent,
-            CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<TaxRegionDto?> GetByIdAsync(Guid id)
+    public async Task<TaxRegionDto?> GetByIdAsync(int id)
+    {
+        return await _repo.GetByIdAsync(id);
+    }
+
+    public async Task<TaxRegionDto?> AddAsync(CreateTaxRegionRequest request)
+    {
+        await _repo.AddAsync(request);
+        // Optionally, fetch the created region (e.g., by unique fields or by returning from repo)
+        // For now, return null as placeholder if repo does not return the created region
+        return null;
+    }
+
+    public async Task<TaxRegionDto?> UpdateAsync(int id, UpdateTaxRegionRequest request)
     {
         var region = await _repo.GetByIdAsync(id);
         if (region == null) return null;
 
-        return new TaxRegionDto
-        {
-            Id = region.Id,
-            TenantId = region.TenantId,
-            StoreId = region.StoreId,
-            RegionName = region.RegionName,
-            TaxPercent = region.TaxPercent,
-            CreatedAt = region.CreatedAt,
-            UpdatedAt = region.UpdatedAt
-        };
+        await _repo.UpdateAsync(id, request);
+        // Fetch and return the updated region
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateTaxRegionRequest request)
-    {
-        var region = new TaxRegion
-        {
-            TenantId = request.TenantId,
-            StoreId = request.StoreId,
-            RegionName = request.RegionName,
-            TaxPercent = request.TaxPercent,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(region);
-    }
-
-    public async Task<bool> UpdateAsync(Guid id, UpdateTaxRegionRequest request)
+    public async Task<bool> DeleteAsync(int id)
     {
         var region = await _repo.GetByIdAsync(id);
         if (region == null) return false;
-
-        region.RegionName = request.RegionName;
-        region.TaxPercent = request.TaxPercent;
-        region.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(region);
-        return true;
-    }
-
-    public async Task<bool> DeleteAsync(Guid id)
-    {
-        var region = await _repo.GetByIdAsync(id);
-        if (region == null) return false;
-
-        // Soft delete logic
-        region.IsDeleted = true;
-        region.DeletedAt = DateTime.UtcNow;
-        region.UpdatedAt = DateTime.UtcNow;
-        
 
         await _repo.DeleteAsync(id);
         return true;
