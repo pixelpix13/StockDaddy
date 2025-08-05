@@ -1,12 +1,13 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
+
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface IHsnMasterRepository
 {
-    Task<List<HsnMaster>> GetAllAsync();
-    Task<HsnMaster?> GetByIdAsync(Guid id);
-    Task AddAsync(HsnMaster hsn);
-    Task UpdateAsync(HsnMaster hsn);
-    Task DeleteAsync(Guid id);
+    Task<List<HsnMasterDto>> GetAllAsync();
+    Task<HsnMasterDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateHsnMasterRequest hsn);
+    Task UpdateAsync(int id, UpdateHsnMasterRequest hsn);
+    Task DeleteAsync(int id);
 }

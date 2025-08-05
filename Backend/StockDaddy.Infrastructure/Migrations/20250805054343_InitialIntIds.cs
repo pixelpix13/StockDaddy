@@ -1,12 +1,13 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace StockDaddy.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialIntIds : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,7 +16,8 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "HsnMaster",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     HSNCode = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
                     CGSTPercent = table.Column<decimal>(type: "numeric", nullable: false),
@@ -34,7 +36,8 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Permissions",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Module = table.Column<string>(type: "text", nullable: false),
                     Action = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -51,7 +54,8 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Roles",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -67,7 +71,8 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Tenants",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -83,9 +88,10 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "RolePermissions",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    RoleId = table.Column<Guid>(type: "uuid", nullable: false),
-                    PermissionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RoleId = table.Column<int>(type: "integer", nullable: false),
+                    PermissionId = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
@@ -112,8 +118,9 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Customers",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Phone = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
@@ -138,8 +145,9 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "ProductBundles",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<int>(type: "integer", nullable: true),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
                     Price = table.Column<decimal>(type: "numeric", nullable: false),
@@ -162,8 +170,9 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Stores",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Location = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -186,8 +195,9 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Suppliers",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     ContactName = table.Column<string>(type: "text", nullable: false),
                     Phone = table.Column<string>(type: "text", nullable: false),
@@ -213,9 +223,10 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Categories",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    StoreId = table.Column<int>(type: "integer", nullable: false),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -243,9 +254,10 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "TaxRegions",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: true),
                     RegionName = table.Column<string>(type: "text", nullable: false),
                     TaxPercent = table.Column<decimal>(type: "numeric", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -273,10 +285,11 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RoleId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
+                    RoleId = table.Column<int>(type: "integer", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: true),
                     Username = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
                     PasswordHash = table.Column<string>(type: "text", nullable: false),
@@ -311,10 +324,11 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "PurchaseOrders",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    SupplierId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
+                    SupplierId = table.Column<int>(type: "integer", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: false),
                     OrderDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ExpectedDelivery = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
@@ -351,10 +365,11 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Subcategories",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CategoryId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    StoreId = table.Column<int>(type: "integer", nullable: false),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
+                    CategoryId = table.Column<int>(type: "integer", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -388,9 +403,10 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "AuditLogs",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: true),
+                    StoreId = table.Column<int>(type: "integer", nullable: true),
                     Action = table.Column<string>(type: "text", nullable: false),
                     TableName = table.Column<string>(type: "text", nullable: false),
                     RecordId = table.Column<string>(type: "text", nullable: false),
@@ -421,8 +437,9 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "IntegrationEvents",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    StoreId = table.Column<int>(type: "integer", nullable: false),
                     EventType = table.Column<string>(type: "text", nullable: false),
                     Payload = table.Column<string>(type: "text", nullable: false),
                     TriggeredBy = table.Column<Guid>(type: "uuid", nullable: false),
@@ -432,7 +449,7 @@ namespace StockDaddy.Infrastructure.Migrations
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    TriggeredByUserId = table.Column<Guid>(type: "uuid", nullable: true)
+                    TriggeredByUserId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -454,11 +471,12 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Sales",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: true),
-                    CustomerId = table.Column<Guid>(type: "uuid", nullable: true),
-                    SoldBy = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: true),
+                    CustomerId = table.Column<int>(type: "integer", nullable: true),
+                    SoldBy = table.Column<int>(type: "integer", nullable: false),
                     TotalAmount = table.Column<decimal>(type: "numeric", nullable: false),
                     PaymentMethod = table.Column<int>(type: "integer", nullable: false),
                     Notes = table.Column<string>(type: "text", nullable: true),
@@ -466,7 +484,7 @@ namespace StockDaddy.Infrastructure.Migrations
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    SoldByUserId = table.Column<Guid>(type: "uuid", nullable: true)
+                    SoldByUserId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -498,10 +516,11 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Products",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: true),
-                    SubcategoryId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: true),
+                    SubcategoryId = table.Column<int>(type: "integer", nullable: true),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
                     Unit = table.Column<string>(type: "text", nullable: false),
@@ -535,9 +554,10 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "BundleSaleItems",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    SaleId = table.Column<Guid>(type: "uuid", nullable: false),
-                    BundleId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    SaleId = table.Column<int>(type: "integer", nullable: false),
+                    BundleId = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "numeric", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "numeric", nullable: false),
@@ -545,7 +565,7 @@ namespace StockDaddy.Infrastructure.Migrations
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ProductBundleId = table.Column<Guid>(type: "uuid", nullable: true)
+                    ProductBundleId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -567,8 +587,9 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "GiftOptions",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    SaleId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    SaleId = table.Column<int>(type: "integer", nullable: true),
                     IsWrapped = table.Column<bool>(type: "boolean", nullable: false),
                     WrapType = table.Column<string>(type: "text", nullable: true),
                     Message = table.Column<string>(type: "text", nullable: true),
@@ -591,8 +612,9 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Invoices",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    SaleId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    SaleId = table.Column<int>(type: "integer", nullable: false),
                     InvoiceNumber = table.Column<string>(type: "text", nullable: false),
                     InvoiceDate = table.Column<DateOnly>(type: "date", nullable: false),
                     DueDate = table.Column<DateOnly>(type: "date", nullable: false),
@@ -602,7 +624,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    StoreId1 = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -614,8 +637,8 @@ namespace StockDaddy.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Invoices_Stores_StoreId",
-                        column: x => x.StoreId,
+                        name: "FK_Invoices_Stores_StoreId1",
+                        column: x => x.StoreId1,
                         principalTable: "Stores",
                         principalColumn: "Id");
                 });
@@ -624,9 +647,10 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Returns",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    SaleId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    SaleId = table.Column<int>(type: "integer", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: true),
                     Reason = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -653,9 +677,10 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Shipments",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    SaleId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    SaleId = table.Column<int>(type: "integer", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: false),
                     CourierName = table.Column<string>(type: "text", nullable: false),
                     TrackingNumber = table.Column<string>(type: "text", nullable: false),
                     ShippedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -687,16 +712,17 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "BundleItems",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    BundleId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    BundleId = table.Column<int>(type: "integer", nullable: false),
+                    ProductId = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     EffectiveUnitPrice = table.Column<decimal>(type: "numeric", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ProductBundleId = table.Column<Guid>(type: "uuid", nullable: true)
+                    ProductBundleId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -718,8 +744,9 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "ProductAttributes",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProductId = table.Column<int>(type: "integer", nullable: false),
                     AttributeName = table.Column<string>(type: "text", nullable: false),
                     AttributeValue = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -742,8 +769,9 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "ProductImages",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProductId = table.Column<int>(type: "integer", nullable: false),
                     ImageUrl = table.Column<string>(type: "text", nullable: false),
                     IsPrimary = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -766,8 +794,9 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "ProductTags",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProductId = table.Column<int>(type: "integer", nullable: false),
                     Tag = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -789,10 +818,11 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "ProductVariants",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: false),
-                    HSNCodeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProductId = table.Column<int>(type: "integer", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: false),
+                    HSNCodeId = table.Column<int>(type: "integer", nullable: false),
                     VariantName = table.Column<string>(type: "text", nullable: false),
                     Barcode = table.Column<string>(type: "text", nullable: false),
                     SkuCode = table.Column<string>(type: "text", nullable: false),
@@ -805,7 +835,7 @@ namespace StockDaddy.Infrastructure.Migrations
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    HSNMasterId = table.Column<Guid>(type: "uuid", nullable: true)
+                    HSNMasterId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -833,18 +863,19 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "StockItems",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProductId = table.Column<int>(type: "integer", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: true),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     LastUpdated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
-                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedBy = table.Column<int>(type: "integer", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    UpdatedByUserId = table.Column<Guid>(type: "uuid", nullable: true)
+                    UpdatedByUserId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -871,18 +902,19 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "AdjustedInvoices",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    InvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    InvoiceId = table.Column<int>(type: "integer", nullable: false),
                     AdjustedTotalAmount = table.Column<decimal>(type: "numeric", nullable: false),
                     AdjustmentReason = table.Column<string>(type: "text", nullable: false),
-                    AdjustedBy = table.Column<Guid>(type: "uuid", nullable: false),
+                    AdjustedBy = table.Column<int>(type: "integer", nullable: false),
                     AdjustedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsVisibleToCustomer = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    AdjustedByUserId = table.Column<Guid>(type: "uuid", nullable: true)
+                    AdjustedByUserId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -904,18 +936,19 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Payments",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    InvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    InvoiceId = table.Column<int>(type: "integer", nullable: false),
                     Amount = table.Column<decimal>(type: "numeric", nullable: false),
                     PaymentMethod = table.Column<int>(type: "integer", nullable: false),
                     PaidAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ReceivedBy = table.Column<Guid>(type: "uuid", nullable: false),
+                    ReceivedBy = table.Column<int>(type: "integer", nullable: false),
                     ReferenceNo = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ReceivedByUserId = table.Column<Guid>(type: "uuid", nullable: true)
+                    ReceivedByUserId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -937,9 +970,10 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "Refunds",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ReturnId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ReturnId = table.Column<int>(type: "integer", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: true),
                     Amount = table.Column<decimal>(type: "numeric", nullable: false),
                     RefundedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Method = table.Column<string>(type: "text", nullable: false),
@@ -968,10 +1002,11 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "ProductRestockAlerts",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StoreId = table.Column<Guid>(type: "uuid", nullable: false),
-                    VariantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProductId = table.Column<int>(type: "integer", nullable: false),
+                    StoreId = table.Column<int>(type: "integer", nullable: false),
+                    VariantId = table.Column<int>(type: "integer", nullable: false),
                     TriggeredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -1006,9 +1041,10 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "PurchaseItems",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    PurchaseOrderId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductVariantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PurchaseOrderId = table.Column<int>(type: "integer", nullable: false),
+                    ProductVariantId = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     UnitCost = table.Column<decimal>(type: "numeric", nullable: false),
                     TotalCost = table.Column<decimal>(type: "numeric", nullable: false),
@@ -1038,9 +1074,10 @@ namespace StockDaddy.Infrastructure.Migrations
                 name: "SaleItems",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    SaleId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductVariantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    SaleId = table.Column<int>(type: "integer", nullable: false),
+                    ProductVariantId = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "numeric", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "numeric", nullable: false),
@@ -1148,9 +1185,9 @@ namespace StockDaddy.Infrastructure.Migrations
                 column: "SaleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Invoices_StoreId",
+                name: "IX_Invoices_StoreId1",
                 table: "Invoices",
-                column: "StoreId");
+                column: "StoreId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Payments_InvoiceId",

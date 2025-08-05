@@ -15,70 +15,33 @@ public class CategoryService
 
     public async Task<List<CategoryDto>> GetAllAsync()
     {
-        var categories = await _repo.GetAllAsync();
-        return categories.Select(c => new CategoryDto
-        {
-            Id = c.Id,
-            StoreId = c.StoreId,
-            TenantId = c.TenantId,
-            Name = c.Name,
-            CreatedAt = c.CreatedAt,
-            UpdatedAt = c.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<CategoryDto?> GetByIdAsync(Guid id)
+    public async Task<CategoryDto?> GetByIdAsync(int id)
     {
-        var category = await _repo.GetByIdAsync(id);
-        if (category == null) return null;
-
-        return new CategoryDto
-        {
-            Id = category.Id,
-            StoreId = category.StoreId,
-            TenantId = category.TenantId,
-            Name = category.Name,
-            CreatedAt = category.CreatedAt,
-            UpdatedAt = category.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateCategoryRequest request)
+    public async Task<CategoryDto> AddAsync(CreateCategoryRequest request)
     {
-        var category = new Category
-        {
-            StoreId = request.StoreId,
-            TenantId = request.TenantId,
-            Name = request.Name,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(category);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(c => c.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateCategoryRequest request)
+    public async Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryRequest request)
     {
-        var category = await _repo.GetByIdAsync(id);
-        if (category == null) return false;
-
-        category.Name = request.Name;
-        category.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(category);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var category = await _repo.GetByIdAsync(id);
-        if (category == null) return false;
-
-        // Soft delete logic
-        category.IsDeleted = true;
-        category.DeletedAt = DateTime.UtcNow;
-        category.UpdatedAt = DateTime.UtcNow;
-        
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

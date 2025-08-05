@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class RolePermissionController : ControllerBase
 
     // GET: api/rolepermission/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var rolePermission = await _rolePermissionRepository.GetByIdAsync(id);
             if (rolePermission == null)
                 return NotFound($"RolePermission with ID {id} not found.");
-
             return Ok(rolePermission);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class RolePermissionController : ControllerBase
 
     // POST: api/rolepermission
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] RolePermission rolePermission)
+    public async Task<IActionResult> Create([FromBody] CreateRolePermissionRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _rolePermissionRepository.AddAsync(rolePermission);
-            return CreatedAtAction(nameof(GetById), new { id = rolePermission.Id }, rolePermission);
+            await _rolePermissionRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class RolePermissionController : ControllerBase
 
     // PUT: api/rolepermission/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] RolePermission rolePermission)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateRolePermissionRequest request)
     {
         try
         {
-            if (id != rolePermission.Id)
-                return BadRequest("ID in URL does not match the role-permission object.");
-
             var existing = await _rolePermissionRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"RolePermission with ID {id} not found.");
 
-            await _rolePermissionRepository.UpdateAsync(rolePermission);
+            await _rolePermissionRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class RolePermissionController : ControllerBase
 
     // DELETE: api/rolepermission/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

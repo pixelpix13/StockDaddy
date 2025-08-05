@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,37 +15,68 @@ public class RolePermissionRepository : IRolePermissionRepository
         _context = context;
     }
 
-    public async Task<List<RolePermission>> GetAllAsync()
+    public async Task<List<RolePermissionDto>> GetAllAsync()
     {
         return await _context.RolePermissions
             .Where(rp => !rp.IsDeleted)
+            .Select(rp => new RolePermissionDto
+            {
+                Id = rp.Id,
+                RoleId = rp.RoleId,
+                PermissionId = rp.PermissionId,
+                CreatedAt = rp.CreatedAt,
+                UpdatedAt = rp.UpdatedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<RolePermission?> GetByIdAsync(Guid id)
+    public async Task<RolePermissionDto?> GetByIdAsync(int id)
     {
         return await _context.RolePermissions
-            .FirstOrDefaultAsync(rp => rp.Id == id && !rp.IsDeleted);
+            .Where(rp => rp.Id == id && !rp.IsDeleted)
+            .Select(rp => new RolePermissionDto
+            {
+                Id = rp.Id,
+                RoleId = rp.RoleId,
+                PermissionId = rp.PermissionId,
+                CreatedAt = rp.CreatedAt,
+                UpdatedAt = rp.UpdatedAt
+            })
+            .FirstOrDefaultAsync();
     }
 
-    public async Task AddAsync(RolePermission rolePermission)
+    public async Task AddAsync(CreateRolePermissionRequest rolePermission)
     {
-        await _context.RolePermissions.AddAsync(rolePermission);
+        var entity = new RolePermission
+        {
+            RoleId = rolePermission.RoleId,
+            PermissionId = rolePermission.PermissionId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.RolePermissions.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(RolePermission rolePermission)
+    public async Task UpdateAsync(int id, UpdateRolePermissionRequest rolePermission)
     {
-        _context.RolePermissions.Update(rolePermission);
+        var entity = await _context.RolePermissions.FirstOrDefaultAsync(rp => rp.Id == id && !rp.IsDeleted);
+        if (entity == null) return;
+        entity.RoleId = rolePermission.RoleId;
+        entity.PermissionId = rolePermission.PermissionId;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.RolePermissions.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
-        var rp = await _context.RolePermissions.FindAsync(id);
-        if (rp == null) return;
-
-        _context.RolePermissions.Update(rp);
+        var entity = await _context.RolePermissions.FirstOrDefaultAsync(rp => rp.Id == id && !rp.IsDeleted);
+        if (entity == null) return;
+        entity.IsDeleted = true;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.RolePermissions.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

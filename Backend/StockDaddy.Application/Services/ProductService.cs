@@ -15,86 +15,33 @@ public class ProductService
 
     public async Task<List<ProductDto>> GetAllAsync()
     {
-        var products = await _repo.GetAllAsync();
-        return products.Select(p => new ProductDto
-        {
-            Id = p.Id,
-            TenantId = p.TenantId,
-            StoreId = p.StoreId,
-            SubcategoryId = p.SubcategoryId,
-            Name = p.Name,
-            Description = p.Description,
-            Unit = p.Unit,
-            CreatedAt = p.CreatedAt,
-            UpdatedAt = p.UpdatedAt,
-            IsDeleted = p.IsDeleted,
-            DeletedAt = p.DeletedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<ProductDto?> GetByIdAsync(Guid id)
+    public async Task<ProductDto?> GetByIdAsync(int id)
     {
-        var product = await _repo.GetByIdAsync(id);
-        if (product == null) return null;
-
-        return new ProductDto
-        {
-            Id = product.Id,
-            TenantId = product.TenantId,
-            StoreId = product.StoreId,
-            SubcategoryId = product.SubcategoryId,
-            Name = product.Name,
-            Description = product.Description,
-            Unit = product.Unit,
-            CreatedAt = product.CreatedAt,
-            UpdatedAt = product.UpdatedAt,
-            IsDeleted = product.IsDeleted,
-            DeletedAt = product.DeletedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateProductRequest request)
+    public async Task<ProductDto> AddAsync(CreateProductRequest request)
     {
-        var product = new Product
-        {
-            TenantId = request.TenantId,
-            StoreId = request.StoreId,
-            SubcategoryId = request.SubcategoryId,
-            Name = request.Name,
-            Description = request.Description,
-            Unit = request.Unit,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(product);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(p => p.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateProductRequest request)
+    public async Task<ProductDto?> UpdateAsync(int id, UpdateProductRequest request)
     {
-        var product = await _repo.GetByIdAsync(id);
-        if (product == null) return false;
-
-        product.StoreId = request.StoreId;
-        product.SubcategoryId = request.SubcategoryId;
-        product.Name = request.Name;
-        product.Description = request.Description;
-        product.Unit = request.Unit;
-        product.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(product);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> SoftDeleteAsync(Guid id)
+    public async Task<bool> SoftDeleteAsync(int id)
     {
-        var product = await _repo.GetByIdAsync(id);
-        if (product == null) return false;
-
-        product.IsDeleted = true;
-        product.DeletedAt = DateTime.UtcNow;
-        product.UpdatedAt = DateTime.UtcNow;
-        
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.SoftDeleteAsync(id);
         return true;
     }

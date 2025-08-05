@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class SaleController : ControllerBase
 
     // GET: api/sale/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var sale = await _saleRepository.GetByIdAsync(id);
             if (sale == null)
                 return NotFound($"Sale with ID {id} not found.");
-
             return Ok(sale);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class SaleController : ControllerBase
 
     // POST: api/sale
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Sale sale)
+    public async Task<IActionResult> Create([FromBody] CreateSaleRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _saleRepository.AddAsync(sale);
-            return CreatedAtAction(nameof(GetById), new { id = sale.Id }, sale);
+            await _saleRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class SaleController : ControllerBase
 
     // PUT: api/sale/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Sale sale)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateSaleRequest request)
     {
         try
         {
-            if (id != sale.Id)
-                return BadRequest("ID in URL does not match the sale object.");
-
             var existing = await _saleRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Sale with ID {id} not found.");
 
-            await _saleRepository.UpdateAsync(sale);
+            await _saleRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class SaleController : ControllerBase
 
     // DELETE: api/sale/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

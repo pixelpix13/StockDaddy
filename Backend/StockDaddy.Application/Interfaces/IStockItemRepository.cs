@@ -1,12 +1,12 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface IStockItemRepository
 {
-    Task<List<StockItem>> GetAllAsync();
-    Task<StockItem?> GetByIdAsync(Guid id);
-    Task AddAsync(StockItem item);
-    Task UpdateAsync(StockItem item);
-    Task DeleteAsync(Guid id);
+    Task<List<StockItemDto>> GetAllAsync();
+    Task<StockItemDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateStockItemRequest item);
+    Task UpdateAsync(int id, UpdateStockItemRequest item);
+    Task DeleteAsync(int id);
 }

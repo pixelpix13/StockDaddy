@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class InvoiceController : ControllerBase
 
     // GET: api/invoice/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var invoice = await _invoiceRepository.GetByIdAsync(id);
             if (invoice == null)
                 return NotFound($"Invoice with ID {id} not found.");
-
             return Ok(invoice);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class InvoiceController : ControllerBase
 
     // POST: api/invoice
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Invoice invoice)
+    public async Task<IActionResult> Create([FromBody] CreateInvoiceRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _invoiceRepository.AddAsync(invoice);
-            return CreatedAtAction(nameof(GetById), new { id = invoice.Id }, invoice);
+            await _invoiceRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class InvoiceController : ControllerBase
 
     // PUT: api/invoice/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Invoice invoice)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateInvoiceRequest request)
     {
         try
         {
-            if (id != invoice.Id)
-                return BadRequest("Invoice ID mismatch between URL and body.");
-
             var existing = await _invoiceRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Invoice with ID {id} not found.");
 
-            await _invoiceRepository.UpdateAsync(invoice);
+            await _invoiceRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class InvoiceController : ControllerBase
 
     // DELETE: api/invoice/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

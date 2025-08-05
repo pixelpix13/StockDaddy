@@ -15,69 +15,33 @@ public class RolePermissionService
 
     public async Task<List<RolePermissionDto>> GetAllAsync()
     {
-        var data = await _repo.GetAllAsync();
-        return data.Select(x => new RolePermissionDto
-        {
-            Id = x.Id,
-            RoleId = x.RoleId,
-            PermissionId = x.PermissionId,
-            CreatedAt = x.CreatedAt,
-            UpdatedAt = x.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<RolePermissionDto?> GetByIdAsync(Guid id)
+    public async Task<RolePermissionDto?> GetByIdAsync(int id)
     {
-        var x = await _repo.GetByIdAsync(id);
-        if (x == null) return null;
-
-        return new RolePermissionDto
-        {
-            Id = x.Id,
-            RoleId = x.RoleId,
-            PermissionId = x.PermissionId,
-            CreatedAt = x.CreatedAt,
-            UpdatedAt = x.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateRolePermissionRequest request)
+    public async Task<RolePermissionDto> AddAsync(CreateRolePermissionRequest request)
     {
-        var x = new RolePermission
-        {
-            RoleId = request.RoleId,
-            PermissionId = request.PermissionId,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(x);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(rp => rp.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateRolePermissionRequest request)
+    public async Task<RolePermissionDto?> UpdateAsync(int id, UpdateRolePermissionRequest request)
     {
-        var x = await _repo.GetByIdAsync(id);
-        if (x == null) return false;
-
-        x.RoleId = request.RoleId;
-        x.PermissionId = request.PermissionId;
-        x.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(x);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var x = await _repo.GetByIdAsync(id);
-        if (x == null) return false;
-
-        // Soft delete logic
-        x.IsDeleted = true;
-        x.DeletedAt = DateTime.UtcNow;
-        x.UpdatedAt = DateTime.UtcNow;
-        
-
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

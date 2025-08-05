@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,41 +15,86 @@ public class CustomerRepository : ICustomerRepository
         _context = context;
     }
 
-    public async Task<List<Customer>> GetAllAsync()
+    public async Task<List<CustomerDto>> GetAllAsync()
     {
         return await _context.Customers
             .Where(c => !c.IsDeleted)
+            .Select(c => new CustomerDto
+            {
+                Id = c.Id,
+                TenantId = c.TenantId,
+                Name = c.Name,
+                Phone = c.Phone,
+                Email = c.Email,
+                Address = c.Address,
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt,
+                IsDeleted = c.IsDeleted,
+                DeletedAt = c.DeletedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<Customer?> GetByIdAsync(Guid id)
+    public async Task<CustomerDto?> GetByIdAsync(int id)
     {
-        return await _context.Customers
-            .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        var c = await _context.Customers.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        if (c == null) return null;
+        return new CustomerDto
+        {
+            Id = c.Id,
+            TenantId = c.TenantId,
+            Name = c.Name,
+            Phone = c.Phone,
+            Email = c.Email,
+            Address = c.Address,
+            CreatedAt = c.CreatedAt,
+            UpdatedAt = c.UpdatedAt,
+            IsDeleted = c.IsDeleted,
+            DeletedAt = c.DeletedAt
+        };
     }
 
-    public async Task AddAsync(Customer customer)
+    public async Task AddAsync(CreateCustomerRequest customer)
     {
-        await _context.Customers.AddAsync(customer);
+        var entity = new Customer
+        {
+            TenantId = customer.TenantId,
+            Name = customer.Name,
+            Phone = customer.Phone,
+            Email = customer.Email,
+            Address = customer.Address,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.Customers.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Customer customer)
+    public async Task UpdateAsync(int id, UpdateCustomerRequest customer)
     {
-        _context.Customers.Update(customer);
+        var entity = await _context.Customers.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        if (entity == null) return;
+
+        entity.Name = customer.Name;
+        entity.Phone = customer.Phone;
+        entity.Email = customer.Email;
+        entity.Address = customer.Address;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        _context.Customers.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task SoftDeleteAsync(Guid id)
+    public async Task SoftDeleteAsync(int id)
     {
-        var customer = await _context.Customers.FindAsync(id);
-        if (customer == null) return;
+        var entity = await _context.Customers.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        if (entity == null) return;
 
-        customer.IsDeleted = true;
-        customer.DeletedAt = DateTime.UtcNow;
-        customer.UpdatedAt = DateTime.UtcNow;
-
-        _context.Customers.Update(customer);
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.Customers.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

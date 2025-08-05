@@ -13,72 +13,39 @@ public class SaleItemService
         _repo = repo;
     }
 
-    public async Task<List<SaleItemDto>> GetAllBySaleIdAsync(Guid saleId)
+    public async Task<List<SaleItemDto>> GetAllBySaleIdAsync(int saleId)
     {
-        var items = await _repo.GetAllBySaleIdAsync(saleId);
-        return items.Select(i => new SaleItemDto
-        {
-            Id = i.Id,
-            SaleId = i.SaleId,
-            ProductVariantId = i.ProductVariantId,
-            Quantity = i.Quantity,
-            UnitPrice = i.UnitPrice,
-            TotalPrice = i.TotalPrice
-        }).ToList();
+        return await _repo.GetAllBySaleIdAsync(saleId);
     }
 
-    public async Task<SaleItemDto?> GetByIdAsync(Guid id)
+    public async Task<SaleItemDto?> GetByIdAsync(int id)
     {
-        var i = await _repo.GetByIdAsync(id);
-        return i == null ? null : new SaleItemDto
-        {
-            Id = i.Id,
-            SaleId = i.SaleId,
-            ProductVariantId = i.ProductVariantId,
-            Quantity = i.Quantity,
-            UnitPrice = i.UnitPrice,
-            TotalPrice = i.TotalPrice
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<Guid> CreateAsync(CreateSaleItemRequest req)
+    public async Task<SaleItemDto?> CreateAsync(CreateSaleItemRequest req)
     {
-        var item = new SaleItem
-        {
-            SaleId = req.SaleId,
-            ProductVariantId = req.ProductVariantId,
-            Quantity = req.Quantity,
-            UnitPrice = req.UnitPrice,
-            TotalPrice = req.Quantity * req.UnitPrice
-        };
-
-        await _repo.AddAsync(item);
-        return item.Id;
+        await _repo.AddAsync(req);
+        // Optionally, fetch the created sale item (e.g., by unique fields or by returning from repo)
+        // For now, return null as placeholder if repo does not return the created sale item
+        return null;
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateSaleItemRequest req)
+    public async Task<SaleItemDto?> UpdateAsync(int id, UpdateSaleItemRequest req)
     {
         var item = await _repo.GetByIdAsync(id);
-        if (item == null) return false;
+        if (item == null) return null;
 
-        item.Quantity = req.Quantity;
-        item.UnitPrice = req.UnitPrice;
-        item.TotalPrice = req.Quantity * req.UnitPrice;
-
-        await _repo.UpdateAsync(item);
-        return true;
+        await _repo.UpdateAsync(id, req);
+        // Fetch and return the updated sale item
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
         var existing = await _repo.GetByIdAsync(id);
         if (existing == null) return false;
 
-        // Soft delete logic
-        existing.IsDeleted = true;
-        existing.DeletedAt = DateTime.UtcNow;
-        existing.UpdatedAt = DateTime.UtcNow;
-        
         await _repo.DeleteAsync(id);
         return true;
     }

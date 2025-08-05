@@ -1,12 +1,12 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface IShipmentRepository
 {
-    Task<List<Shipment>> GetAllAsync();
-    Task<Shipment?> GetByIdAsync(Guid id);
-    Task AddAsync(Shipment shipment);
-    Task UpdateAsync(Shipment shipment);
-    Task DeleteAsync(Guid id);
+    Task<List<ShipmentDto>> GetAllAsync();
+    Task<ShipmentDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateShipmentRequest shipment);
+    Task UpdateAsync(int id, UpdateShipmentRequest shipment);
+    Task DeleteAsync(int id);
 }

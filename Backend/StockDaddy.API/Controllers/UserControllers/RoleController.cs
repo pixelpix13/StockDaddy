@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class RoleController : ControllerBase
 
     // GET: api/role/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var role = await _roleRepository.GetByIdAsync(id);
             if (role == null)
                 return NotFound($"Role with ID {id} not found.");
-
             return Ok(role);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class RoleController : ControllerBase
 
     // POST: api/role
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Role role)
+    public async Task<IActionResult> Create([FromBody] CreateRoleRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _roleRepository.AddAsync(role);
-            return CreatedAtAction(nameof(GetById), new { id = role.Id }, role);
+            await _roleRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class RoleController : ControllerBase
 
     // PUT: api/role/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Role role)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateRoleRequest request)
     {
         try
         {
-            if (id != role.Id)
-                return BadRequest("ID in URL does not match the role object.");
-
             var existing = await _roleRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Role with ID {id} not found.");
 
-            await _roleRepository.UpdateAsync(role);
+            await _roleRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class RoleController : ControllerBase
 
     // DELETE: api/role/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

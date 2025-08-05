@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class CustomerController : ControllerBase
 
     // GET: api/customer/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var customer = await _customerRepo.GetByIdAsync(id);
             if (customer == null)
                 return NotFound($"Customer with ID {id} not found.");
-
             return Ok(customer);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class CustomerController : ControllerBase
 
     // POST: api/customer
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Customer customer)
+    public async Task<IActionResult> Create([FromBody] CreateCustomerRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _customerRepo.AddAsync(customer);
-            return CreatedAtAction(nameof(GetById), new { id = customer.Id }, customer);
+            await _customerRepo.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class CustomerController : ControllerBase
 
     // PUT: api/customer/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Customer customer)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateCustomerRequest request)
     {
         try
         {
-            if (id != customer.Id)
-                return BadRequest("ID in URL and body must match.");
-
             var existing = await _customerRepo.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Customer with ID {id} not found.");
 
-            await _customerRepo.UpdateAsync(customer);
+            await _customerRepo.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class CustomerController : ControllerBase
 
     // DELETE: api/customer/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> SoftDelete(Guid id)
+    public async Task<IActionResult> SoftDelete(int id)
     {
         try
         {

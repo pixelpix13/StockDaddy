@@ -1,12 +1,12 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface ISaleRepository
 {
-    Task<List<Sale>> GetAllAsync();
-    Task<Sale?> GetByIdAsync(Guid id);
-    Task AddAsync(Sale sale);
-    Task UpdateAsync(Sale sale);
-    Task DeleteAsync(Guid id);
+    Task<List<SaleDto>> GetAllAsync();
+    Task<SaleDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateSaleRequest sale);
+    Task UpdateAsync(int id, UpdateSaleRequest sale);
+    Task DeleteAsync(int id);
 }

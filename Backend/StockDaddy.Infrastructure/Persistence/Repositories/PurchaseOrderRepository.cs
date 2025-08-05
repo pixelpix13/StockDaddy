@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
+using StockDaddy.Domain.Enums;
 using StockDaddy.Infrastructure.Persistence;
 
 namespace StockDaddy.Infrastructure.Repositories;
@@ -14,37 +16,84 @@ public class PurchaseOrderRepository : IPurchaseOrderRepository
         _context = context;
     }
 
-    public async Task<List<PurchaseOrder>> GetAllAsync()
+    public async Task<List<PurchaseOrderDto>> GetAllAsync()
     {
         return await _context.PurchaseOrders
             .Where(o => !o.IsDeleted)
+            .Select(o => new PurchaseOrderDto
+            {
+                Id = o.Id,
+                TenantId = o.TenantId,
+                SupplierId = o.SupplierId,
+                StoreId = o.StoreId,
+                OrderDate = o.OrderDate,
+                ExpectedDelivery = o.ExpectedDelivery,
+                Status = o.Status,
+                Notes = o.Notes,
+                CreatedAt = o.CreatedAt,
+                UpdatedAt = o.UpdatedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<PurchaseOrder?> GetByIdAsync(Guid id)
+    public async Task<PurchaseOrderDto?> GetByIdAsync(int id)
     {
         return await _context.PurchaseOrders
-            .FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
+            .Where(o => o.Id == id && !o.IsDeleted)
+            .Select(o => new PurchaseOrderDto
+            {
+                Id = o.Id,
+                TenantId = o.TenantId,
+                SupplierId = o.SupplierId,
+                StoreId = o.StoreId,
+                OrderDate = o.OrderDate,
+                ExpectedDelivery = o.ExpectedDelivery,
+                Status = o.Status,
+                Notes = o.Notes,
+                CreatedAt = o.CreatedAt,
+                UpdatedAt = o.UpdatedAt
+            })
+            .FirstOrDefaultAsync();
     }
 
-    public async Task AddAsync(PurchaseOrder order)
+    public async Task AddAsync(CreatePurchaseOrderRequest order)
     {
-        await _context.PurchaseOrders.AddAsync(order);
+        var entity = new PurchaseOrder
+        {
+            TenantId = order.TenantId,
+            SupplierId = order.SupplierId,
+            StoreId = order.StoreId,
+            OrderDate = order.OrderDate,
+            ExpectedDelivery = order.ExpectedDelivery,
+            Status = order.Status,
+            Notes = order.Notes,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.PurchaseOrders.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(PurchaseOrder order)
+    public async Task UpdateAsync(int id, UpdatePurchaseOrderRequest order)
     {
-        _context.PurchaseOrders.Update(order);
+        var entity = await _context.PurchaseOrders.FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
+        if (entity == null) return;
+        entity.ExpectedDelivery = order.ExpectedDelivery;
+        entity.Status = order.Status;
+        entity.Notes = order.Notes;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.PurchaseOrders.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
-        var order = await _context.PurchaseOrders.FindAsync(id);
-        if (order == null) return;
-
-        _context.PurchaseOrders.Update(order);
+        var entity = await _context.PurchaseOrders.FirstOrDefaultAsync(o => o.Id == id && !o.IsDeleted);
+        if (entity == null) return;
+        entity.IsDeleted = true;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.PurchaseOrders.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

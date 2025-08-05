@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -17,7 +17,7 @@ public class AdjustedInvoiceController : ControllerBase
 
     // GET: api/AdjustedInvoice
     [HttpGet]
-    public async Task<ActionResult<List<AdjustedInvoice>>> GetAll()
+    public async Task<ActionResult<List<AdjustedInvoiceDto>>> GetAll()
     {
         var invoices = await _adjustedInvoiceRepository.GetAllAsync();
         return Ok(invoices);
@@ -25,7 +25,7 @@ public class AdjustedInvoiceController : ControllerBase
 
     // GET: api/AdjustedInvoice/{id}
     [HttpGet("{id}")]
-    public async Task<ActionResult<AdjustedInvoice>> GetById(Guid id)
+    public async Task<ActionResult<AdjustedInvoiceDto>> GetById(int id)
     {
         var invoice = await _adjustedInvoiceRepository.GetByIdAsync(id);
         if (invoice == null)
@@ -36,29 +36,31 @@ public class AdjustedInvoiceController : ControllerBase
 
     // POST: api/AdjustedInvoice
     [HttpPost]
-    public async Task<ActionResult> Add(AdjustedInvoice invoice)
+    public async Task<ActionResult> Add([FromBody] CreateAdjustedInvoiceRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        await _adjustedInvoiceRepository.AddAsync(invoice);
-        return CreatedAtAction(nameof(GetById), new { id = invoice.Id }, invoice);
+        await _adjustedInvoiceRepository.AddAsync(request);
+        // Optionally, fetch the created entity's ID if needed
+        return Ok();
     }
 
     // PUT: api/AdjustedInvoice/{id}
     [HttpPut("{id}")]
-    public async Task<ActionResult> Update(Guid id, AdjustedInvoice invoice)
+    public async Task<ActionResult> Update(int id, [FromBody] UpdateAdjustedInvoiceRequest request)
     {
-        if (id != invoice.Id)
-            return BadRequest("Mismatched invoice ID.");
+        var existing = await _adjustedInvoiceRepository.GetByIdAsync(id);
+        if (existing == null)
+            return NotFound($"Adjusted invoice with ID {id} not found.");
 
-        await _adjustedInvoiceRepository.UpdateAsync(invoice);
+        await _adjustedInvoiceRepository.UpdateAsync(id, request);
         return NoContent();
     }
 
     // DELETE: api/AdjustedInvoice/{id}
     [HttpDelete("{id}")]
-    public async Task<ActionResult> Delete(Guid id)
+    public async Task<ActionResult> Delete(int id)
     {
         var existing = await _adjustedInvoiceRepository.GetByIdAsync(id);
         if (existing == null)

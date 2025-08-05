@@ -1,12 +1,12 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface ICategoryRepository
 {
-    Task<List<Category>> GetAllAsync();
-    Task<Category?> GetByIdAsync(Guid id);
-    Task AddAsync(Category category);
-    Task UpdateAsync(Category category);
-    Task DeleteAsync(Guid id);
+    Task<List<CategoryDto>> GetAllAsync();
+    Task<CategoryDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateCategoryRequest category);
+    Task UpdateAsync(int id, UpdateCategoryRequest category);
+    Task DeleteAsync(int id);
 }

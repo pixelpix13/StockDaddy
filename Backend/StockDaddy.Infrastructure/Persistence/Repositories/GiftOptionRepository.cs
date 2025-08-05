@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,38 +15,78 @@ public class GiftOptionRepository : IGiftOptionRepository
         _context = context;
     }
 
-    public async Task<List<GiftOption>> GetAllAsync()
+    public async Task<List<GiftOptionDto>> GetAllAsync()
     {
         return await _context.GiftOptions
             .Where(g => !g.IsDeleted)
+            .Select(g => new GiftOptionDto
+            {
+                Id = g.Id,
+                SaleId = g.SaleId,
+                IsWrapped = g.IsWrapped,
+                WrapType = g.WrapType,
+                Message = g.Message,
+                CreatedAt = g.CreatedAt,
+                UpdatedAt = g.UpdatedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<GiftOption?> GetByIdAsync(Guid id)
+    public async Task<GiftOptionDto?> GetByIdAsync(int id)
     {
-        return await _context.GiftOptions
-            .FirstOrDefaultAsync(g => g.Id == id && !g.IsDeleted);
+        var g = await _context.GiftOptions.FirstOrDefaultAsync(g => g.Id == id && !g.IsDeleted);
+        if (g == null) return null;
+        return new GiftOptionDto
+        {
+            Id = g.Id,
+            SaleId = g.SaleId,
+            IsWrapped = g.IsWrapped,
+            WrapType = g.WrapType,
+            Message = g.Message,
+            CreatedAt = g.CreatedAt,
+            UpdatedAt = g.UpdatedAt
+        };
     }
 
-    public async Task AddAsync(GiftOption option)
+    public async Task AddAsync(CreateGiftOptionRequest option)
     {
-        await _context.GiftOptions.AddAsync(option);
+        var entity = new GiftOption
+        {
+            SaleId = option.SaleId,
+            IsWrapped = option.IsWrapped,
+            WrapType = option.WrapType,
+            Message = option.Message,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.GiftOptions.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(GiftOption option)
+    public async Task UpdateAsync(int id, UpdateGiftOptionRequest option)
     {
-        _context.GiftOptions.Update(option);
+        var entity = await _context.GiftOptions.FirstOrDefaultAsync(g => g.Id == id && !g.IsDeleted);
+        if (entity == null) return;
+
+        entity.IsWrapped = option.IsWrapped;
+        entity.WrapType = option.WrapType;
+        entity.Message = option.Message;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        _context.GiftOptions.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
-        var giftOption = await _context.GiftOptions.FindAsync(id);
-        if (giftOption == null) return;
+        var entity = await _context.GiftOptions.FirstOrDefaultAsync(g => g.Id == id && !g.IsDeleted);
+        if (entity == null) return;
 
-        // Entity is already soft-marked by service
-        _context.GiftOptions.Update(giftOption);
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.GiftOptions.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

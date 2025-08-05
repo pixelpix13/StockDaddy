@@ -15,83 +15,33 @@ public class PurchaseOrderService
 
     public async Task<List<PurchaseOrderDto>> GetAllAsync()
     {
-        var orders = await _repo.GetAllAsync();
-        return orders.Select(o => new PurchaseOrderDto
-        {
-            Id = o.Id,
-            TenantId = o.TenantId,
-            SupplierId = o.SupplierId,
-            StoreId = o.StoreId,
-            OrderDate = o.OrderDate,
-            ExpectedDelivery = o.ExpectedDelivery,
-            Status = o.Status,
-            Notes = o.Notes,
-            CreatedAt = o.CreatedAt,
-            UpdatedAt = o.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<PurchaseOrderDto?> GetByIdAsync(Guid id)
+    public async Task<PurchaseOrderDto?> GetByIdAsync(int id)
     {
-        var order = await _repo.GetByIdAsync(id);
-        if (order == null) return null;
-
-        return new PurchaseOrderDto
-        {
-            Id = order.Id,
-            TenantId = order.TenantId,
-            SupplierId = order.SupplierId,
-            StoreId = order.StoreId,
-            OrderDate = order.OrderDate,
-            ExpectedDelivery = order.ExpectedDelivery,
-            Status = order.Status,
-            Notes = order.Notes,
-            CreatedAt = order.CreatedAt,
-            UpdatedAt = order.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreatePurchaseOrderRequest request)
+    public async Task<PurchaseOrderDto> AddAsync(CreatePurchaseOrderRequest request)
     {
-        var order = new PurchaseOrder
-        {
-            TenantId = request.TenantId,
-            SupplierId = request.SupplierId,
-            StoreId = request.StoreId,
-            OrderDate = request.OrderDate,
-            ExpectedDelivery = request.ExpectedDelivery,
-            Status = request.Status,
-            Notes = request.Notes,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(order);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(o => o.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdatePurchaseOrderRequest request)
+    public async Task<PurchaseOrderDto?> UpdateAsync(int id, UpdatePurchaseOrderRequest request)
     {
-        var order = await _repo.GetByIdAsync(id);
-        if (order == null) return false;
-
-        order.ExpectedDelivery = request.ExpectedDelivery;
-        order.Status = request.Status;
-        order.Notes = request.Notes;
-        order.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(order);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var order = await _repo.GetByIdAsync(id);
-        if (order == null) return false;
-
-        order.IsDeleted = true;
-        order.DeletedAt = DateTime.UtcNow;
-        order.UpdatedAt = DateTime.UtcNow;
-
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

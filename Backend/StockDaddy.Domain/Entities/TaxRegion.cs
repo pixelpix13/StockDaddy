@@ -2,10 +2,10 @@ namespace StockDaddy.Domain.Entities;
 
 public class TaxRegion
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public int Id { get; set; }
 
-    public Guid TenantId { get; set; }
-    public Guid? StoreId { get; set; } // Optional override
+    public int TenantId { get; set; }
+    public int? StoreId { get; set; } // Optional override
 
     public string RegionName { get; set; } = string.Empty;
     public decimal TaxPercent { get; set; }

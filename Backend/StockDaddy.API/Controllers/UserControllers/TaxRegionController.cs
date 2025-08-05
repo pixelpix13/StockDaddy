@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class TaxRegionController : ControllerBase
 
     // GET: api/taxregion/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var region = await _taxRegionRepository.GetByIdAsync(id);
             if (region == null)
                 return NotFound($"TaxRegion with ID {id} not found.");
-
             return Ok(region);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class TaxRegionController : ControllerBase
 
     // POST: api/taxregion
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] TaxRegion region)
+    public async Task<IActionResult> Create([FromBody] CreateTaxRegionRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _taxRegionRepository.AddAsync(region);
-            return CreatedAtAction(nameof(GetById), new { id = region.Id }, region);
+            await _taxRegionRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class TaxRegionController : ControllerBase
 
     // PUT: api/taxregion/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] TaxRegion region)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateTaxRegionRequest request)
     {
         try
         {
-            if (id != region.Id)
-                return BadRequest("ID in URL does not match the request body.");
-
             var existing = await _taxRegionRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"TaxRegion with ID {id} not found.");
 
-            await _taxRegionRepository.UpdateAsync(region);
+            await _taxRegionRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class TaxRegionController : ControllerBase
 
     // DELETE: api/taxregion/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

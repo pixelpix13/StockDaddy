@@ -2,9 +2,9 @@ namespace StockDaddy.Application.DTOs;
 
 public class BundleItemDto
 {
-    public Guid Id { get; set; }
-    public Guid BundleId { get; set; }
-    public Guid ProductId { get; set; }
+    public int Id { get; set; }
+    public int BundleId { get; set; }
+    public int ProductId { get; set; }
     public int Quantity { get; set; }
     public decimal EffectiveUnitPrice { get; set; }
     public DateTime CreatedAt { get; set; }

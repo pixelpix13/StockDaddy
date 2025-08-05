@@ -1,12 +1,12 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface IRefundRepository
 {
-    Task<List<Refund>> GetAllAsync();
-    Task<Refund?> GetByIdAsync(Guid id);
-    Task AddAsync(Refund refund);
-    Task UpdateAsync(Refund refund);
-    Task DeleteAsync(Guid id);
+    Task<List<RefundDto>> GetAllAsync();
+    Task<RefundDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateRefundRequest refund);
+    Task UpdateAsync(int id, UpdateRefundRequest refund);
+    Task DeleteAsync(int id);
 }

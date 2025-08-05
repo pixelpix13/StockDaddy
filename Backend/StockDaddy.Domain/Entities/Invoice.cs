@@ -4,8 +4,8 @@ namespace StockDaddy.Domain.Entities;
 
 public class Invoice
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid SaleId { get; set; }
+    public int Id { get; set; }
+    public int SaleId { get; set; }
     public string InvoiceNumber { get; set; } = string.Empty;
     public DateOnly InvoiceDate { get; set; }
     public DateOnly DueDate { get; set; }

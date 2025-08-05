@@ -1,7 +1,5 @@
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
-
 namespace StockDaddy.Application.Services;
 
 public class HsnMasterService
@@ -15,75 +13,33 @@ public class HsnMasterService
 
     public async Task<List<HsnMasterDto>> GetAllAsync()
     {
-        var list = await _repo.GetAllAsync();
-        return list.Select(h => new HsnMasterDto
-        {
-            Id = h.Id,
-            HSNCode = h.HSNCode,
-            Description = h.Description,
-            CGSTPercent = h.CGSTPercent,
-            SGSTPercent = h.SGSTPercent,
-            CreatedAt = h.CreatedAt,
-            UpdatedAt = h.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<HsnMasterDto?> GetByIdAsync(Guid id)
+    public async Task<HsnMasterDto?> GetByIdAsync(int id)
     {
-        var Hsn = await _repo.GetByIdAsync(id);
-        if (Hsn == null) return null;
-
-        return new HsnMasterDto
-        {
-            Id = Hsn.Id,
-            HSNCode = Hsn.HSNCode,
-            Description = Hsn.Description,
-            CGSTPercent = Hsn.CGSTPercent,
-            SGSTPercent = Hsn.SGSTPercent,
-            CreatedAt = Hsn.CreatedAt,
-            UpdatedAt = Hsn.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateHsnMasterRequest request)
+    public async Task<HsnMasterDto> AddAsync(CreateHsnMasterRequest request)
     {
-        var Hsn = new HsnMaster
-        {
-            HSNCode = request.HSNCode,
-            Description = request.Description,
-            CGSTPercent = request.CGSTPercent,
-            SGSTPercent = request.SGSTPercent,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(Hsn);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(h => h.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateHsnMasterRequest request)
+    public async Task<HsnMasterDto?> UpdateAsync(int id, UpdateHsnMasterRequest request)
     {
-        var Hsn = await _repo.GetByIdAsync(id);
-        if (Hsn == null) return false;
-
-        Hsn.Description = request.Description;
-        Hsn.CGSTPercent = request.CGSTPercent;
-        Hsn.SGSTPercent = request.SGSTPercent;
-        Hsn.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(Hsn);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var Hsn = await _repo.GetByIdAsync(id);
-        if (Hsn == null) return false;
-
-        // Soft delete logic
-        Hsn.IsDeleted = true;
-        Hsn.DeletedAt = DateTime.UtcNow;
-        Hsn.UpdatedAt = DateTime.UtcNow;
-        
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class ReturnController : ControllerBase
 
     // GET: api/return/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var r = await _returnRepository.GetByIdAsync(id);
             if (r == null)
                 return NotFound($"Return with ID {id} not found.");
-
             return Ok(r);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class ReturnController : ControllerBase
 
     // POST: api/return
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Return r)
+    public async Task<IActionResult> Create([FromBody] CreateReturnRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _returnRepository.AddAsync(r);
-            return CreatedAtAction(nameof(GetById), new { id = r.Id }, r);
+            await _returnRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class ReturnController : ControllerBase
 
     // PUT: api/return/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Return r)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateReturnRequest request)
     {
         try
         {
-            if (id != r.Id)
-                return BadRequest("ID in URL does not match the return object.");
-
             var existing = await _returnRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Return with ID {id} not found.");
 
-            await _returnRepository.UpdateAsync(r);
+            await _returnRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class ReturnController : ControllerBase
 
     // DELETE: api/return/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

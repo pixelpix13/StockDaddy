@@ -15,76 +15,33 @@ public class PurchaseItemService
 
     public async Task<List<PurchaseItemDto>> GetAllAsync()
     {
-        var items = await _repo.GetAllAsync();
-        return items.Select(i => new PurchaseItemDto
-        {
-            Id = i.Id,
-            PurchaseOrderId = i.PurchaseOrderId,
-            ProductVariantId = i.ProductVariantId,
-            Quantity = i.Quantity,
-            UnitCost = i.UnitCost,
-            TotalCost = i.TotalCost,
-            CreatedAt = i.CreatedAt,
-            UpdatedAt = i.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<PurchaseItemDto?> GetByIdAsync(Guid id)
+    public async Task<PurchaseItemDto?> GetByIdAsync(int id)
     {
-        var item = await _repo.GetByIdAsync(id);
-        if (item == null) return null;
-
-        return new PurchaseItemDto
-        {
-            Id = item.Id,
-            PurchaseOrderId = item.PurchaseOrderId,
-            ProductVariantId = item.ProductVariantId,
-            Quantity = item.Quantity,
-            UnitCost = item.UnitCost,
-            TotalCost = item.TotalCost,
-            CreatedAt = item.CreatedAt,
-            UpdatedAt = item.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreatePurchaseItemRequest request)
+    public async Task<PurchaseItemDto> AddAsync(CreatePurchaseItemRequest request)
     {
-        var item = new PurchaseItem
-        {
-            PurchaseOrderId = request.PurchaseOrderId,
-            ProductVariantId = request.ProductVariantId,
-            Quantity = request.Quantity,
-            UnitCost = request.UnitCost,
-            TotalCost = request.Quantity * request.UnitCost,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(item);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(i => i.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdatePurchaseItemRequest request)
+    public async Task<PurchaseItemDto?> UpdateAsync(int id, UpdatePurchaseItemRequest request)
     {
-        var item = await _repo.GetByIdAsync(id);
-        if (item == null) return false;
-
-        item.Quantity = request.Quantity;
-        item.UnitCost = request.UnitCost;
-        item.TotalCost = request.Quantity * request.UnitCost;
-        item.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(item);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var item = await _repo.GetByIdAsync(id);
-        if (item == null) return false;
-
-        item.IsDeleted = true;
-        item.DeletedAt = DateTime.UtcNow;
-        item.UpdatedAt = DateTime.UtcNow;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

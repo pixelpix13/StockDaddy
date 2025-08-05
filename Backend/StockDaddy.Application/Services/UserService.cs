@@ -31,67 +31,34 @@ public class UserService
         }).ToList();
     }
 
-    public async Task<UserDto?> GetByIdAsync(Guid id)
+    public async Task<UserDto?> GetByIdAsync(int id)
+    {
+        return await _repo.GetByIdAsync(id);
+    }
+
+    public async Task<UserDto?> AddAsync(CreateUserRequest request)
+    {
+        await _repo.AddAsync(request);
+        // Optionally, fetch the created user (e.g., by unique fields or by returning from repo)
+        // Here, let's assume Username+Email is unique and fetch by those, or repo can return the created UserDto
+        // For now, return null as placeholder if repo does not return the created user
+        return null;
+    }
+
+    public async Task<UserDto?> UpdateAsync(int id, UpdateUserRequest request)
     {
         var user = await _repo.GetByIdAsync(id);
         if (user == null) return null;
 
-        return new UserDto
-        {
-            Id = user.Id,
-            TenantId = user.TenantId,
-            RoleId = user.RoleId,
-            StoreId = user.StoreId,
-            Username = user.Username,
-            Email = user.Email,
-            CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt,
-            IsDeleted = user.IsDeleted,
-            DeletedAt = user.DeletedAt
-        };
+        await _repo.UpdateAsync(id, request);
+        // Fetch and return the updated user
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateUserRequest request)
-    {
-        var user = new User
-        {
-            TenantId = request.TenantId,
-            RoleId = request.RoleId,
-            StoreId = request.StoreId,
-            Username = request.Username,
-            Email = request.Email,
-            PasswordHash = request.PasswordHash,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(user);
-    }
-
-    public async Task<bool> UpdateAsync(Guid id, UpdateUserRequest request)
+    public async Task<bool> SoftDeleteAsync(int id)
     {
         var user = await _repo.GetByIdAsync(id);
         if (user == null) return false;
-
-        user.RoleId = request.RoleId;
-        user.StoreId = request.StoreId;
-        user.Username = request.Username;
-        user.Email = request.Email;
-        user.PasswordHash = request.PasswordHash;
-        user.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(user);
-        return true;
-    }
-
-    public async Task<bool> SoftDeleteAsync(Guid id)
-    {
-        var user = await _repo.GetByIdAsync(id);
-        if (user == null) return false;
-
-        user.IsDeleted = true;
-        user.DeletedAt = DateTime.UtcNow;
-        user.UpdatedAt = DateTime.UtcNow;
 
         await _repo.SoftDeleteAsync(id);
         return true;

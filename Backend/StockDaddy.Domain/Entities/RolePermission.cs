@@ -2,10 +2,10 @@ namespace StockDaddy.Domain.Entities;
 
 public class RolePermission
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public int Id { get; set; }
 
-    public Guid RoleId { get; set; }
-    public Guid PermissionId { get; set; }
+    public int RoleId { get; set; }
+    public int PermissionId { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

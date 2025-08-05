@@ -15,87 +15,54 @@ public class SupplierService
 
     public async Task<List<SupplierDto>> GetAllAsync()
     {
-        var suppliers = await _repo.GetAllAsync();
-        return suppliers.Select(s => new SupplierDto
-        {
-            Id = s.Id,
-            TenantId = s.TenantId,
-            Name = s.Name,
-            ContactName = s.ContactName,
-            Phone = s.Phone,
-            Email = s.Email,
-            Address = s.Address,
-            CreatedAt = s.CreatedAt,
-            UpdatedAt = s.UpdatedAt,
-            IsDeleted = s.IsDeleted,
-            DeletedAt = s.DeletedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<SupplierDto?> GetByIdAsync(Guid id)
+    public async Task<SupplierDto?> GetByIdAsync(int id)
     {
         var supplier = await _repo.GetByIdAsync(id);
-        if (supplier == null) return null;
-
-        return new SupplierDto
-        {
-            Id = supplier.Id,
-            TenantId = supplier.TenantId,
-            Name = supplier.Name,
-            ContactName = supplier.ContactName,
-            Phone = supplier.Phone,
-            Email = supplier.Email,
-            Address = supplier.Address,
-            CreatedAt = supplier.CreatedAt,
-            UpdatedAt = supplier.UpdatedAt,
-            IsDeleted = supplier.IsDeleted,
-            DeletedAt = supplier.DeletedAt
-        };
+        if (supplier == null)
+            return null;
+        return supplier;
     }
 
-    public async Task AddAsync(CreateSupplierRequest request)
+    public async Task<SupplierDto?> AddAsync(CreateSupplierRequest request)
     {
-        var supplier = new Supplier
-        {
-            TenantId = request.TenantId,
-            Name = request.Name,
-            ContactName = request.ContactName,
-            Phone = request.Phone,
-            Email = request.Email,
-            Address = request.Address,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new ArgumentException("Supplier name is required.");
+        if (string.IsNullOrWhiteSpace(request.ContactName))
+            throw new ArgumentException("Contact name is required.");
+        if (string.IsNullOrWhiteSpace(request.Phone))
+            throw new ArgumentException("Phone is required.");
+        if (string.IsNullOrWhiteSpace(request.Email))
+            throw new ArgumentException("Email is required.");
+        if (string.IsNullOrWhiteSpace(request.Address))
+            throw new ArgumentException("Address is required.");
 
-        await _repo.AddAsync(supplier);
+        await _repo.AddAsync(request);
+        // Optionally, fetch the created supplier (e.g., by unique fields or by returning from repo)
+        // For now, return null as placeholder if repo does not return the created supplier
+        return null;
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateSupplierRequest request)
+    public async Task<SupplierDto?> UpdateAsync(int id, UpdateSupplierRequest request)
     {
         var supplier = await _repo.GetByIdAsync(id);
-        if (supplier == null) return false;
+        if (supplier == null)
+            return null;
 
-        supplier.Name = request.Name;
-        supplier.ContactName = request.ContactName;
-        supplier.Phone = request.Phone;
-        supplier.Email = request.Email;
-        supplier.Address = request.Address;
-        supplier.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(supplier);
-        return true;
+        await _repo.UpdateAsync(id, request);
+        // Fetch and return the updated supplier
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
         var supplier = await _repo.GetByIdAsync(id);
-        if (supplier == null) return false;
+        if (supplier == null)
+            return false;
 
-        supplier.IsDeleted = true;
-        supplier.DeletedAt = DateTime.UtcNow;
-        supplier.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(supplier);
+        await _repo.DeleteAsync(id);
         return true;
     }
 }

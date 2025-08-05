@@ -12,5 +12,5 @@ public class UpdateProductVariantRequest
     public decimal Price { get; set; }
     public int Quantity { get; set; }
 
-    public Guid HSNCodeId { get; set; }
+    public int HSNCodeId { get; set; }
 }

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class PaymentController : ControllerBase
 
     // GET: api/payment/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var payment = await _paymentRepository.GetByIdAsync(id);
             if (payment == null)
                 return NotFound($"Payment with ID {id} not found.");
-
             return Ok(payment);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class PaymentController : ControllerBase
 
     // POST: api/payment
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Payment payment)
+    public async Task<IActionResult> Create([FromBody] CreatePaymentRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _paymentRepository.AddAsync(payment);
-            return CreatedAtAction(nameof(GetById), new { id = payment.Id }, payment);
+            await _paymentRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class PaymentController : ControllerBase
 
     // PUT: api/payment/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Payment payment)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdatePaymentRequest request)
     {
         try
         {
-            if (id != payment.Id)
-                return BadRequest("ID in URL does not match ID in body.");
-
             var existing = await _paymentRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Payment with ID {id} not found.");
 
-            await _paymentRepository.UpdateAsync(payment);
+            await _paymentRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class PaymentController : ControllerBase
 
     // DELETE: api/payment/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

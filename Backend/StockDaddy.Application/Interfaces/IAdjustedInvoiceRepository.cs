@@ -1,12 +1,12 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface IAdjustedInvoiceRepository
 {
-    Task<List<AdjustedInvoice>> GetAllAsync();
-    Task<AdjustedInvoice?> GetByIdAsync(Guid id);
-    Task AddAsync(AdjustedInvoice invoice);
-    Task UpdateAsync(AdjustedInvoice invoice);
-    Task DeleteAsync(Guid id);
+    Task<List<AdjustedInvoiceDto>> GetAllAsync();
+    Task<AdjustedInvoiceDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateAdjustedInvoiceRequest invoice);
+    Task UpdateAsync(int id, UpdateAdjustedInvoiceRequest invoice);
+    Task DeleteAsync(int id);
 }

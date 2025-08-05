@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class PermissionController : ControllerBase
 
     // GET: api/permission/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var permission = await _permissionRepository.GetByIdAsync(id);
             if (permission == null)
                 return NotFound($"Permission with ID {id} not found.");
-
             return Ok(permission);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class PermissionController : ControllerBase
 
     // POST: api/permission
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Permission permission)
+    public async Task<IActionResult> Create([FromBody] CreatePermissionRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _permissionRepository.AddAsync(permission);
-            return CreatedAtAction(nameof(GetById), new { id = permission.Id }, permission);
+            await _permissionRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class PermissionController : ControllerBase
 
     // PUT: api/permission/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Permission permission)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdatePermissionRequest request)
     {
         try
         {
-            if (id != permission.Id)
-                return BadRequest("ID in URL does not match ID in body.");
-
             var existing = await _permissionRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Permission with ID {id} not found.");
 
-            await _permissionRepository.UpdateAsync(permission);
+            await _permissionRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class PermissionController : ControllerBase
 
     // DELETE: api/permission/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

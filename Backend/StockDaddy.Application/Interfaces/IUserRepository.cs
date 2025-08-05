@@ -1,12 +1,11 @@
-using StockDaddy.Domain.Entities;
-
 namespace StockDaddy.Application.Interfaces;
+using StockDaddy.Application.DTOs;
 
 public interface IUserRepository
 {
-    Task<List<User>> GetAllAsync();
-    Task<User?> GetByIdAsync(Guid id);
-    Task AddAsync(User user);
-    Task UpdateAsync(User user);
-    Task SoftDeleteAsync(Guid id);
+    Task<List<UserDto>> GetAllAsync();
+    Task<UserDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateUserRequest user);
+    Task UpdateAsync(int id, UpdateUserRequest user);
+    Task SoftDeleteAsync(int id);
 }

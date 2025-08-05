@@ -1,12 +1,12 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface ICustomerRepository
 {
-    Task<List<Customer>> GetAllAsync();
-    Task<Customer?> GetByIdAsync(Guid id);
-    Task AddAsync(Customer customer);
-    Task UpdateAsync(Customer customer);
-    Task SoftDeleteAsync(Guid id);
+    Task<List<CustomerDto>> GetAllAsync();
+    Task<CustomerDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateCustomerRequest customer);
+    Task UpdateAsync(int id, UpdateCustomerRequest customer);
+    Task SoftDeleteAsync(int id);
 }

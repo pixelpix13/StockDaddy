@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class ProductController : ControllerBase
 
     // GET: api/product/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var product = await _productRepository.GetByIdAsync(id);
             if (product == null)
                 return NotFound($"Product with ID {id} not found.");
-
             return Ok(product);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class ProductController : ControllerBase
 
     // POST: api/product
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Product product)
+    public async Task<IActionResult> Create([FromBody] CreateProductRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _productRepository.AddAsync(product);
-            return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
+            await _productRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class ProductController : ControllerBase
 
     // PUT: api/product/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Product updated)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductRequest request)
     {
         try
         {
-            if (id != updated.Id)
-                return BadRequest("ID in path and body do not match.");
-
             var existing = await _productRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Product with ID {id} not found.");
 
-            await _productRepository.UpdateAsync(updated);
+            await _productRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class ProductController : ControllerBase
 
     // DELETE: api/product/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> SoftDelete(Guid id)
+    public async Task<IActionResult> SoftDelete(int id)
     {
         try
         {

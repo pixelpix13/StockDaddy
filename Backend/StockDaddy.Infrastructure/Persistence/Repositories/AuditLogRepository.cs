@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,35 +15,79 @@ public class AuditLogRepository : IAuditLogRepository
         _context = context;
     }
 
-    public async Task<List<AuditLog>> GetAllAsync()
+
+    public async Task<List<AuditLogDto>> GetAllAsync()
     {
         return await _context.AuditLogs
             .Where(a => !a.IsDeleted)
+            .Select(a => new AuditLogDto
+            {
+                Id = a.Id,
+                UserId = a.UserId,
+                StoreId = a.StoreId,
+                Action = a.Action,
+                TableName = a.TableName,
+                RecordId = a.RecordId,
+                OldData = a.OldData,
+                NewData = a.NewData,
+                Timestamp = a.Timestamp,
+                CreatedAt = a.CreatedAt,
+                UpdatedAt = a.UpdatedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<AuditLog?> GetByIdAsync(Guid id)
+
+    public async Task<AuditLogDto?> GetByIdAsync(int id)
     {
-        return await _context.AuditLogs
-            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+        var a = await _context.AuditLogs.FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+        if (a == null) return null;
+        return new AuditLogDto
+        {
+            Id = a.Id,
+            UserId = a.UserId,
+            StoreId = a.StoreId,
+            Action = a.Action,
+            TableName = a.TableName,
+            RecordId = a.RecordId,
+            OldData = a.OldData,
+            NewData = a.NewData,
+            Timestamp = a.Timestamp,
+            CreatedAt = a.CreatedAt,
+            UpdatedAt = a.UpdatedAt
+        };
     }
 
-    public async Task AddAsync(AuditLog log)
+
+    public async Task AddAsync(CreateAuditLogRequest auditLog)
     {
-        await _context.AuditLogs.AddAsync(log);
+        var entity = new AuditLog
+        {
+            UserId = auditLog.UserId,
+            StoreId = auditLog.StoreId,
+            Action = auditLog.Action,
+            TableName = auditLog.TableName,
+            RecordId = auditLog.RecordId,
+            OldData = auditLog.OldData,
+            NewData = auditLog.NewData,
+            Timestamp = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.AuditLogs.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task SoftDeleteAsync(int id)
     {
-        var log = await _context.AuditLogs.FindAsync(id);
-        if (log == null) return;
+        var entity = await _context.AuditLogs.FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+        if (entity == null) return;
 
-        log.IsDeleted = true;
-        log.DeletedAt = DateTime.UtcNow;
-        log.UpdatedAt = DateTime.UtcNow;
-
-        _context.AuditLogs.Update(log);
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.AuditLogs.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

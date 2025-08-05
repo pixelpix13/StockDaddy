@@ -24,18 +24,20 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.AdjustedInvoice", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("AdjustedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("AdjustedBy")
-                        .HasColumnType("uuid");
+                    b.Property<int>("AdjustedBy")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("AdjustedByUserId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("AdjustedByUserId")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("AdjustedTotalAmount")
                         .HasColumnType("numeric");
@@ -50,8 +52,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -73,9 +75,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.AuditLog", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Action")
                         .IsRequired()
@@ -102,8 +106,8 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("TableName")
                         .IsRequired()
@@ -115,8 +119,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("UserId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -129,12 +133,14 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.BundleItem", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("BundleId")
-                        .HasColumnType("uuid");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BundleId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -148,11 +154,11 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid?>("ProductBundleId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("ProductBundleId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
@@ -171,12 +177,14 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.BundleSaleItem", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("BundleId")
-                        .HasColumnType("uuid");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BundleId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -187,14 +195,14 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid?>("ProductBundleId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("ProductBundleId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("SaleId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("SaleId")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("numeric");
@@ -216,9 +224,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Category", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -233,11 +243,11 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("StoreId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -253,9 +263,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Customer", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
                         .IsRequired()
@@ -282,8 +294,8 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -297,9 +309,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.GiftOption", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -316,8 +330,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<string>("Message")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("SaleId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("SaleId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -334,9 +348,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.HsnMaster", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("CGSTPercent")
                         .HasColumnType("numeric");
@@ -374,9 +390,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.IntegrationEvent", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -398,8 +416,8 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("StoreId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("TriggeredAt")
                         .HasColumnType("timestamp with time zone");
@@ -407,8 +425,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<Guid>("TriggeredBy")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("TriggeredByUserId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("TriggeredByUserId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -424,9 +442,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Invoice", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -450,14 +470,17 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("SaleId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("SaleId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.Property<Guid?>("StoreId")
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("StoreId1")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -466,16 +489,18 @@ namespace StockDaddy.Infrastructure.Migrations
 
                     b.HasIndex("SaleId");
 
-                    b.HasIndex("StoreId");
+                    b.HasIndex("StoreId1");
 
                     b.ToTable("Invoices");
                 });
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Payment", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
@@ -486,8 +511,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -498,11 +523,11 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<int>("PaymentMethod")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("ReceivedBy")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ReceivedBy")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("ReceivedByUserId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("ReceivedByUserId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ReferenceNo")
                         .IsRequired()
@@ -522,9 +547,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Permission", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Action")
                         .HasColumnType("integer");
@@ -552,9 +579,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Product", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -573,14 +602,14 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("SubcategoryId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("SubcategoryId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Unit")
                         .IsRequired()
@@ -604,9 +633,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.ProductAttribute", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AttributeName")
                         .IsRequired()
@@ -625,8 +656,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -640,9 +671,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.ProductBundle", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -663,8 +696,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -678,9 +711,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.ProductImage", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -698,8 +733,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsPrimary")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -713,9 +748,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.ProductRestockAlert", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -726,15 +763,15 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("StoreId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("TriggeredAt")
                         .HasColumnType("timestamp with time zone");
@@ -742,8 +779,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("VariantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("VariantId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -758,9 +795,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.ProductTag", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -771,8 +810,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Tag")
                         .IsRequired()
@@ -790,9 +829,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.ProductVariant", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Barcode")
                         .IsRequired()
@@ -807,11 +848,11 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("HSNCodeId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("HSNCodeId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("HSNMasterId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("HSNMasterId")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -822,8 +863,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
@@ -832,8 +873,8 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("StoreId")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("TaxPercent")
                         .HasColumnType("numeric");
@@ -858,9 +899,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.PurchaseItem", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -871,11 +914,11 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("ProductVariantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ProductVariantId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("PurchaseOrderId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("PurchaseOrderId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
@@ -900,9 +943,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.PurchaseOrder", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -926,14 +971,14 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("StoreId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("SupplierId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("SupplierId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -951,9 +996,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Refund", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
@@ -974,11 +1021,11 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<DateTime>("RefundedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ReturnId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ReturnId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -994,9 +1041,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Return", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1011,11 +1060,11 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("SaleId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("SaleId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1031,9 +1080,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Role", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1058,9 +1109,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.RolePermission", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1071,11 +1124,11 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("PermissionId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("PermissionId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("RoleId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1091,15 +1144,17 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Sale", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("CustomerId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1113,17 +1168,17 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<int>("PaymentMethod")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("SoldBy")
-                        .HasColumnType("uuid");
+                    b.Property<int>("SoldBy")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("SoldByUserId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("SoldByUserId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("numeric");
@@ -1146,9 +1201,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.SaleItem", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1159,14 +1216,14 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("ProductVariantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ProductVariantId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("SaleId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("SaleId")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("numeric");
@@ -1188,9 +1245,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Shipment", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CourierName")
                         .IsRequired()
@@ -1208,8 +1267,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("SaleId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("SaleId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("ShippedDate")
                         .HasColumnType("timestamp with time zone");
@@ -1217,8 +1276,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("StoreId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("TrackingNumber")
                         .IsRequired()
@@ -1238,9 +1297,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.StockItem", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1254,8 +1315,8 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
@@ -1263,17 +1324,17 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("UpdatedByUserId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -1288,9 +1349,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Store", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1309,8 +1372,8 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1324,12 +1387,14 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Subcategory", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("CategoryId")
-                        .HasColumnType("uuid");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1344,11 +1409,11 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("StoreId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1366,9 +1431,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Supplier", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
                         .IsRequired()
@@ -1399,8 +1466,8 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1414,9 +1481,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.TaxRegion", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1431,14 +1500,14 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("TaxPercent")
                         .HasColumnType("numeric");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1454,9 +1523,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Tenant", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1481,9 +1552,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.User", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1502,14 +1575,14 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("RoleId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid?>("StoreId")
-                        .HasColumnType("uuid");
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("integer");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid");
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1661,7 +1734,7 @@ namespace StockDaddy.Infrastructure.Migrations
 
                     b.HasOne("StockDaddy.Domain.Entities.Store", "Store")
                         .WithMany()
-                        .HasForeignKey("StoreId");
+                        .HasForeignKey("StoreId1");
 
                     b.Navigation("Sale");
 

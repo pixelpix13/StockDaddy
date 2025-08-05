@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class BundleItemController : ControllerBase
 
     // GET: api/bundleitem/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var item = await _repository.GetByIdAsync(id);
             if (item == null)
                 return NotFound($"Bundle item with ID {id} not found.");
-
             return Ok(item);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class BundleItemController : ControllerBase
 
     // POST: api/bundleitem
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] BundleItem item)
+    public async Task<IActionResult> Create([FromBody] CreateBundleItemRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _repository.AddAsync(item);
-            return CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
+            await _repository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class BundleItemController : ControllerBase
 
     // PUT: api/bundleitem/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] BundleItem item)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateBundleItemRequest request)
     {
         try
         {
-            if (id != item.Id)
-                return BadRequest("ID mismatch between URL and body.");
-
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Bundle item with ID {id} not found.");
 
-            await _repository.UpdateAsync(item);
+            await _repository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class BundleItemController : ControllerBase
 
     // DELETE: api/bundleitem/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> SoftDelete(Guid id)
+    public async Task<IActionResult> SoftDelete(int id)
     {
         try
         {

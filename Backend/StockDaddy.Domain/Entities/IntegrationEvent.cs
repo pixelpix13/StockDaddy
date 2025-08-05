@@ -2,9 +2,9 @@ namespace StockDaddy.Domain.Entities;
 
 public class IntegrationEvent
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public int Id { get; set; }
 
-    public Guid StoreId { get; set; }
+    public int StoreId { get; set; }
     public string EventType { get; set; } = string.Empty;
     public string Payload { get; set; } = string.Empty; // JSON stored as string
 

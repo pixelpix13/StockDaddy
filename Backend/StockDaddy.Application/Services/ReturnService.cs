@@ -15,70 +15,33 @@ public class ReturnService
 
     public async Task<List<ReturnDto>> GetAllAsync()
     {
-        var items = await _repo.GetAllAsync();
-        return items.Select(r => new ReturnDto
-        {
-            Id = r.Id,
-            SaleId = r.SaleId,
-            StoreId = r.StoreId,
-            Reason = r.Reason,
-            CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<ReturnDto?> GetByIdAsync(Guid id)
+    public async Task<ReturnDto?> GetByIdAsync(int id)
     {
-        var r = await _repo.GetByIdAsync(id);
-        if (r == null) return null;
-
-        return new ReturnDto
-        {
-            Id = r.Id,
-            SaleId = r.SaleId,
-            StoreId = r.StoreId,
-            Reason = r.Reason,
-            CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateReturnRequest request)
+    public async Task<ReturnDto> AddAsync(CreateReturnRequest request)
     {
-        var r = new Return
-        {
-            SaleId = request.SaleId,
-            StoreId = request.StoreId,
-            Reason = request.Reason,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(r);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(r => r.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateReturnRequest request)
+    public async Task<ReturnDto?> UpdateAsync(int id, UpdateReturnRequest request)
     {
-        var r = await _repo.GetByIdAsync(id);
-        if (r == null) return false;
-
-        r.Reason = request.Reason;
-        r.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(r);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var r = await _repo.GetByIdAsync(id);
-        if (r == null) return false;
-
-        // Soft delete logic
-        r.IsDeleted = true;
-        r.DeletedAt = DateTime.UtcNow;
-        r.UpdatedAt = DateTime.UtcNow;
-        
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

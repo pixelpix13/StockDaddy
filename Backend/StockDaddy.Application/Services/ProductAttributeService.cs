@@ -15,71 +15,33 @@ public class ProductAttributeService
 
     public async Task<List<ProductAttributeDto>> GetAllAsync()
     {
-        var attributes = await _repo.GetAllAsync();
-        return attributes.Select(a => new ProductAttributeDto
-        {
-            Id = a.Id,
-            ProductId = a.ProductId,
-            AttributeName = a.AttributeName,
-            AttributeValue = a.AttributeValue,
-            CreatedAt = a.CreatedAt,
-            UpdatedAt = a.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<ProductAttributeDto?> GetByIdAsync(Guid id)
+    public async Task<ProductAttributeDto?> GetByIdAsync(int id)
     {
-        var a = await _repo.GetByIdAsync(id);
-        if (a == null) return null;
-
-        return new ProductAttributeDto
-        {
-            Id = a.Id,
-            ProductId = a.ProductId,
-            AttributeName = a.AttributeName,
-            AttributeValue = a.AttributeValue,
-            CreatedAt = a.CreatedAt,
-            UpdatedAt = a.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateProductAttributeRequest request)
+    public async Task<ProductAttributeDto> AddAsync(CreateProductAttributeRequest request)
     {
-        var attr = new ProductAttribute
-        {
-            ProductId = request.ProductId,
-            AttributeName = request.AttributeName,
-            AttributeValue = request.AttributeValue,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(attr);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(a => a.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateProductAttributeRequest request)
+    public async Task<ProductAttributeDto?> UpdateAsync(int id, UpdateProductAttributeRequest request)
     {
-        var attr = await _repo.GetByIdAsync(id);
-        if (attr == null) return false;
-
-        attr.AttributeName = request.AttributeName;
-        attr.AttributeValue = request.AttributeValue;
-        attr.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(attr);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var attr = await _repo.GetByIdAsync(id);
-        if (attr == null) return false;
-
-        // Soft delete logic
-        attr.IsDeleted = true;
-        attr.DeletedAt = DateTime.UtcNow;
-        attr.UpdatedAt = DateTime.UtcNow;
-
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

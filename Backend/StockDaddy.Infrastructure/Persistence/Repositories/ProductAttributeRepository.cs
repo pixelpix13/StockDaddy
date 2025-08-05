@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,37 +15,74 @@ public class ProductAttributeRepository : IProductAttributeRepository
         _context = context;
     }
 
-    public async Task<List<ProductAttribute>> GetAllAsync()
+    public async Task<List<ProductAttributeDto>> GetAllAsync()
     {
         return await _context.ProductAttributes
             .Where(a => !a.IsDeleted)
+            .Select(a => new ProductAttributeDto
+            {
+                Id = a.Id,
+                ProductId = a.ProductId,
+                AttributeName = a.AttributeName,
+                AttributeValue = a.AttributeValue,
+                CreatedAt = a.CreatedAt,
+                UpdatedAt = a.UpdatedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<ProductAttribute?> GetByIdAsync(Guid id)
+    public async Task<ProductAttributeDto?> GetByIdAsync(int id)
     {
-        return await _context.ProductAttributes
-            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+        var a = await _context.ProductAttributes.FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+        if (a == null) return null;
+        return new ProductAttributeDto
+        {
+            Id = a.Id,
+            ProductId = a.ProductId,
+            AttributeName = a.AttributeName,
+            AttributeValue = a.AttributeValue,
+            CreatedAt = a.CreatedAt,
+            UpdatedAt = a.UpdatedAt
+        };
     }
 
-    public async Task AddAsync(ProductAttribute attribute)
+    public async Task AddAsync(CreateProductAttributeRequest attribute)
     {
-        await _context.ProductAttributes.AddAsync(attribute);
+        var entity = new ProductAttribute
+        {
+            ProductId = attribute.ProductId,
+            AttributeName = attribute.AttributeName,
+            AttributeValue = attribute.AttributeValue,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.ProductAttributes.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(ProductAttribute attribute)
+    public async Task UpdateAsync(int id, UpdateProductAttributeRequest attribute)
     {
-        _context.ProductAttributes.Update(attribute);
+        var entity = await _context.ProductAttributes.FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+        if (entity == null) return;
+
+        entity.AttributeName = attribute.AttributeName;
+        entity.AttributeValue = attribute.AttributeValue;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        _context.ProductAttributes.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
-        var attr = await _context.ProductAttributes.FindAsync(id);
-        if (attr == null) return;
+        var entity = await _context.ProductAttributes.FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+        if (entity == null) return;
 
-        _context.ProductAttributes.Update(attr); // Soft delete fields already updated in service
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.ProductAttributes.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

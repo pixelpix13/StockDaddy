@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class SubcategoryController : ControllerBase
 
     // GET: api/subcategory/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var subcategory = await _subcategoryRepository.GetByIdAsync(id);
             if (subcategory == null)
                 return NotFound($"Subcategory with ID {id} not found.");
-
             return Ok(subcategory);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class SubcategoryController : ControllerBase
 
     // POST: api/subcategory
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Subcategory subcategory)
+    public async Task<IActionResult> Create([FromBody] CreateSubcategoryRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _subcategoryRepository.AddAsync(subcategory);
-            return CreatedAtAction(nameof(GetById), new { id = subcategory.Id }, subcategory);
+            await _subcategoryRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class SubcategoryController : ControllerBase
 
     // PUT: api/subcategory/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Subcategory subcategory)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateSubcategoryRequest request)
     {
         try
         {
-            if (id != subcategory.Id)
-                return BadRequest("ID in URL does not match the subcategory object.");
-
             var existing = await _subcategoryRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Subcategory with ID {id} not found.");
 
-            await _subcategoryRepository.UpdateAsync(subcategory);
+            await _subcategoryRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class SubcategoryController : ControllerBase
 
     // DELETE: api/subcategory/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

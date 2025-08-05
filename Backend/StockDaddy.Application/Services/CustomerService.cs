@@ -15,83 +15,33 @@ public class CustomerService
 
     public async Task<List<CustomerDto>> GetAllAsync()
     {
-        var customers = await _repo.GetAllAsync();
-        return customers.Select(c => new CustomerDto
-        {
-            Id = c.Id,
-            TenantId = c.TenantId,
-            Name = c.Name,
-            Phone = c.Phone,
-            Email = c.Email,
-            Address = c.Address,
-            CreatedAt = c.CreatedAt,
-            UpdatedAt = c.UpdatedAt,
-            IsDeleted = c.IsDeleted,
-            DeletedAt = c.DeletedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<CustomerDto?> GetByIdAsync(Guid id)
+    public async Task<CustomerDto?> GetByIdAsync(int id)
     {
-        var c = await _repo.GetByIdAsync(id);
-        if (c == null) return null;
-
-        return new CustomerDto
-        {
-            Id = c.Id,
-            TenantId = c.TenantId,
-            Name = c.Name,
-            Phone = c.Phone,
-            Email = c.Email,
-            Address = c.Address,
-            CreatedAt = c.CreatedAt,
-            UpdatedAt = c.UpdatedAt,
-            IsDeleted = c.IsDeleted,
-            DeletedAt = c.DeletedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateCustomerRequest request)
+    public async Task<CustomerDto> AddAsync(CreateCustomerRequest request)
     {
-        var c = new Customer
-        {
-            TenantId = request.TenantId,
-            Name = request.Name,
-            Phone = request.Phone,
-            Email = request.Email,
-            Address = request.Address,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(c);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(c => c.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateCustomerRequest request)
+    public async Task<CustomerDto?> UpdateAsync(int id, UpdateCustomerRequest request)
     {
-        var c = await _repo.GetByIdAsync(id);
-        if (c == null) return false;
-
-        c.Name = request.Name;
-        c.Phone = request.Phone;
-        c.Email = request.Email;
-        c.Address = request.Address;
-        c.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(c);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> SoftDeleteAsync(Guid id)
+    public async Task<bool> SoftDeleteAsync(int id)
     {
-        var c = await _repo.GetByIdAsync(id);
-        if (c == null) return false;
-
-        // Soft delete logic
-        c.IsDeleted = true;
-        c.DeletedAt = DateTime.UtcNow;
-        c.UpdatedAt = DateTime.UtcNow;
-
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.SoftDeleteAsync(id);
         return true;
     }

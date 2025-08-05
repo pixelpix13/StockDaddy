@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class ProductRestockAlertController : ControllerBase
 
     // GET: api/productrestockalert/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var alert = await _alertRepository.GetByIdAsync(id);
             if (alert == null)
                 return NotFound($"Alert with ID {id} not found.");
-
             return Ok(alert);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class ProductRestockAlertController : ControllerBase
 
     // POST: api/productrestockalert
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ProductRestockAlert alert)
+    public async Task<IActionResult> Create([FromBody] CreateProductRestockAlertRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _alertRepository.AddAsync(alert);
-            return CreatedAtAction(nameof(GetById), new { id = alert.Id }, alert);
+            await _alertRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class ProductRestockAlertController : ControllerBase
 
     // PUT: api/productrestockalert/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] ProductRestockAlert alert)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductRestockAlertRequest request)
     {
         try
         {
-            if (id != alert.Id)
-                return BadRequest("Mismatched alert ID in request.");
-
             var existing = await _alertRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Alert with ID {id} not found.");
 
-            await _alertRepository.UpdateAsync(alert);
+            await _alertRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class ProductRestockAlertController : ControllerBase
 
     // DELETE: api/productrestockalert/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

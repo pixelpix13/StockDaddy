@@ -2,10 +2,10 @@ namespace StockDaddy.Domain.Entities;
 
 public class Return
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public int Id { get; set; }
 
-    public Guid SaleId { get; set; }
-    public Guid? StoreId { get; set; }
+    public int SaleId { get; set; }
+    public int? StoreId { get; set; }
     public string Reason { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

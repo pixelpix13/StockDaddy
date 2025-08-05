@@ -2,9 +2,9 @@ namespace StockDaddy.Domain.Entities;
 
 public class Category
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid StoreId { get; set; }
-    public Guid TenantId { get; set; }
+    public int Id { get; set; }
+    public int StoreId { get; set; }
+    public int TenantId { get; set; }
 
     public string Name { get; set; } = string.Empty;
 

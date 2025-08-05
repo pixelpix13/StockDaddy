@@ -3,15 +3,15 @@ namespace StockDaddy.Domain.Entities;
 
 public class StockItem
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid ProductId { get; set; }
-    public Guid? StoreId { get; set; }
+    public int Id { get; set; }
+    public int ProductId { get; set; }
+    public int? StoreId { get; set; }
     public int Quantity { get; set; }
 
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
     public StockStatus Status { get; set; } = StockStatus.InStock;
 
-    public Guid? UpdatedBy { get; set; }
+    public int? UpdatedBy { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

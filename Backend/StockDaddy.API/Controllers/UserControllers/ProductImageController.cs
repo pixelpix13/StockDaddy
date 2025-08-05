@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class ProductImageController : ControllerBase
 
     // GET: api/productimage/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var image = await _productImageRepository.GetByIdAsync(id);
             if (image == null)
                 return NotFound($"Product image with ID {id} not found.");
-
             return Ok(image);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class ProductImageController : ControllerBase
 
     // POST: api/productimage
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ProductImage image)
+    public async Task<IActionResult> Create([FromBody] CreateProductImageRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _productImageRepository.AddAsync(image);
-            return CreatedAtAction(nameof(GetById), new { id = image.Id }, image);
+            await _productImageRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class ProductImageController : ControllerBase
 
     // PUT: api/productimage/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] ProductImage image)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductImageRequest request)
     {
         try
         {
-            if (id != image.Id)
-                return BadRequest("ID mismatch between route and body.");
-
             var existing = await _productImageRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Product image with ID {id} not found.");
 
-            await _productImageRepository.UpdateAsync(image);
+            await _productImageRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class ProductImageController : ControllerBase
 
     // DELETE: api/productimage/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> SoftDelete(Guid id)
+    public async Task<IActionResult> SoftDelete(int id)
     {
         try
         {
@@ -98,7 +94,7 @@ public class ProductImageController : ControllerBase
             if (image == null)
                 return NotFound($"Product image with ID {id} not found.");
 
-            await _productImageRepository.DeleteAsync(id); // marks as soft-deleted
+            await _productImageRepository.DeleteAsync(id);
             return NoContent();
         }
         catch (Exception ex)

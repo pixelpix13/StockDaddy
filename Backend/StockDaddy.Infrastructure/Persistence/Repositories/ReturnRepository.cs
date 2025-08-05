@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
@@ -14,37 +15,70 @@ public class ReturnRepository : IReturnRepository
         _context = context;
     }
 
-    public async Task<List<Return>> GetAllAsync()
+    public async Task<List<ReturnDto>> GetAllAsync()
     {
         return await _context.Returns
             .Where(r => !r.IsDeleted)
+            .Select(r => new ReturnDto
+            {
+                Id = r.Id,
+                SaleId = r.SaleId,
+                StoreId = r.StoreId,
+                Reason = r.Reason,
+                CreatedAt = r.CreatedAt,
+                UpdatedAt = r.UpdatedAt
+            })
             .ToListAsync();
     }
 
-    public async Task<Return?> GetByIdAsync(Guid id)
+    public async Task<ReturnDto?> GetByIdAsync(int id)
     {
         return await _context.Returns
-            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
+            .Where(r => r.Id == id && !r.IsDeleted)
+            .Select(r => new ReturnDto
+            {
+                Id = r.Id,
+                SaleId = r.SaleId,
+                StoreId = r.StoreId,
+                Reason = r.Reason,
+                CreatedAt = r.CreatedAt,
+                UpdatedAt = r.UpdatedAt
+            })
+            .FirstOrDefaultAsync();
     }
 
-    public async Task AddAsync(Return r)
+    public async Task AddAsync(CreateReturnRequest returnEntity)
     {
-        await _context.Returns.AddAsync(r);
+        var entity = new Return
+        {
+            SaleId = returnEntity.SaleId,
+            StoreId = returnEntity.StoreId,
+            Reason = returnEntity.Reason,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        await _context.Returns.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Return r)
+    public async Task UpdateAsync(int id, UpdateReturnRequest returnEntity)
     {
-        _context.Returns.Update(r);
+        var entity = await _context.Returns.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+        if (entity == null) return;
+        entity.Reason = returnEntity.Reason;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.Returns.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(int id)
     {
-        var r = await _context.Returns.FindAsync(id);
-        if (r == null) return;
-
-        _context.Returns.Update(r); // The entity is already soft-deleted in the service
+        var entity = await _context.Returns.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+        if (entity == null) return;
+        entity.IsDeleted = true;
+        entity.UpdatedAt = DateTime.UtcNow;
+        _context.Returns.Update(entity);
         await _context.SaveChangesAsync();
     }
 }

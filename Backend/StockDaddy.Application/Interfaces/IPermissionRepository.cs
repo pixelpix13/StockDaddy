@@ -1,12 +1,12 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface IPermissionRepository
 {
-    Task<List<Permission>> GetAllAsync();
-    Task<Permission?> GetByIdAsync(Guid id);
-    Task AddAsync(Permission permission);
-    Task UpdateAsync(Permission permission);
-    Task DeleteAsync(Guid id);
+    Task<List<PermissionDto>> GetAllAsync();
+    Task<PermissionDto?> GetByIdAsync(int id);
+    Task AddAsync(CreatePermissionRequest permission);
+    Task UpdateAsync(int id, UpdatePermissionRequest permission);
+    Task DeleteAsync(int id);
 }

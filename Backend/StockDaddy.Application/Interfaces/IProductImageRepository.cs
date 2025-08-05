@@ -1,12 +1,13 @@
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
+
 
 namespace StockDaddy.Application.Interfaces;
 
 public interface IProductImageRepository
 {
-    Task<List<ProductImage>> GetAllAsync();
-    Task<ProductImage?> GetByIdAsync(Guid id);
-    Task AddAsync(ProductImage image);
-    Task UpdateAsync(ProductImage image);
-    Task DeleteAsync(Guid id);
+    Task<List<ProductImageDto>> GetAllAsync();
+    Task<ProductImageDto?> GetByIdAsync(int id);
+    Task AddAsync(CreateProductImageRequest image);
+    Task UpdateAsync(int id, UpdateProductImageRequest image);
+    Task DeleteAsync(int id);
 }

@@ -2,10 +2,10 @@ namespace StockDaddy.Domain.Entities;
 
 public class ProductVariant
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid ProductId { get; set; }
-    public Guid StoreId { get; set; }
-    public Guid HSNCodeId { get; set; } // FK to HSNMaster
+    public int Id { get; set; }
+    public int ProductId { get; set; }
+    public int StoreId { get; set; }
+    public int HSNCodeId { get; set; } // FK to HSNMaster
 
     public string VariantName { get; set; } = string.Empty;
     public string Barcode { get; set; } = string.Empty; // optional but unique

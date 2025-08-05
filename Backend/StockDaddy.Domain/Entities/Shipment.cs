@@ -4,10 +4,10 @@ namespace StockDaddy.Domain.Entities;
 
 public class Shipment
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public int Id { get; set; }
 
-    public Guid SaleId { get; set; }
-    public Guid StoreId { get; set; }
+    public int SaleId { get; set; }
+    public int StoreId { get; set; }
 
     public string CourierName { get; set; } = string.Empty;
     public string TrackingNumber { get; set; } = string.Empty;

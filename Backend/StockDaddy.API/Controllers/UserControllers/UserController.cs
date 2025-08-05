@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class UserController : ControllerBase
 
     // GET: api/user/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null)
                 return NotFound($"User with ID {id} not found.");
-
             return Ok(user);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class UserController : ControllerBase
 
     // POST: api/user
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] User user)
+    public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _userRepository.AddAsync(user);
-            return CreatedAtAction(nameof(GetById), new { id = user.Id }, user);
+            await _userRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class UserController : ControllerBase
 
     // PUT: api/user/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] User user)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateUserRequest request)
     {
         try
         {
-            if (id != user.Id)
-                return BadRequest("User ID in URL does not match request body.");
-
             var existing = await _userRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"User with ID {id} not found.");
 
-            await _userRepository.UpdateAsync(user);
+            await _userRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class UserController : ControllerBase
 
     // DELETE: api/user/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> SoftDelete(Guid id)
+    public async Task<IActionResult> SoftDelete(int id)
     {
         try
         {

@@ -2,8 +2,8 @@ namespace StockDaddy.Application.DTOs;
 
 public class CreateAuditLogRequest
 {
-    public Guid? UserId { get; set; }
-    public Guid? StoreId { get; set; }
+    public int UserId { get; set; }
+    public int? StoreId { get; set; }
 
     public string Action { get; set; } = string.Empty;
     public string TableName { get; set; } = string.Empty;

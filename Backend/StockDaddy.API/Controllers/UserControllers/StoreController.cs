@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class StoreController : ControllerBase
 
     // GET: api/store/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var store = await _storeRepository.GetByIdAsync(id);
             if (store == null)
                 return NotFound($"Store with ID {id} not found.");
-
             return Ok(store);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class StoreController : ControllerBase
 
     // POST: api/store
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Store store)
+    public async Task<IActionResult> Create([FromBody] CreateStoreRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _storeRepository.AddAsync(store);
-            return CreatedAtAction(nameof(GetById), new { id = store.Id }, store);
+            await _storeRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class StoreController : ControllerBase
 
     // PUT: api/store/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Store store)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateStoreRequest request)
     {
         try
         {
-            if (id != store.Id)
-                return BadRequest("ID in URL does not match the store object.");
-
             var existing = await _storeRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Store with ID {id} not found.");
 
-            await _storeRepository.UpdateAsync(store);
+            await _storeRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class StoreController : ControllerBase
 
     // DELETE: api/store/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class ShipmentController : ControllerBase
 
     // GET: api/shipment/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var shipment = await _shipmentRepository.GetByIdAsync(id);
             if (shipment == null)
                 return NotFound($"Shipment with ID {id} not found.");
-
             return Ok(shipment);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class ShipmentController : ControllerBase
 
     // POST: api/shipment
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Shipment shipment)
+    public async Task<IActionResult> Create([FromBody] CreateShipmentRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _shipmentRepository.AddAsync(shipment);
-            return CreatedAtAction(nameof(GetById), new { id = shipment.Id }, shipment);
+            await _shipmentRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class ShipmentController : ControllerBase
 
     // PUT: api/shipment/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Shipment shipment)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateShipmentRequest request)
     {
         try
         {
-            if (id != shipment.Id)
-                return BadRequest("ID in URL does not match shipment object.");
-
             var existing = await _shipmentRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Shipment with ID {id} not found.");
 
-            await _shipmentRepository.UpdateAsync(shipment);
+            await _shipmentRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class ShipmentController : ControllerBase
 
     // DELETE: api/shipment/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         try
         {

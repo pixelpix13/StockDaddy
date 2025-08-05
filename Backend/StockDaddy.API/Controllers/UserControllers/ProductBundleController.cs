@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StockDaddy.Application.Interfaces;
-using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.API.Controllers;
 
@@ -32,14 +32,13 @@ public class ProductBundleController : ControllerBase
 
     // GET: api/productbundle/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         try
         {
             var bundle = await _productBundleRepository.GetByIdAsync(id);
             if (bundle == null)
                 return NotFound($"Product bundle with ID {id} not found.");
-
             return Ok(bundle);
         }
         catch (Exception ex)
@@ -50,15 +49,15 @@ public class ProductBundleController : ControllerBase
 
     // POST: api/productbundle
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ProductBundle bundle)
+    public async Task<IActionResult> Create([FromBody] CreateProductBundleRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _productBundleRepository.AddAsync(bundle);
-            return CreatedAtAction(nameof(GetById), new { id = bundle.Id }, bundle);
+            await _productBundleRepository.AddAsync(request);
+            return Ok();
         }
         catch (Exception ex)
         {
@@ -68,18 +67,15 @@ public class ProductBundleController : ControllerBase
 
     // PUT: api/productbundle/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] ProductBundle bundle)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductBundleRequest request)
     {
         try
         {
-            if (id != bundle.Id)
-                return BadRequest("ID mismatch between route and body.");
-
             var existing = await _productBundleRepository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound($"Product bundle with ID {id} not found.");
 
-            await _productBundleRepository.UpdateAsync(bundle);
+            await _productBundleRepository.UpdateAsync(id, request);
             return NoContent();
         }
         catch (Exception ex)
@@ -90,7 +86,7 @@ public class ProductBundleController : ControllerBase
 
     // DELETE: api/productbundle/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> SoftDelete(Guid id)
+    public async Task<IActionResult> SoftDelete(int id)
     {
         try
         {

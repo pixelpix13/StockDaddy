@@ -15,77 +15,33 @@ public class RefundService
 
     public async Task<List<RefundDto>> GetAllAsync()
     {
-        var refunds = await _repo.GetAllAsync();
-        return refunds.Select(r => new RefundDto
-        {
-            Id = r.Id,
-            ReturnId = r.ReturnId,
-            StoreId = r.StoreId,
-            Amount = r.Amount,
-            RefundedAt = r.RefundedAt,
-            Method = r.Method,
-            CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
-        }).ToList();
+        return await _repo.GetAllAsync();
     }
 
-    public async Task<RefundDto?> GetByIdAsync(Guid id)
+    public async Task<RefundDto?> GetByIdAsync(int id)
     {
-        var r = await _repo.GetByIdAsync(id);
-        if (r == null) return null;
-
-        return new RefundDto
-        {
-            Id = r.Id,
-            ReturnId = r.ReturnId,
-            StoreId = r.StoreId,
-            Amount = r.Amount,
-            RefundedAt = r.RefundedAt,
-            Method = r.Method,
-            CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
-        };
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task AddAsync(CreateRefundRequest request)
+    public async Task<RefundDto> AddAsync(CreateRefundRequest request)
     {
-        var r = new Refund
-        {
-            ReturnId = request.ReturnId,
-            StoreId = request.StoreId,
-            Amount = request.Amount,
-            RefundedAt = request.RefundedAt,
-            Method = request.Method,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _repo.AddAsync(r);
+        await _repo.AddAsync(request);
+        var all = await _repo.GetAllAsync();
+        return all.OrderByDescending(r => r.Id).First();
     }
 
-    public async Task<bool> UpdateAsync(Guid id, UpdateRefundRequest request)
+    public async Task<RefundDto?> UpdateAsync(int id, UpdateRefundRequest request)
     {
-        var r = await _repo.GetByIdAsync(id);
-        if (r == null) return false;
-
-        r.Amount = request.Amount;
-        r.RefundedAt = request.RefundedAt;
-        r.Method = request.Method;
-        r.UpdatedAt = DateTime.UtcNow;
-
-        await _repo.UpdateAsync(r);
-        return true;
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return null;
+        await _repo.UpdateAsync(id, request);
+        return await _repo.GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var r = await _repo.GetByIdAsync(id);
-        if (r == null) return false;
-        
-        r.IsDeleted = true;
-        r.DeletedAt = DateTime.UtcNow;
-        r.UpdatedAt = DateTime.UtcNow;
-
+        var existing = await _repo.GetByIdAsync(id);
+        if (existing == null) return false;
         await _repo.DeleteAsync(id);
         return true;
     }

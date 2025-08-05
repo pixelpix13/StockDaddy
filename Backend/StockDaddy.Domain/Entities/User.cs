@@ -2,10 +2,10 @@ namespace StockDaddy.Domain.Entities;
 
 public class User
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid TenantId { get; set; }
-    public Guid RoleId { get; set; }
-    public Guid? StoreId { get; set; }
+    public int Id { get; set; } // Auto-incremented by DB
+    public int TenantId { get; set; }
+    public int RoleId { get; set; }
+    public int? StoreId { get; set; }
 
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
