@@ -1,9 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using StockDaddy.API.Services;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Application.Services;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Infrastructure.Persistence.Repositories;
 using StockDaddy.Infrastructure.Repositories;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +65,7 @@ async Task MainAsync()
     builder.Services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
     builder.Services.AddScoped<IIntegrationEventRepository, IntegrationEventRepository>();
     builder.Services.AddScoped<IAdjustedInvoiceRepository, AdjustedInvoiceRepository>();
+    builder.Services.AddScoped<IScheduledPriceRevertRepository, ScheduledPriceRevertRepository>();
 
     // ===============================
     // 4. Register Services
@@ -101,7 +105,8 @@ async Task MainAsync()
     builder.Services.AddScoped<RolePermissionService>();
     builder.Services.AddScoped<IntegrationEventService>();
     builder.Services.AddScoped<AdjustedInvoiceService>();
-
+    builder.Services.AddScoped<ScheduledPriceRevertService>();
+    builder.Services.AddHostedService<ScheduledPriceRevertBackgroundService>();
 
     // ===============================
     // 5. Swagger for API Docs

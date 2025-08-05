@@ -9,4 +9,6 @@ public interface IProductVariantRepository
     Task AddAsync(CreateProductVariantRequest variant);
     Task UpdateAsync(int id, UpdateProductVariantRequest variant);
     Task DeleteAsync(int id);
+    Task<bool> UpdatePriceAsync(int id, decimal newPrice);
+
 }
