@@ -45,4 +45,12 @@ public class ProductVariantService
         await _repo.DeleteAsync(id);
         return true;
     }
+
+    /// <summary>
+    /// Reverts the price of a product variant to the specified value.
+    /// </summary>
+    public async Task<bool> RevertVariantPriceAsync(int variantId, decimal originalPrice)
+    {
+        return await _repo.UpdatePriceAsync(variantId, originalPrice);
+    }
 }

@@ -1243,6 +1243,50 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.ToTable("SaleItems");
                 });
 
+            modelBuilder.Entity("StockDaddy.Domain.Entities.ScheduledPriceRevert", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BatchCriteria")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OriginalPricesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("RefId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("RevertAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.ToTable("ScheduledPriceReverts");
+                });
+
             modelBuilder.Entity("StockDaddy.Domain.Entities.Shipment", b =>
                 {
                     b.Property<int>("Id")
@@ -2020,6 +2064,15 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Navigation("ProductVariant");
 
                     b.Navigation("Sale");
+                });
+
+            modelBuilder.Entity("StockDaddy.Domain.Entities.ScheduledPriceRevert", b =>
+                {
+                    b.HasOne("StockDaddy.Domain.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId");
+
+                    b.Navigation("CreatedByUser");
                 });
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Shipment", b =>

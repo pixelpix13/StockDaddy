@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace StockDaddy.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialIntIds : Migration
+    public partial class AddScheduledPriceRevertTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -508,6 +508,32 @@ namespace StockDaddy.Infrastructure.Migrations
                     table.ForeignKey(
                         name: "FK_Sales_Users_SoldByUserId",
                         column: x => x.SoldByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ScheduledPriceReverts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Type = table.Column<string>(type: "text", nullable: false),
+                    RefId = table.Column<int>(type: "integer", nullable: false),
+                    OriginalPricesJson = table.Column<string>(type: "text", nullable: false),
+                    BatchCriteria = table.Column<string>(type: "text", nullable: true),
+                    RevertAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsCompleted = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedByUserId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ScheduledPriceReverts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ScheduledPriceReverts_Users_CreatedByUserId",
+                        column: x => x.CreatedByUserId,
                         principalTable: "Users",
                         principalColumn: "Id");
                 });
@@ -1355,6 +1381,11 @@ namespace StockDaddy.Infrastructure.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ScheduledPriceReverts_CreatedByUserId",
+                table: "ScheduledPriceReverts",
+                column: "CreatedByUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Shipments_SaleId",
                 table: "Shipments",
                 column: "SaleId");
@@ -1477,6 +1508,9 @@ namespace StockDaddy.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "SaleItems");
+
+            migrationBuilder.DropTable(
+                name: "ScheduledPriceReverts");
 
             migrationBuilder.DropTable(
                 name: "Shipments");

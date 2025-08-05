@@ -113,4 +113,14 @@ public class ProductVariantRepository : IProductVariantRepository
         _context.ProductVariants.Update(entity);
         await _context.SaveChangesAsync();
     }
+    public async Task<bool> UpdatePriceAsync(int id, decimal newPrice)
+    {
+        var variant = await _context.ProductVariants.FindAsync(id);
+        if (variant == null) return false;
+
+        variant.Price = newPrice;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
 }
