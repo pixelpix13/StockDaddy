@@ -47,35 +47,52 @@ StockDaddy is a **multi-tenant inventory management REST API**. "Multi-tenant" m
 
 This application is built with **Clean Architecture** — a way of organizing code into layers where each layer has a single responsibility and dependencies only point inward.
 
+> **Important**: StockDaddy uses a **single .NET project** (`StockDaddy.API`). The four architectural layers are enforced through **folder organization** and **namespace conventions** rather than separate `.csproj` files. This is a pragmatic monolith approach — the same Clean Architecture rules apply, but all code lives in one deployable unit.
+
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  API Layer  (StockDaddy.API)                                 │
-│  ↳ Program.cs, Controllers, Background Services             │
-│  ↳ Receives HTTP requests, returns HTTP responses           │
-│  ↳ Knows about: Application layer                           │
-└─────────────────────────┬────────────────────────────────────┘
-                          │ calls Services and Repositories
-┌─────────────────────────▼────────────────────────────────────┐
-│  Application Layer  (StockDaddy.Application)                 │
-│  ↳ Services, Interfaces, DTOs                               │
-│  ↳ Orchestrates business logic                              │
-│  ↳ Knows about: Domain layer only                           │
-└─────────────────────────┬────────────────────────────────────┘
-                          │ defines contracts, implemented by
-┌─────────────────────────▼────────────────────────────────────┐
-│  Infrastructure Layer  (StockDaddy.Infrastructure)           │
-│  ↳ Repository implementations, DbContext, Migrations        │
-│  ↳ Does actual database work                                │
-│  ↳ Knows about: Application + Domain layers                 │
-└──────────────────────────────────────────────────────────────┘
-          ▲ (all layers can reference Domain)
-┌─────────┴────────────────────────────────────────────────────┐
-│  Domain Layer  (StockDaddy.Domain)                           │
-│  ↳ Entities, Enums (pure business objects)                  │
-│  ↳ Has ZERO external dependencies                           │
-│  ↳ The only layer that knows nothing about the others       │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│  StockDaddy.API  (single .csproj — all layers live here as folders) │
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  API Layer  — StockDaddy.API/Controllers/UserControllers/   │   │
+│  │  ↳ Program.cs, Controllers, Background Services (BgServices)│   │
+│  │  ↳ Receives HTTP requests, returns HTTP responses           │   │
+│  └───────────────────────────┬─────────────────────────────────┘   │
+│                              │ calls Services                       │
+│  ┌───────────────────────────▼─────────────────────────────────┐   │
+│  │  Application Layer  — StockDaddy.API/Application/           │   │
+│  │  ↳ Services/, Interfaces/, DTOs/                            │   │
+│  │  ↳ Orchestrates business logic                              │   │
+│  └───────────────────────────┬─────────────────────────────────┘   │
+│                              │ contracts implemented by             │
+│  ┌───────────────────────────▼─────────────────────────────────┐   │
+│  │  Infrastructure Layer  — StockDaddy.API/Infrastructure/     │   │
+│  │  ↳ Persistence/Repositories/, Persistence/ (DbContext)      │   │
+│  │  ↳ Migrations/                                              │   │
+│  │  ↳ Does actual database work                                │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│             ▲  (all layers reference Domain)                        │
+│  ┌──────────┴──────────────────────────────────────────────────┐   │
+│  │  Domain Layer  — StockDaddy.API/Domain/                     │   │
+│  │  ↳ Entities/, Enums/ (pure business objects)                │   │
+│  │  ↳ Has ZERO external dependencies                           │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
 ```
+
+**Layer separation is enforced by namespaces, not project boundaries:**
+
+| Folder | Namespace | What lives here |
+|--------|-----------|------------------|
+| `Domain/Entities/` | `StockDaddy.Domain.Entities` | Pure C# entity classes |
+| `Domain/Enums/` | `StockDaddy.Domain.Enums` | Enum definitions |
+| `Application/DTOs/` | `StockDaddy.Application.DTOs` | Request/response shapes |
+| `Application/Interfaces/` | `StockDaddy.Application.Interfaces` | Repository contracts |
+| `Application/Services/` | `StockDaddy.Application.Services` | Business orchestration |
+| `Infrastructure/Persistence/` | `StockDaddy.Infrastructure.Persistence` | DbContext |
+| `Infrastructure/Persistence/Repositories/` | `StockDaddy.Infrastructure.Repositories` | EF Core implementations |
+| `Controllers/UserControllers/` | `StockDaddy.API.Controllers` | HTTP endpoints |
+| `BgServices/` | `StockDaddy.API.Services` | Background/hosted services |
 
 **Why this structure?**
 
@@ -84,6 +101,7 @@ This application is built with **Clean Architecture** — a way of organizing co
 3. **Infrastructure fulfills contracts** — `TenantRepository` implements `ITenantRepository` using EF Core and PostgreSQL.
 4. **API is just delivery** — Controllers translate between HTTP and your business logic. You could replace the API with a CLI, desktop app, or mobile app without changing any business logic.
 5. **Easy to test** — You can replace `TenantRepository` with a fake in-memory version for unit tests.
+6. **Single project simplicity** — One `.csproj` to build, one deployment artifact. The logical boundaries are maintained by namespaces and folder discipline, not build-time project references.
 
 ---
 
@@ -104,11 +122,12 @@ This application is built with **Clean Architecture** — a way of organizing co
 
 ## 4. Layer 1 — Domain: The Heart of the System
 
-**Folder**: `Backend/StockDaddy.Domain/`
+**Folder**: `Backend/StockDaddy.API/Domain/`  
+**Namespaces**: `StockDaddy.Domain.Entities`, `StockDaddy.Domain.Enums`
 
 The Domain layer contains your **business entities** — the "things" your system manages — and **enums** — fixed sets of values.
 
-**Rule**: The Domain layer has NO `using` statements that reference any other project. It knows nothing about EF Core, ASP.NET Core, or databases.
+**Rule**: The Domain layer has NO `using` statements that reference Application, Infrastructure, or any external libraries. It knows nothing about EF Core, ASP.NET Core, or databases. Even though it shares a project with those layers, it is written as if it were completely isolated.
 
 ### 4.1 Entities
 
@@ -343,7 +362,8 @@ Enums are stored as integers in the database (0, 1, 2...) by default. EF Core ha
 
 ## 5. Layer 2 — Application: Business Logic and Contracts
 
-**Folder**: `Backend/StockDaddy.Application/`
+**Folder**: `Backend/StockDaddy.API/Application/`  
+**Namespaces**: `StockDaddy.Application.DTOs`, `StockDaddy.Application.Interfaces`, `StockDaddy.Application.Services`
 
 The Application layer is the brain. It:
 - Defines **interfaces** (contracts) for what database operations exist
@@ -492,7 +512,10 @@ public class TenantService
 
 ## 6. Layer 3 — Infrastructure: Database Access
 
-**Folder**: `Backend/StockDaddy.Infrastructure/`
+**Folder**: `Backend/StockDaddy.API/Infrastructure/`  
+**Namespaces**: `StockDaddy.Infrastructure.Persistence` (DbContext), `StockDaddy.Infrastructure.Repositories` (repository implementations)
+
+> **Note on folder vs namespace**: The repositories are stored in `Infrastructure/Persistence/Repositories/` on disk, but their namespace is `StockDaddy.Infrastructure.Repositories` (without `.Persistence`). In .NET, namespaces do not have to mirror folder paths — this is a deliberate choice by the author.
 
 Infrastructure implements the interfaces defined in Application. This is where EF Core and PostgreSQL integration lives.
 
@@ -620,9 +643,13 @@ EF Core builds this SQL from your C# code. You never write raw SQL for standard 
 
 ## 7. Layer 4 — API: HTTP Entry Point
 
-**Folder**: `Backend/StockDaddy.API/`
+**Folder (Controllers)**: `Backend/StockDaddy.API/Controllers/UserControllers/`  
+**Folder (Background Services)**: `Backend/StockDaddy.API/BgServices/`  
+**Namespace**: `StockDaddy.API.Controllers`, `StockDaddy.API.Services`
 
 The API layer is the outer shell. It accepts HTTP requests, calls the appropriate service or repository, and sends back HTTP responses.
+
+> **Note on Controllers location**: All controllers live inside `Controllers/UserControllers/` — the extra subfolder was added to group them together as the controller count grew.
 
 ### 7.1 Program.cs — Application Wiring
 
@@ -1116,7 +1143,8 @@ public double Price { get; set; }
 
 ## 11. Background Services
 
-**File**: `Backend/StockDaddy.API/BgServices/ScheduledPriceRevertBackgroundService.cs`
+**File**: `Backend/StockDaddy.API/BgServices/ScheduledPriceRevertBackgroundService.cs`  
+**Namespace**: `StockDaddy.API.Services`
 
 Background services run continuously, independent of HTTP requests. This one reverts product prices after a scheduled time — for example, "sale ends at midnight."
 
@@ -1296,7 +1324,7 @@ return entities.Select(t => new TenantDto { ... });
 
 | Concept | What You Learned |
 |---|---|
-| **Clean Architecture** | 4 layers — Domain, Application, Infrastructure, API — with inward-only dependencies |
+| **Clean Architecture** | 4 logical layers — Domain, Application, Infrastructure, API — organized as folders within a single project, with inward-only namespace dependencies |
 | **Domain Entities** | Pure C# classes with no external dependencies — the business heart of the system |
 | **Interfaces** | Contracts that decouple callers from implementations, enabling testability and flexibility |
 | **DTOs** | Data containers that control exactly what the API exposes — separate from DB entities |
