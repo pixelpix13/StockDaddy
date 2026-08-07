@@ -19,10 +19,18 @@ export const authService = {
     return response.data;
   },
 
-  async getCurrentUser(): Promise<UserDto> {
-    const response = await apiClient.get<UserDto>('/auth/me');
-    localStorage.setItem('stockdaddy_user', JSON.stringify(response.data));
+  async refreshSession(): Promise<AuthResponse> {
+    const response = await apiClient.get<AuthResponse>('/auth/me');
+    if (response.data.token) {
+      this.saveAuth(response.data);
+    }
     return response.data;
+  },
+
+  /** @deprecated Use refreshSession — /auth/me now returns a fresh JWT with current permissions. */
+  async getCurrentUser(): Promise<UserDto> {
+    const session = await this.refreshSession();
+    return session.user;
   },
 
   saveAuth(authData: AuthResponse): void {

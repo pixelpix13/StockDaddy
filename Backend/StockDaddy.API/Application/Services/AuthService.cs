@@ -86,6 +86,12 @@ public class AuthService : IAuthService
 
     public async Task<UserDto?> GetCurrentUserAsync(int userId)
     {
+        var response = await RefreshSessionAsync(userId);
+        return response?.User;
+    }
+
+    public async Task<AuthResponse?> RefreshSessionAsync(int userId)
+    {
         var user = await _context.Users
             .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
@@ -95,23 +101,7 @@ public class AuthService : IAuthService
             return null;
         }
 
-        var permissions = await _rbacService.GetPermissionKeysForRoleAsync(user.RoleId);
-
-        return new UserDto
-        {
-            Id = user.Id,
-            TenantId = user.TenantId,
-            RoleId = user.RoleId,
-            RoleName = user.Role?.Name ?? string.Empty,
-            StoreId = user.StoreId,
-            Username = user.Username,
-            Email = user.Email,
-            CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt,
-            IsDeleted = user.IsDeleted,
-            DeletedAt = user.DeletedAt,
-            Permissions = permissions
-        };
+        return await GenerateAuthResponseAsync(user);
     }
 
     private async Task<AuthResponse> GenerateAuthResponseAsync(User user)

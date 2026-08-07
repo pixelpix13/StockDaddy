@@ -63,10 +63,10 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        var user = await _authService.GetCurrentUserAsync(userId);
-        if (user == null)
+        var session = await _authService.RefreshSessionAsync(userId);
+        if (session == null)
             return NotFound("User not found.");
 
-        return Ok(user);
+        return Ok(session);
     }
 }

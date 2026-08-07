@@ -31,9 +31,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const storedToken = authService.getToken();
       if (storedToken) {
         try {
-          const currentUser = await authService.getCurrentUser();
-          setUser(currentUser);
-          setToken(storedToken);
+          const session = await authService.refreshSession();
+          setUser(session.user);
+          setToken(session.token);
         } catch (error) {
           console.error('Failed to validate session:', error);
           authService.logout();
@@ -66,8 +66,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshSession = useCallback(async () => {
-    const currentUser = await authService.getCurrentUser();
-    setUser(currentUser);
+    const session = await authService.refreshSession();
+    setUser(session.user);
+    setToken(session.token);
   }, []);
 
   const hasPermission = useCallback(
