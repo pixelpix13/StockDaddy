@@ -1,3 +1,4 @@
+/** App-wide toast notifications. Call `showToast(type, title, message?)` from any page. */
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { AlertCircle, CheckCircle2, Info, XCircle, X } from 'lucide-react';
 

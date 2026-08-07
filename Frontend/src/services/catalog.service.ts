@@ -1,3 +1,4 @@
+/** Catalog taxonomy CRUD: categories, subcategories, HSN master, tax regions. */
 import { apiClient } from './api.client';
 import {
   CategoryDto,

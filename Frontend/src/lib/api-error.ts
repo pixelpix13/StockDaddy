@@ -1,3 +1,4 @@
+/** Extract a human-readable message from Axios or generic errors for toast display. */
 import axios from 'axios';
 
 export function getApiErrorMessage(error: unknown, fallback: string): string {

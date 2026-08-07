@@ -1,3 +1,4 @@
+/** Sale and invoice read/create. POS checkout uses `orchestrationService.checkout` instead. */
 import { apiClient } from './api.client';
 import { SaleDto, CreateSaleRequest, CreateSaleItemRequest, InvoiceDto } from '../dtos';
 

@@ -6,6 +6,9 @@ using StockDaddy.Application.Interfaces;
 
 namespace StockDaddy.API.Controllers;
 
+/// <summary>
+/// Login, register, and current-user endpoints. Only routes marked AllowAnonymous skip JWT.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase

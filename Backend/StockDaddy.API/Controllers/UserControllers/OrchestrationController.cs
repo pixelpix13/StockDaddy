@@ -4,6 +4,9 @@ using StockDaddy.Application.Services;
 
 namespace StockDaddy.API.Controllers;
 
+/// <summary>
+/// HTTP surface for multi-step inventory/POS workflows. See OrchestrationService for logic.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class OrchestrationController : ControllerBase

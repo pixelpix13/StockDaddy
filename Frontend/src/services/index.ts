@@ -1,3 +1,4 @@
+/** Barrel export for API services. Import from `@/services`, not individual files. */
 export * from './api.client';
 export * from './auth.service';
 export * from './product.service';

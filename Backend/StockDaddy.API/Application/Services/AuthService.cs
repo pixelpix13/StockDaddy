@@ -12,6 +12,9 @@ using StockDaddy.Infrastructure.Persistence;
 
 namespace StockDaddy.Application.Services;
 
+/// <summary>
+/// Issues JWT tokens on login/register and validates credentials against Users table.
+/// </summary>
 public class AuthService : IAuthService
 {
     private readonly ApplicationDbContext _context;

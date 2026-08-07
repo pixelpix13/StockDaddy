@@ -1,3 +1,4 @@
+/** User management CRUD for admin screens. */
 import { apiClient } from './api.client';
 import { UserManagementDto, CreateUserManagementRequest, UpdateUserManagementRequest } from '../dtos';
 

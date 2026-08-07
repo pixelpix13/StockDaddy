@@ -1,3 +1,4 @@
+/** Product image URLs linked to a product (`/api/productimage`). */
 import { apiClient } from './api.client';
 
 export interface ProductImageDto {

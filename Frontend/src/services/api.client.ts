@@ -1,3 +1,8 @@
+/**
+ * Shared Axios instance for all API services.
+ * - Attaches JWT from localStorage on every request.
+ * - On 401, clears session and redirects to `/login`.
+ */
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';

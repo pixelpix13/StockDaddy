@@ -6,6 +6,11 @@ using StockDaddy.Infrastructure.Persistence;
 
 namespace StockDaddy.Application.Services;
 
+/// <summary>
+/// Cross-entity workflows that must run in a single DB transaction:
+/// product+variant+stock, POS checkout, stock adjust, PO with lines, barcode lookup.
+/// Controllers should stay thin; business rules live here.
+/// </summary>
 public class OrchestrationService
 {
     private readonly ApplicationDbContext _context;

@@ -1,3 +1,5 @@
+// StockDaddy API entry point — DI registration, JWT auth, CORS, Swagger, DB seed.
+// See README.md in this folder for architecture overview.
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

@@ -1,3 +1,4 @@
+/** Tenant, store, and role lookups for settings screens. */
 import { apiClient } from './api.client';
 import { TenantDto, StoreDto, RoleDto, CreateStoreRequest, UpdateStoreRequest } from '../dtos';
 

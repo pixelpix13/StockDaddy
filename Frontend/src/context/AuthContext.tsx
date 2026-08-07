@@ -1,3 +1,7 @@
+/**
+ * Global auth state: JWT token + current user profile.
+ * On mount, re-validates stored token via `GET /api/auth/me`.
+ */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserDto, LoginRequest, RegisterRequest } from '../dtos';
 import { authService } from '../services';

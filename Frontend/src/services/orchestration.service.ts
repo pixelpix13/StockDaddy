@@ -1,3 +1,7 @@
+/**
+ * Multi-step backend workflows (single transaction on server).
+ * Use for POS checkout, stock adjust, product+variant create, PO with line items.
+ */
 import { apiClient } from './api.client';
 import {
   VariantStockDto,

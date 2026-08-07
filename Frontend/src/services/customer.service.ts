@@ -1,3 +1,4 @@
+/** Customer CRUD for CRM / POS customer picker. */
 import { apiClient } from './api.client';
 import { CustomerDto, CreateCustomerRequest, UpdateCustomerRequest } from '../dtos';
 

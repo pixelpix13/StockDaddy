@@ -1,3 +1,4 @@
+/** Login, register, session storage, and current-user lookup. */
 import { apiClient } from './api.client';
 import { LoginRequest, RegisterRequest, AuthResponse, UserDto } from '../dtos';
 

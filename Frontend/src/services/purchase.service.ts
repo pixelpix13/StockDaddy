@@ -1,3 +1,4 @@
+/** Purchase orders, suppliers, and PO line items. */
 import { apiClient } from './api.client';
 import {
   PurchaseOrderDto,

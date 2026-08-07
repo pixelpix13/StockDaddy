@@ -1,3 +1,8 @@
+/**
+ * Product and variant CRUD against `/api/product` and `/api/productvariant`.
+ * For catalog taxonomy (categories, HSN, tax), use `catalogService` instead.
+ * For product+variant+stock in one call, use `orchestrationService`.
+ */
 import { apiClient } from './api.client';
 import {
   ProductDto,
@@ -6,9 +11,6 @@ import {
   CreateProductVariantRequest,
   UpdateProductRequest,
   UpdateProductVariantRequest,
-  CategoryDto,
-  CreateCategoryRequest,
-  SubcategoryDto,
 } from '../dtos';
 
 export const productService = {
@@ -56,19 +58,5 @@ export const productService = {
 
   async deleteProductVariant(id: number): Promise<void> {
     await apiClient.delete(`/productvariant/${id}`);
-  },
-
-  async getCategories(): Promise<CategoryDto[]> {
-    const response = await apiClient.get<CategoryDto[]>('/category');
-    return response.data;
-  },
-
-  async createCategory(request: CreateCategoryRequest): Promise<void> {
-    await apiClient.post('/category', request);
-  },
-
-  async getSubcategories(): Promise<SubcategoryDto[]> {
-    const response = await apiClient.get<SubcategoryDto[]>('/subcategory');
-    return response.data;
   },
 };

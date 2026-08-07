@@ -1,3 +1,4 @@
+/** Stock item CRUD and restock alerts (`/api/stockitem`, `/api/productrestockalert`). */
 import { apiClient } from './api.client';
 import { StockItemDto, CreateStockItemRequest, ProductRestockAlertDto } from '../dtos';
 
