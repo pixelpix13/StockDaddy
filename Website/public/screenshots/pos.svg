@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <rect width="800" height="500" rx="16" fill="#0f172a"/>
+  <rect x="24" y="24" width="752" height="452" rx="12" fill="#1e293b" stroke="#334155"/>
+  <text x="48" y="72" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="22" font-weight="700">Sales &amp; POS</text>
+  <rect x="48" y="96" width="320" height="340" rx="10" fill="#0f172a" stroke="#334155"/>
+  <text x="64" y="128" fill="#93c5fd" font-family="system-ui,sans-serif" font-size="13">Barcode / SKU Scanner</text>
+  <rect x="64" y="140" width="288" height="36" rx="8" fill="#1e293b" stroke="#475569"/>
+  <text x="64" y="200" fill="#64748b" font-family="system-ui,sans-serif" font-size="12">Customer (required)</text>
+  <rect x="64" y="212" width="288" height="80" rx="8" fill="#1e293b" stroke="#475569"/>
+  <text x="64" y="320" fill="#34d399" font-family="system-ui,sans-serif" font-size="28" font-weight="700">$204.29</text>
+  <text x="64" y="344" fill="#fbbf24" font-family="system-ui,sans-serif" font-size="12">$10.75 discount</text>
+  <rect x="64" y="368" width="288" height="44" rx="8" fill="#2563eb"/>
+  <text x="130" y="396" fill="#fff" font-family="system-ui,sans-serif" font-size="14" font-weight="600">Process Checkout</text>
+  <rect x="392" y="96" width="360" height="340" rx="10" fill="#0f172a" stroke="#334155"/>
+  <text x="408" y="128" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">Sales History</text>
+  <rect x="408" y="144" width="328" height="32" rx="6" fill="#1e293b"/>
+  <rect x="408" y="192" width="328" height="48" rx="6" fill="#1e293b" stroke="#334155"/>
+  <text x="424" y="222" fill="#e2e8f0" font-family="monospace" font-size="12">Purav Jignesh Patel · $204.29 · Card</text>
+  <rect x="408" y="252" width="328" height="48" rx="6" fill="#1e293b" stroke="#334155"/>
+  <text x="424" y="282" fill="#e2e8f0" font-family="monospace" font-size="12">Customer · $23.60 · Cash</text>
+</svg>

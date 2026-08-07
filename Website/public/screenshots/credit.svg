@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <rect width="800" height="500" rx="16" fill="#0f172a"/>
+  <rect x="24" y="24" width="752" height="452" rx="12" fill="#1e293b" stroke="#334155"/>
+  <text x="48" y="72" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="22" font-weight="700">Credit &amp; Reminders</text>
+  <rect x="48" y="96" width="704" height="48" rx="8" fill="#422006" stroke="#b45309"/>
+  <text x="64" y="126" fill="#fcd34d" font-family="system-ui,sans-serif" font-size="13">1 credit entry is overdue  follow up to collect or pay.</text>
+  <rect x="48" y="160" width="704" height="64" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text x="64" y="188" fill="#f1f5f9" font-family="system-ui,sans-serif" font-size="14" font-weight="600">Purav Jignesh Patel</text>
+  <text x="64" y="208" fill="#64748b" font-family="system-ui,sans-serif" font-size="11">Collect from customer · Due in 5 days</text>
+  <text x="580" y="198" fill="#34d399" font-family="system-ui,sans-serif" font-size="18" font-weight="700">$204.29</text>
+  <rect x="48" y="240" width="704" height="64" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text x="64" y="268" fill="#f1f5f9" font-family="system-ui,sans-serif" font-size="14" font-weight="600">Main Supplier Co.</text>
+  <text x="64" y="288" fill="#64748b" font-family="system-ui,sans-serif" font-size="11">Pay supplier · PO #12</text>
+  <text x="580" y="278" fill="#34d399" font-family="system-ui,sans-serif" font-size="18" font-weight="700">$1,450.00</text>
+</svg>

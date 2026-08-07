@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <rect width="800" height="500" rx="16" fill="#0f172a"/>
+  <rect x="24" y="24" width="752" height="452" rx="12" fill="#1e293b" stroke="#334155"/>
+  <text x="48" y="72" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="22" font-weight="700">Customers</text>
+  <rect x="48" y="96" width="704" height="36" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text x="64" y="120" fill="#64748b" font-family="system-ui,sans-serif" font-size="12">Search customers&</text>
+  <rect x="48" y="148" width="704" height="56" rx="8" fill="#0f172a" stroke="#334155"/>
+  <text x="64" y="182" fill="#f1f5f9" font-family="system-ui,sans-serif" font-size="14" font-weight="600">Purav Jignesh Patel</text>
+  <text x="560" y="182" fill="#64748b" font-family="system-ui,sans-serif" font-size="12">5599777557</text>
+  <rect x="48" y="220" width="704" height="200" rx="10" fill="#0f172a" stroke="#334155"/>
+  <text x="64" y="252" fill="#93c5fd" font-family="system-ui,sans-serif" font-size="13" font-weight="600">Purchase history</text>
+  <text x="64" y="284" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">Sale #2 · $204.29 · 5% discount</text>
+  <text x="80" y="308" fill="#64748b" font-family="system-ui,sans-serif" font-size="11">Ceramic Mug × 2 · $96.00 each</text>
+  <text x="64" y="340" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">Sale #1 · $23.60 · Cash</text>
+</svg>
