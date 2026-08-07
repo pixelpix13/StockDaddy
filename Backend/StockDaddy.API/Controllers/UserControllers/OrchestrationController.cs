@@ -156,18 +156,76 @@ public class OrchestrationController : ControllerBase
         }
     }
 
-    [HttpPost("purchase-order/{id}/receive")]
-    public async Task<IActionResult> ReceivePurchaseOrder(int id)
+    [HttpGet("purchase-order/{id}")]
+    public async Task<IActionResult> GetPurchaseOrderWithItems(int id)
     {
         try
         {
-            var result = await _orchestrationService.ReceivePurchaseOrderAsync(id);
+            var result = await _orchestrationService.GetPurchaseOrderWithItemsAsync(id);
             if (result == null)
             {
                 return NotFound($"Purchase order {id} not found.");
             }
 
             return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [HttpPut("purchase-order/{id}")]
+    public async Task<IActionResult> UpdatePurchaseOrderWithItems(
+        int id,
+        [FromBody] UpdatePurchaseOrderWithItemsRequest request)
+    {
+        try
+        {
+            if (request.Items.Count == 0)
+            {
+                return BadRequest("At least one line item is required.");
+            }
+
+            var result = await _orchestrationService.UpdatePurchaseOrderWithItemsAsync(id, request);
+            if (result == null)
+            {
+                return NotFound($"Purchase order {id} not found.");
+            }
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [HttpPost("purchase-order/{id}/receive")]
+    public async Task<IActionResult> ReceivePurchaseOrder(int id, [FromBody] ReceivePurchaseOrderRequest request)
+    {
+        try
+        {
+            if (request.Items.Count == 0)
+            {
+                return BadRequest("Received quantities are required for each line item.");
+            }
+
+            var result = await _orchestrationService.ReceivePurchaseOrderAsync(id, request);
+            if (result == null)
+            {
+                return NotFound($"Purchase order {id} not found.");
+            }
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {

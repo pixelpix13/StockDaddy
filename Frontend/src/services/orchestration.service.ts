@@ -15,8 +15,9 @@ import {
   AdjustStockResponse,
   CreatePurchaseOrderWithItemsRequest,
   PurchaseOrderWithItemsResponse,
+  UpdatePurchaseOrderWithItemsRequest,
+  ReceivePurchaseOrderRequest,
 } from '../dtos/orchestration.dto';
-import { PurchaseOrderDto } from '../dtos/purchase.dto';
 
 export const orchestrationService = {
   getVariantStockPaged(
@@ -79,9 +80,31 @@ export const orchestrationService = {
     return response.data;
   },
 
-  async receivePurchaseOrder(id: number): Promise<PurchaseOrderDto> {
-    const response = await apiClient.post<PurchaseOrderDto>(
-      `/orchestration/purchase-order/${id}/receive`
+  async getPurchaseOrderWithItems(id: number): Promise<PurchaseOrderWithItemsResponse> {
+    const response = await apiClient.get<PurchaseOrderWithItemsResponse>(
+      `/orchestration/purchase-order/${id}`
+    );
+    return response.data;
+  },
+
+  async updatePurchaseOrderWithItems(
+    id: number,
+    request: UpdatePurchaseOrderWithItemsRequest
+  ): Promise<PurchaseOrderWithItemsResponse> {
+    const response = await apiClient.put<PurchaseOrderWithItemsResponse>(
+      `/orchestration/purchase-order/${id}`,
+      request
+    );
+    return response.data;
+  },
+
+  async receivePurchaseOrder(
+    id: number,
+    request: ReceivePurchaseOrderRequest
+  ): Promise<PurchaseOrderWithItemsResponse> {
+    const response = await apiClient.post<PurchaseOrderWithItemsResponse>(
+      `/orchestration/purchase-order/${id}/receive`,
+      request
     );
     return response.data;
   },

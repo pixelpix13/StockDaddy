@@ -28,4 +28,6 @@ public class PagedQuery
     public int? CustomerId { get; set; }
     /// <summary>Filter credit ledger by party type (Customer/Supplier).</summary>
     public string? PartyType { get; set; }
+    /// <summary>Filter purchase line items by purchase order.</summary>
+    public int? PurchaseOrderId { get; set; }
 }

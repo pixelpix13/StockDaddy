@@ -96,6 +96,8 @@ public static class EndpointPermissionResolver
             nameof(AdjustStock) => PermissionKeys.Format("Inventory", PermissionAction.Update),
             nameof(GetVariantStock) => PermissionKeys.Format("Inventory", PermissionAction.Read),
             nameof(CreatePurchaseOrderWithItems) => PermissionKeys.Format("Purchase", PermissionAction.Write),
+            nameof(GetPurchaseOrderWithItems) => PermissionKeys.Format("Purchase", PermissionAction.Read),
+            nameof(UpdatePurchaseOrderWithItems) => PermissionKeys.Format("Purchase", PermissionAction.Update),
             nameof(ReceivePurchaseOrder) => PermissionKeys.Format("Purchase", PermissionAction.Update),
             _ => MapHttpMethod(httpMethod) is { } action
                 ? PermissionKeys.Format("Product", action)
@@ -120,5 +122,7 @@ public static class EndpointPermissionResolver
     private const string AdjustStock = "AdjustStock";
     private const string GetVariantStock = "GetVariantStock";
     private const string CreatePurchaseOrderWithItems = "CreatePurchaseOrderWithItems";
+    private const string GetPurchaseOrderWithItems = "GetPurchaseOrderWithItems";
+    private const string UpdatePurchaseOrderWithItems = "UpdatePurchaseOrderWithItems";
     private const string ReceivePurchaseOrder = "ReceivePurchaseOrder";
 }

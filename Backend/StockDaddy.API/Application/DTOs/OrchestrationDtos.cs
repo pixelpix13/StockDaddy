@@ -125,6 +125,35 @@ public class PurchaseOrderWithItemsResponse
     public List<PurchaseItemDto> Items { get; set; } = new();
 }
 
+public class UpdatePurchaseOrderLineRequest
+{
+    public int? Id { get; set; }
+    public int ProductVariantId { get; set; }
+    public int Quantity { get; set; }
+    public decimal UnitCost { get; set; }
+}
+
+public class UpdatePurchaseOrderWithItemsRequest
+{
+    public int SupplierId { get; set; }
+    public DateTime ExpectedDelivery { get; set; }
+    public PurchaseOrderStatus Status { get; set; } = PurchaseOrderStatus.Pending;
+    public string Notes { get; set; } = string.Empty;
+    public DateTime? DueDate { get; set; }
+    public List<UpdatePurchaseOrderLineRequest> Items { get; set; } = new();
+}
+
+public class ReceivePurchaseOrderLineRequest
+{
+    public int PurchaseItemId { get; set; }
+    public int QuantityReceived { get; set; }
+}
+
+public class ReceivePurchaseOrderRequest
+{
+    public List<ReceivePurchaseOrderLineRequest> Items { get; set; } = new();
+}
+
 public class VariantStockDto
 {
     public int Id { get; set; }

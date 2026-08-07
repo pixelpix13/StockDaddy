@@ -125,3 +125,28 @@ export interface PurchaseOrderWithItemsResponse {
   order: import('./purchase.dto').PurchaseOrderDto;
   items: import('./purchase.dto').PurchaseItemDto[];
 }
+
+export interface UpdatePurchaseOrderLineRequest {
+  id?: number;
+  productVariantId: number;
+  quantity: number;
+  unitCost: number;
+}
+
+export interface UpdatePurchaseOrderWithItemsRequest {
+  supplierId: number;
+  expectedDelivery: string;
+  status?: PurchaseOrderStatus;
+  notes?: string;
+  dueDate?: string;
+  items: UpdatePurchaseOrderLineRequest[];
+}
+
+export interface ReceivePurchaseOrderLineRequest {
+  purchaseItemId: number;
+  quantityReceived: number;
+}
+
+export interface ReceivePurchaseOrderRequest {
+  items: ReceivePurchaseOrderLineRequest[];
+}

@@ -17,6 +17,7 @@ public class PurchaseOrder
 
     public decimal TotalAmount { get; set; }
     public DateTime? DueDate { get; set; }
+    public bool FullyReceived { get; set; }
 
     public string Notes { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

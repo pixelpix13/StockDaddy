@@ -55,7 +55,10 @@ public class PurchaseOrderRepository : IPurchaseOrderRepository
                 OrderDate = o.OrderDate,
                 ExpectedDelivery = o.ExpectedDelivery,
                 Status = o.Status,
+                TotalAmount = o.TotalAmount,
+                DueDate = o.DueDate,
                 Notes = o.Notes,
+                FullyReceived = o.FullyReceived,
                 CreatedAt = o.CreatedAt,
                 UpdatedAt = o.UpdatedAt
             
@@ -86,7 +89,10 @@ public class PurchaseOrderRepository : IPurchaseOrderRepository
                 OrderDate = o.OrderDate,
                 ExpectedDelivery = o.ExpectedDelivery,
                 Status = o.Status,
+                TotalAmount = o.TotalAmount,
+                DueDate = o.DueDate,
                 Notes = o.Notes,
+                FullyReceived = o.FullyReceived,
                 CreatedAt = o.CreatedAt,
                 UpdatedAt = o.UpdatedAt
             })
@@ -106,7 +112,10 @@ public class PurchaseOrderRepository : IPurchaseOrderRepository
                 OrderDate = o.OrderDate,
                 ExpectedDelivery = o.ExpectedDelivery,
                 Status = o.Status,
+                TotalAmount = o.TotalAmount,
+                DueDate = o.DueDate,
                 Notes = o.Notes,
+                FullyReceived = o.FullyReceived,
                 CreatedAt = o.CreatedAt,
                 UpdatedAt = o.UpdatedAt
             })

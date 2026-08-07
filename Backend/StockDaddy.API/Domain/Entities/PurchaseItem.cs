@@ -8,6 +8,7 @@ public class PurchaseItem
     public int ProductVariantId { get; set; }
 
     public int Quantity { get; set; }
+    public int? QuantityReceived { get; set; }
     public decimal UnitCost { get; set; }
     public decimal TotalCost { get; set; }
 

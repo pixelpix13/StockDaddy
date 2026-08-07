@@ -475,7 +475,139 @@ public class OrchestrationService
         }
     }
 
-    public async Task<PurchaseOrderDto?> ReceivePurchaseOrderAsync(int purchaseOrderId)
+    public async Task<PurchaseOrderWithItemsResponse?> GetPurchaseOrderWithItemsAsync(int purchaseOrderId)
+    {
+        var order = await _context.PurchaseOrders
+            .FirstOrDefaultAsync(o => o.Id == purchaseOrderId && !o.IsDeleted);
+
+        if (order == null)
+        {
+            return null;
+        }
+
+        var items = await LoadPurchaseItemDtosAsync(purchaseOrderId);
+
+        return new PurchaseOrderWithItemsResponse
+        {
+            Order = MapPurchaseOrder(order, order.FullyReceived),
+            Items = items
+        };
+    }
+
+    public async Task<PurchaseOrderWithItemsResponse?> UpdatePurchaseOrderWithItemsAsync(
+        int purchaseOrderId,
+        UpdatePurchaseOrderWithItemsRequest request)
+    {
+        if (request.Items.Count == 0)
+        {
+            return null;
+        }
+
+        var order = await _context.PurchaseOrders
+            .FirstOrDefaultAsync(o => o.Id == purchaseOrderId && !o.IsDeleted);
+
+        if (order == null)
+        {
+            return null;
+        }
+
+        if (order.Status is PurchaseOrderStatus.Delivered or PurchaseOrderStatus.Cancelled)
+        {
+            throw new InvalidOperationException("Delivered or cancelled purchase orders cannot be edited.");
+        }
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var now = DateTime.UtcNow;
+            var totalAmount = request.Items.Sum(line => line.UnitCost * line.Quantity);
+
+            order.SupplierId = request.SupplierId;
+            order.ExpectedDelivery = request.ExpectedDelivery;
+            order.Status = request.Status;
+            order.Notes = request.Notes;
+            order.DueDate = request.DueDate;
+            order.TotalAmount = totalAmount;
+            order.UpdatedAt = now;
+
+            var existingItems = await _context.PurchaseItems
+                .Where(i => i.PurchaseOrderId == purchaseOrderId && !i.IsDeleted)
+                .ToListAsync();
+
+            var requestedIds = request.Items
+                .Where(i => i.Id.HasValue)
+                .Select(i => i.Id!.Value)
+                .ToHashSet();
+
+            foreach (var existing in existingItems)
+            {
+                if (!requestedIds.Contains(existing.Id))
+                {
+                    existing.IsDeleted = true;
+                    existing.DeletedAt = now;
+                    existing.UpdatedAt = now;
+                }
+            }
+
+            foreach (var line in request.Items)
+            {
+                if (line.Id.HasValue)
+                {
+                    var entity = existingItems.FirstOrDefault(i => i.Id == line.Id.Value);
+                    if (entity == null || entity.IsDeleted)
+                    {
+                        continue;
+                    }
+
+                    entity.ProductVariantId = line.ProductVariantId;
+                    entity.Quantity = line.Quantity;
+                    entity.UnitCost = line.UnitCost;
+                    entity.TotalCost = line.UnitCost * line.Quantity;
+                    entity.UpdatedAt = now;
+                }
+                else
+                {
+                    await _context.PurchaseItems.AddAsync(new PurchaseItem
+                    {
+                        PurchaseOrderId = purchaseOrderId,
+                        ProductVariantId = line.ProductVariantId,
+                        Quantity = line.Quantity,
+                        UnitCost = line.UnitCost,
+                        TotalCost = line.UnitCost * line.Quantity,
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                        IsDeleted = false
+                    });
+                }
+            }
+
+            if (request.Status == PurchaseOrderStatus.Unpaid && request.DueDate.HasValue)
+            {
+                var ledger = await _context.CreditLedgers
+                    .FirstOrDefaultAsync(c => c.PurchaseOrderId == purchaseOrderId && !c.IsDeleted);
+                if (ledger != null)
+                {
+                    ledger.Amount = totalAmount;
+                    ledger.DueDate = request.DueDate.Value.ToUniversalTime();
+                    ledger.UpdatedAt = now;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return await GetPurchaseOrderWithItemsAsync(purchaseOrderId);
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    public async Task<PurchaseOrderWithItemsResponse?> ReceivePurchaseOrderAsync(
+        int purchaseOrderId,
+        ReceivePurchaseOrderRequest request)
     {
         var order = await _context.PurchaseOrders
             .FirstOrDefaultAsync(o => o.Id == purchaseOrderId && !o.IsDeleted);
@@ -487,19 +619,46 @@ public class OrchestrationService
 
         if (order.Status == PurchaseOrderStatus.Delivered)
         {
-            return MapPurchaseOrder(order);
+            return await GetPurchaseOrderWithItemsAsync(purchaseOrderId);
+        }
+
+        if (request.Items.Count == 0)
+        {
+            return null;
         }
 
         var items = await _context.PurchaseItems
             .Where(i => i.PurchaseOrderId == purchaseOrderId && !i.IsDeleted)
             .ToListAsync();
 
+        var receivedById = request.Items.ToDictionary(i => i.PurchaseItemId, i => i.QuantityReceived);
+
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var now = DateTime.UtcNow;
+
             foreach (var item in items)
             {
+                if (!receivedById.TryGetValue(item.Id, out var qtyReceived))
+                {
+                    throw new InvalidOperationException($"Missing received quantity for line #{item.Id}.");
+                }
+
+                if (qtyReceived < 0 || qtyReceived > item.Quantity)
+                {
+                    throw new InvalidOperationException(
+                        $"Received quantity for line #{item.Id} must be between 0 and {item.Quantity}.");
+                }
+
+                item.QuantityReceived = qtyReceived;
+                item.UpdatedAt = now;
+
+                if (qtyReceived <= 0)
+                {
+                    continue;
+                }
+
                 var variant = await _context.ProductVariants
                     .FirstOrDefaultAsync(v => v.Id == item.ProductVariantId && !v.IsDeleted);
 
@@ -508,17 +667,19 @@ public class OrchestrationService
                     continue;
                 }
 
-                variant.Quantity += item.Quantity;
+                variant.Quantity += qtyReceived;
                 variant.UpdatedAt = now;
-                await SyncStockItemAsync(variant.ProductId, variant.StoreId, item.Quantity, now);
+                await SyncStockItemAsync(variant.ProductId, variant.StoreId, qtyReceived, now);
             }
 
             order.Status = PurchaseOrderStatus.Delivered;
+            order.FullyReceived = items.All(i =>
+                i.QuantityReceived.HasValue && i.QuantityReceived.Value >= i.Quantity);
             order.UpdatedAt = now;
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return MapPurchaseOrder(order);
+            return await GetPurchaseOrderWithItemsAsync(purchaseOrderId);
         }
         catch
         {
@@ -526,6 +687,29 @@ public class OrchestrationService
             throw;
         }
     }
+
+    private async Task<List<PurchaseItemDto>> LoadPurchaseItemDtosAsync(int purchaseOrderId) =>
+        await _context.PurchaseItems
+            .AsNoTracking()
+            .Where(i => i.PurchaseOrderId == purchaseOrderId && !i.IsDeleted)
+            .Select(i => new PurchaseItemDto
+            {
+                Id = i.Id,
+                PurchaseOrderId = i.PurchaseOrderId,
+                ProductVariantId = i.ProductVariantId,
+                Quantity = i.Quantity,
+                QuantityReceived = i.QuantityReceived,
+                UnitCost = i.UnitCost,
+                TotalCost = i.TotalCost,
+                ProductName = i.ProductVariant != null && i.ProductVariant.Product != null
+                    ? i.ProductVariant.Product.Name
+                    : null,
+                SkuCode = i.ProductVariant != null ? i.ProductVariant.SkuCode : null,
+                CreatedAt = i.CreatedAt,
+                UpdatedAt = i.UpdatedAt
+            })
+            .OrderBy(i => i.Id)
+            .ToListAsync();
 
     public async Task<PagedResult<VariantStockDto>> GetVariantStockAsync(int? storeId = null, PagedQuery? query = null)
     {
@@ -719,7 +903,7 @@ public class OrchestrationService
         UpdatedAt = variant.UpdatedAt
     };
 
-    private static PurchaseOrderDto MapPurchaseOrder(PurchaseOrder order) => new()
+    private static PurchaseOrderDto MapPurchaseOrder(PurchaseOrder order, bool? fullyReceived = null) => new()
     {
         Id = order.Id,
         TenantId = order.TenantId,
@@ -731,6 +915,7 @@ public class OrchestrationService
         TotalAmount = order.TotalAmount,
         DueDate = order.DueDate,
         Notes = order.Notes,
+        FullyReceived = fullyReceived ?? order.FullyReceived,
         CreatedAt = order.CreatedAt,
         UpdatedAt = order.UpdatedAt
     };

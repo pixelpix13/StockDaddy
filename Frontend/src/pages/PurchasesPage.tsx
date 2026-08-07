@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Truck, Plus, PackageCheck } from 'lucide-react';
+import { Truck, Plus, PackageCheck, Trash2 } from 'lucide-react';
 import { orchestrationService, purchaseService } from '@/services';
 import {
   PurchaseOrderDto,
+  PurchaseItemDto,
   SupplierDto,
   VariantStockDto,
   PurchaseOrderStatus,
@@ -41,10 +42,28 @@ import { DatePicker, formatIsoDate, parseIsoDate } from '@/components/ui/date-pi
 import { Combobox } from '@/components/ui/combobox';
 
 interface PoLineDraft {
+  id?: number;
   productVariantId: number;
   quantity: number;
   unitCost: number;
   label: string;
+}
+
+interface ReceiveLineDraft {
+  purchaseItemId: number;
+  label: string;
+  quantityOrdered: number;
+  quantityReceived: string;
+}
+
+function lineLabel(variant: VariantStockDto) {
+  return `${variant.productName} (${variant.skuCode})`;
+}
+
+function itemLabel(item: PurchaseItemDto) {
+  const name = item.productName ?? `Variant #${item.productVariantId}`;
+  const sku = item.skuCode ? ` (${item.skuCode})` : '';
+  return `${name}${sku}`;
 }
 
 export const PurchasesPage: React.FC = () => {
@@ -63,11 +82,18 @@ export const PurchasesPage: React.FC = () => {
   const [variants, setVariants] = useState<VariantStockDto[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrderDto | null>(null);
+  const [receivingOrder, setReceivingOrder] = useState<PurchaseOrderDto | null>(null);
+  const [editSupplierId, setEditSupplierId] = useState('1');
   const [editStatus, setEditStatus] = useState<PurchaseOrderStatus>('Pending');
   const [editNotes, setEditNotes] = useState('');
   const [editExpectedDelivery, setEditExpectedDelivery] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  const [editLines, setEditLines] = useState<PoLineDraft[]>([]);
+  const [receiveLines, setReceiveLines] = useState<ReceiveLineDraft[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
 
   const [supplierId, setSupplierId] = useState('1');
   const [status, setStatus] = useState<PurchaseOrderStatus>('Pending');
@@ -94,22 +120,32 @@ export const PurchasesPage: React.FC = () => {
       });
   }, [storeId]);
 
-  const addLine = () => {
+  const addLineToDraft = (
+    draftLines: PoLineDraft[],
+    setDraftLines: React.Dispatch<React.SetStateAction<PoLineDraft[]>>
+  ) => {
     const variant = variants.find((v) => String(v.id) === selectedVariantId);
     const qty = parseInt(lineQty, 10) || 1;
     const cost = parseFloat(lineCost) || variant?.costPrice || 0;
     if (!variant) return;
-    setLines((prev) => [
-      ...prev,
+    setDraftLines([
+      ...draftLines,
       {
         productVariantId: variant.id,
         quantity: qty,
         unitCost: cost,
-        label: `${variant.productName} (${variant.skuCode})`,
+        label: lineLabel(variant),
       },
     ]);
     setLineQty('1');
     setLineCost('');
+  };
+
+  const removeLineFromDraft = (
+    index: number,
+    setDraftLines: React.Dispatch<React.SetStateAction<PoLineDraft[]>>
+  ) => {
+    setDraftLines((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -146,6 +182,7 @@ export const PurchasesPage: React.FC = () => {
       setDialogOpen(false);
       setLines([]);
       setNotes('');
+      setDueDate('');
       list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not create PO.'));
@@ -154,38 +191,136 @@ export const PurchasesPage: React.FC = () => {
     }
   };
 
-  const handleReceive = async (orderId: number) => {
+  const openReceiveOrder = async (order: PurchaseOrderDto) => {
+    setIsLoadingOrder(true);
     try {
-      await orchestrationService.receivePurchaseOrder(orderId);
-      showToast('success', 'Received', `PO #${orderId} received and stock updated.`);
-      list.reload();
+      const detail = await orchestrationService.getPurchaseOrderWithItems(order.id);
+      setReceivingOrder(detail.order);
+      setReceiveLines(
+        detail.items.map((item) => ({
+          purchaseItemId: item.id,
+          label: itemLabel(item),
+          quantityOrdered: item.quantity,
+          quantityReceived: String(item.quantity),
+        }))
+      );
+      setReceiveDialogOpen(true);
     } catch (err: unknown) {
-      showToast('error', 'Failed', getApiErrorMessage(err, 'Could not receive order.'));
+      showToast('error', 'Load Failed', getApiErrorMessage(err, 'Could not load PO lines.'));
+    } finally {
+      setIsLoadingOrder(false);
     }
   };
 
-  const openEditOrder = (order: PurchaseOrderDto) => {
-    setEditingOrder(order);
-    setEditStatus(order.status);
-    setEditNotes(order.notes || '');
-    setEditExpectedDelivery(order.expectedDelivery?.slice(0, 10) || '');
-    setEditDialogOpen(true);
+  const handleReceive = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!receivingOrder) return;
+
+    for (const line of receiveLines) {
+      const qty = parseInt(line.quantityReceived, 10);
+      if (Number.isNaN(qty) || qty < 0 || qty > line.quantityOrdered) {
+        showToast(
+          'warning',
+          'Invalid Quantity',
+          `${line.label}: enter 0–${line.quantityOrdered} received.`
+        );
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result = await orchestrationService.receivePurchaseOrder(receivingOrder.id, {
+        items: receiveLines.map((line) => ({
+          purchaseItemId: line.purchaseItemId,
+          quantityReceived: parseInt(line.quantityReceived, 10) || 0,
+        })),
+      });
+      const partial = !result.order.fullyReceived;
+      showToast(
+        'success',
+        'Received',
+        partial
+          ? `PO #${receivingOrder.id} received with partial quantities — stock updated for what arrived.`
+          : `PO #${receivingOrder.id} fully received and stock updated.`
+      );
+      setReceiveDialogOpen(false);
+      setReceivingOrder(null);
+      setReceiveLines([]);
+      list.reload();
+      orchestrationService.getVariantStock(storeId).then(setVariants);
+    } catch (err: unknown) {
+      showToast('error', 'Failed', getApiErrorMessage(err, 'Could not receive order.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openEditOrder = async (order: PurchaseOrderDto) => {
+    if (order.status === 'Delivered' || order.status === 'Cancelled') {
+      showToast('warning', 'Cannot Edit', 'Delivered or cancelled orders cannot be edited.');
+      return;
+    }
+
+    setIsLoadingOrder(true);
+    try {
+      const detail = await orchestrationService.getPurchaseOrderWithItems(order.id);
+      setEditingOrder(detail.order);
+      setEditSupplierId(String(detail.order.supplierId));
+      setEditStatus(detail.order.status);
+      setEditNotes(detail.order.notes || '');
+      setEditExpectedDelivery(detail.order.expectedDelivery?.slice(0, 10) || '');
+      setEditDueDate(detail.order.dueDate?.slice(0, 10) || '');
+      setEditLines(
+        detail.items.map((item) => ({
+          id: item.id,
+          productVariantId: item.productVariantId,
+          quantity: item.quantity,
+          unitCost: item.unitCost,
+          label: itemLabel(item),
+        }))
+      );
+      setEditDialogOpen(true);
+    } catch (err: unknown) {
+      showToast('error', 'Load Failed', getApiErrorMessage(err, 'Could not load PO for editing.'));
+    } finally {
+      setIsLoadingOrder(false);
+    }
   };
 
   const handleUpdateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingOrder) return;
+    if (editLines.length === 0) {
+      showToast('warning', 'No Items', 'Add at least one line item.');
+      return;
+    }
+    if (editStatus === 'Unpaid' && !editDueDate) {
+      showToast('warning', 'Due Date Required', 'Set a due date for unpaid supplier credit.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await purchaseService.updatePurchaseOrder(editingOrder.id, {
-        status: editStatus,
-        notes: editNotes,
+      await orchestrationService.updatePurchaseOrderWithItems(editingOrder.id, {
+        supplierId: parseInt(editSupplierId, 10),
         expectedDelivery: editExpectedDelivery
           ? new Date(editExpectedDelivery).toISOString()
           : editingOrder.expectedDelivery,
+        status: editStatus,
+        notes: editNotes,
+        dueDate: editStatus === 'Unpaid' && editDueDate ? new Date(editDueDate).toISOString() : undefined,
+        items: editLines.map((line) => ({
+          id: line.id,
+          productVariantId: line.productVariantId,
+          quantity: line.quantity,
+          unitCost: line.unitCost,
+        })),
       });
       showToast('success', 'Updated', `PO #${editingOrder.id} updated.`);
       setEditDialogOpen(false);
+      setEditingOrder(null);
+      setEditLines([]);
       list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not update order.'));
@@ -205,8 +340,75 @@ export const PurchasesPage: React.FC = () => {
     }
   };
 
-  const getSupplierName = (supplierId: number) =>
-    suppliers.find((s) => s.id === supplierId)?.name ?? `Supplier #${supplierId}`;
+  const getSupplierName = (id: number) =>
+    suppliers.find((s) => s.id === id)?.name ?? `Supplier #${id}`;
+
+  const renderLineList = (
+    draftLines: PoLineDraft[],
+    onRemove: (index: number) => void
+  ) => (
+    <div className="space-y-2 max-h-40 overflow-y-auto">
+      {draftLines.length === 0 ? (
+        <p className="text-xs text-slate-500 text-center py-2">No line items yet</p>
+      ) : (
+        draftLines.map((line, idx) => (
+          <div
+            key={line.id ?? `new-${idx}-${line.productVariantId}`}
+            className="flex items-center justify-between rounded-lg border border-slate-800 px-3 py-2"
+          >
+            <p className="text-xs text-slate-300 pr-2">
+              {line.label} · {line.quantity} × ${line.unitCost.toFixed(2)}
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0 text-slate-500 hover:text-rose-400"
+              onClick={() => onRemove(idx)}
+              aria-label="Remove line"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        ))
+      )}
+    </div>
+  );
+
+  const renderLineEditor = (
+    draftLines: PoLineDraft[],
+    setDraftLines: React.Dispatch<React.SetStateAction<PoLineDraft[]>>
+  ) => (
+    <div className="rounded-xl border border-slate-800 p-4 space-y-3">
+      <p className="text-xs font-semibold uppercase text-slate-400">Line Items</p>
+      <VariantSelect variants={variants} value={selectedVariantId} onValueChange={setSelectedVariantId} />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label>Qty</Label>
+          <Input type="number" min="1" value={lineQty} onChange={(e) => setLineQty(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>Unit Cost ($)</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={lineCost}
+            onChange={(e) => setLineCost(e.target.value)}
+            placeholder="Auto from variant"
+          />
+        </div>
+      </div>
+      <Button
+        type="button"
+        variant="secondary"
+        className="w-full"
+        onClick={() => addLineToDraft(draftLines, setDraftLines)}
+      >
+        <Plus className="w-4 h-4" /> Add Line
+      </Button>
+      {renderLineList(draftLines, (index) => removeLineFromDraft(index, setDraftLines))}
+    </div>
+  );
 
   const columns: Column<PurchaseOrderDto>[] = [
     {
@@ -228,30 +430,40 @@ export const PurchasesPage: React.FC = () => {
     {
       header: 'Status',
       accessor: (row) => (
-        <Badge
-          variant={
-            row.status === 'Delivered'
-              ? 'success'
-              : row.status === 'Cancelled'
-              ? 'destructive'
-              : 'secondary'
-          }
-        >
-          {row.status}
-        </Badge>
+        <div className="flex flex-col gap-1">
+          <Badge
+            variant={
+              row.status === 'Delivered'
+                ? 'success'
+                : row.status === 'Cancelled'
+                ? 'destructive'
+                : 'secondary'
+            }
+          >
+            {row.status}
+          </Badge>
+          {row.status === 'Delivered' && row.fullyReceived === false ? (
+            <span className="text-[10px] text-amber-400">Partial receipt</span>
+          ) : null}
+        </div>
       ),
     },
     {
       header: 'Actions',
       accessor: (row) => (
         <div className="flex items-center gap-2">
-          {row.status !== 'Delivered' && (
+          {row.status !== 'Delivered' && row.status !== 'Cancelled' ? (
             <PermissionGate module={APP_MODULES.Purchase} action="Update">
-              <Button size="sm" variant="outline" onClick={() => handleReceive(row.id)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => openReceiveOrder(row)}
+                disabled={isLoadingOrder}
+              >
                 <PackageCheck className="w-4 h-4" /> Receive
               </Button>
             </PermissionGate>
-          )}
+          ) : null}
           <CrudRowActions
             module={APP_MODULES.Purchase}
             onEdit={() => openEditOrder(row)}
@@ -270,7 +482,7 @@ export const PurchasesPage: React.FC = () => {
             Purchase Orders <Truck className="w-6 h-6 text-blue-400" />
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Create POs with line items and receive goods into variant stock
+            Create POs with line items, edit before delivery, and record partial or full receipts
           </p>
         </div>
         <PermissionGate module={APP_MODULES.Purchase} action="Write">
@@ -314,7 +526,7 @@ export const PurchasesPage: React.FC = () => {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create Purchase Order</DialogTitle>
             <DialogDescription>Add line items and submit to your supplier.</DialogDescription>
@@ -355,32 +567,10 @@ export const PurchasesPage: React.FC = () => {
                   placeholder="Select due date"
                   fromDate={new Date()}
                 />
-                <p className="text-[11px] text-slate-500">Creates a credit reminder to pay this supplier on the due date.</p>
               </div>
             ) : null}
 
-            <div className="rounded-xl border border-slate-800 p-4 space-y-3">
-              <p className="text-xs font-semibold uppercase text-slate-400">Line Items</p>
-              <VariantSelect variants={variants} value={selectedVariantId} onValueChange={setSelectedVariantId} />
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Qty</Label>
-                  <Input type="number" min="1" value={lineQty} onChange={(e) => setLineQty(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Unit Cost ($)</Label>
-                  <Input type="number" step="0.01" value={lineCost} onChange={(e) => setLineCost(e.target.value)} placeholder="Auto from variant" />
-                </div>
-              </div>
-              <Button type="button" variant="secondary" className="w-full" onClick={addLine}>
-                <Plus className="w-4 h-4" /> Add Line
-              </Button>
-              {lines.map((line, idx) => (
-                <p key={idx} className="text-xs text-slate-300">
-                  {line.label} · {line.quantity} × ${line.unitCost.toFixed(2)}
-                </p>
-              ))}
-            </div>
+            {renderLineEditor(lines, setLines)}
 
             <div className="space-y-2">
               <Label>Notes</Label>
@@ -396,11 +586,27 @@ export const PurchasesPage: React.FC = () => {
       </Dialog>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit PO #{editingOrder?.id}</DialogTitle>
+            <DialogDescription>Update supplier, lines, status, and notes before delivery.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateOrder} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Supplier</Label>
+              <Combobox
+                options={suppliers.map((s) => ({
+                  value: String(s.id),
+                  label: s.name,
+                  keywords: s.email ?? s.phone ?? '',
+                }))}
+                value={editSupplierId}
+                onValueChange={setEditSupplierId}
+                placeholder="Select supplier"
+                searchPlaceholder="Search suppliers…"
+                emptyText="No matching suppliers."
+              />
+            </div>
             <div className="space-y-2">
               <Label>Status</Label>
               <Select value={editStatus} onValueChange={(v) => setEditStatus(v as PurchaseOrderStatus)}>
@@ -409,11 +615,21 @@ export const PurchasesPage: React.FC = () => {
                   <SelectItem value="Pending">Pending</SelectItem>
                   <SelectItem value="Paid">Paid</SelectItem>
                   <SelectItem value="Unpaid">Unpaid</SelectItem>
-                  <SelectItem value="Delivered">Delivered</SelectItem>
                   <SelectItem value="Cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {editStatus === 'Unpaid' ? (
+              <div className="space-y-2">
+                <Label>Pay supplier by</Label>
+                <DatePicker
+                  value={parseIsoDate(editDueDate)}
+                  onChange={(date) => setEditDueDate(formatIsoDate(date))}
+                  placeholder="Select due date"
+                  fromDate={new Date()}
+                />
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label>Expected Delivery</Label>
               <DatePicker
@@ -422,13 +638,61 @@ export const PurchasesPage: React.FC = () => {
                 placeholder="Select expected delivery"
               />
             </div>
+
+            {renderLineEditor(editLines, setEditLines)}
+
             <div className="space-y-2">
               <Label>Notes</Label>
               <Input value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="secondary" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>Update</Button>
+              <Button type="submit" disabled={isSubmitting}>Save Changes</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={receiveDialogOpen} onOpenChange={setReceiveDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Receive PO #{receivingOrder?.id}</DialogTitle>
+            <DialogDescription>
+              Enter how many units you actually received for each line. Stock updates by received qty only.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleReceive} className="space-y-4">
+            <div className="space-y-3 max-h-72 overflow-y-auto">
+              {receiveLines.map((line, idx) => (
+                <div key={line.purchaseItemId} className="rounded-lg border border-slate-800 p-3 space-y-2">
+                  <p className="text-sm text-slate-200">{line.label}</p>
+                  <p className="text-xs text-slate-500">Ordered: {line.quantityOrdered}</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Qty received</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={line.quantityOrdered}
+                      value={line.quantityReceived}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setReceiveLines((prev) =>
+                          prev.map((row, i) => (i === idx ? { ...row, quantityReceived: value } : row))
+                        );
+                      }}
+                      required
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setReceiveDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                <PackageCheck className="w-4 h-4" /> Confirm Receipt
+              </Button>
             </div>
           </form>
         </DialogContent>

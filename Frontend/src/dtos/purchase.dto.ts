@@ -34,9 +34,12 @@ export interface PurchaseItemDto {
   id: number;
   purchaseOrderId: number;
   productVariantId: number;
-  quantityOrdered: number;
+  quantity: number;
+  quantityReceived?: number | null;
   unitCost: number;
   totalCost: number;
+  productName?: string;
+  skuCode?: string;
 }
 
 export interface PurchaseOrderDto {
@@ -50,6 +53,7 @@ export interface PurchaseOrderDto {
   totalAmount?: number;
   dueDate?: string | null;
   notes: string;
+  fullyReceived?: boolean;
   createdAt: string;
   updatedAt: string;
   items?: PurchaseItemDto[];

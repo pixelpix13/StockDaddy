@@ -21,6 +21,11 @@ public class PurchaseItemRepository : IPurchaseItemRepository
         var q = RepositoryPaging.Normalize(query);
         var baseQuery = _context.PurchaseItems.Where(p => !p.IsDeleted);
 
+        if (q.PurchaseOrderId.HasValue)
+        {
+            baseQuery = baseQuery.Where(p => p.PurchaseOrderId == q.PurchaseOrderId.Value);
+        }
+
         baseQuery = ApplySort(baseQuery, q);
 
         var projected = baseQuery.Select(p => new PurchaseItemDto
@@ -29,8 +34,13 @@ public class PurchaseItemRepository : IPurchaseItemRepository
                 PurchaseOrderId = p.PurchaseOrderId,
                 ProductVariantId = p.ProductVariantId,
                 Quantity = p.Quantity,
+                QuantityReceived = p.QuantityReceived,
                 UnitCost = p.UnitCost,
                 TotalCost = p.TotalCost,
+                ProductName = p.ProductVariant != null && p.ProductVariant.Product != null
+                    ? p.ProductVariant.Product.Name
+                    : null,
+                SkuCode = p.ProductVariant != null ? p.ProductVariant.SkuCode : null,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             
