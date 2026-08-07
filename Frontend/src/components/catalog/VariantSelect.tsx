@@ -1,10 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Label } from '@/components/ui/label';
 import { VariantStockDto } from '@/dtos';
 
@@ -21,24 +15,25 @@ export function VariantSelect({
   value,
   onValueChange,
   label = 'Product Variant',
-  placeholder = 'Select a variant',
+  placeholder = 'Search product or SKU…',
 }: VariantSelectProps) {
+  const options = variants.map((variant) => ({
+    value: String(variant.id),
+    label: `${variant.productName} · ${variant.skuCode} · $${variant.price.toFixed(2)} · Qty ${variant.quantity}`,
+    keywords: `${variant.productName} ${variant.skuCode}`,
+  }));
+
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
-      <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {variants.map((variant) => (
-            <SelectItem key={variant.id} value={String(variant.id)}>
-              {variant.productName} · {variant.skuCode} · ${variant.price.toFixed(2)} · Qty{' '}
-              {variant.quantity}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Combobox
+        options={options}
+        value={value}
+        onValueChange={onValueChange}
+        placeholder={placeholder}
+        searchPlaceholder="Search by name or SKU…"
+        emptyText="No matching variants."
+      />
     </div>
   );
 }

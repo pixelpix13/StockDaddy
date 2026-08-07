@@ -23,13 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Badge } from '@/components/ui/badge';
 import { getApiErrorMessage } from '@/lib/api-error';
 
@@ -266,18 +260,17 @@ export const ProductsPage: React.FC = () => {
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-2">
               <Label>Subcategory</Label>
-              <Select value={subcategoryId} onValueChange={setSubcategoryId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select subcategory" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subcategories.map((sub) => (
-                    <SelectItem key={sub.id} value={String(sub.id)}>
-                      {sub.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={subcategories.map((sub) => ({
+                  value: String(sub.id),
+                  label: sub.name,
+                }))}
+                value={subcategoryId}
+                onValueChange={setSubcategoryId}
+                placeholder="Select subcategory"
+                searchPlaceholder="Search subcategories…"
+                emptyText="No matching subcategories."
+              />
             </div>
             <div className="space-y-2">
               <Label>Product Name</Label>
@@ -336,14 +329,17 @@ export const ProductsPage: React.FC = () => {
           <form onSubmit={handleUpdate} className="space-y-4">
             <div className="space-y-2">
               <Label>Subcategory</Label>
-              <Select value={subcategoryId} onValueChange={setSubcategoryId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {subcategories.map((sub) => (
-                    <SelectItem key={sub.id} value={String(sub.id)}>{sub.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={subcategories.map((sub) => ({
+                  value: String(sub.id),
+                  label: sub.name,
+                }))}
+                value={subcategoryId}
+                onValueChange={setSubcategoryId}
+                placeholder="Select subcategory"
+                searchPlaceholder="Search subcategories…"
+                emptyText="No matching subcategories."
+              />
             </div>
             <div className="space-y-2">
               <Label>Product Name</Label>

@@ -18,13 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
@@ -182,14 +176,17 @@ export function SubcategoriesTab({ tenantId, storeId }: SubcategoriesTabProps) {
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
               <Label>Parent Category</Label>
-              <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={categories.map((cat) => ({
+                  value: String(cat.id),
+                  label: cat.name,
+                }))}
+                value={selectedCategoryId}
+                onValueChange={setSelectedCategoryId}
+                placeholder="Select category"
+                searchPlaceholder="Search categories…"
+                emptyText="No matching categories."
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="subcategoryName">Subcategory Name</Label>

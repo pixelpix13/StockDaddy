@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Combobox, COMBOBOX_THRESHOLD, shouldUseCombobox } from '@/components/ui/combobox';
 import { cn } from '@/lib/utils';
 
 export interface FilterOption<T = string | number> {
@@ -22,6 +23,9 @@ interface FilterSelectProps<T extends string | number> {
   onChange: (value: T | undefined) => void;
   className?: string;
   placeholder?: string;
+  /** Force combobox (searchable) regardless of option count. */
+  searchable?: boolean;
+  comboboxThreshold?: number;
 }
 
 /** Compact dropdown filter for list pages. */
@@ -32,8 +36,11 @@ export function FilterSelect<T extends string | number>({
   onChange,
   className,
   placeholder = 'All',
+  searchable,
+  comboboxThreshold = COMBOBOX_THRESHOLD,
 }: FilterSelectProps<T>) {
   const selectedStr = value == null ? 'all' : String(value);
+  const useCombobox = searchable ?? shouldUseCombobox(options.length, comboboxThreshold);
 
   const handleChange = (raw: string) => {
     if (raw === 'all') {
@@ -50,23 +57,39 @@ export function FilterSelect<T extends string | number>({
     onChange(option.value as T);
   };
 
+  const selectedLabel = options.find((o) => String(o.value) === selectedStr)?.label ?? placeholder;
+
   return (
     <div className={cn('flex flex-col gap-1.5 w-full sm:w-auto sm:min-w-[160px]', className)}>
       {label ? (
         <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</Label>
       ) : null}
-      <Select value={selectedStr} onValueChange={handleChange}>
-        <SelectTrigger className="h-9 w-full sm:w-[180px]">
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={String(option.value)} value={String(option.value)}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {useCombobox ? (
+        <Combobox
+          options={options.map((option) => ({
+            value: String(option.value),
+            label: option.label,
+          }))}
+          value={selectedStr}
+          onValueChange={handleChange}
+          placeholder={placeholder}
+          searchPlaceholder={`Search ${label?.toLowerCase() ?? 'options'}…`}
+          triggerClassName="h-9 w-full sm:w-[180px]"
+        />
+      ) : (
+        <Select value={selectedStr} onValueChange={handleChange}>
+          <SelectTrigger className="h-9 w-full sm:w-[180px]">
+            <SelectValue placeholder={placeholder}>{selectedLabel}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={String(option.value)} value={String(option.value)}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 }
