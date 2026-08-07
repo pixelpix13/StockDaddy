@@ -58,7 +58,7 @@ public class ProductRepository : IProductRepository
         };
     }
 
-    public async Task AddAsync(CreateProductRequest product)
+    public async Task<int> AddAsync(CreateProductRequest product)
     {
         var entity = new Product
         {
@@ -74,6 +74,7 @@ public class ProductRepository : IProductRepository
         };
         await _context.Products.AddAsync(entity);
         await _context.SaveChangesAsync();
+        return entity.Id;
     }
 
     public async Task UpdateAsync(int id, UpdateProductRequest product)

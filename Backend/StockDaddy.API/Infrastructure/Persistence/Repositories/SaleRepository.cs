@@ -56,7 +56,7 @@ public class SaleRepository : ISaleRepository
             .FirstOrDefaultAsync();
     }
 
-    public async Task AddAsync(CreateSaleRequest sale)
+    public async Task<int> AddAsync(CreateSaleRequest sale)
     {
         var entity = new Sale
         {
@@ -73,6 +73,7 @@ public class SaleRepository : ISaleRepository
         };
         await _context.Sales.AddAsync(entity);
         await _context.SaveChangesAsync();
+        return entity.Id;
     }
 
     public async Task UpdateAsync(int id, UpdateSaleRequest sale)

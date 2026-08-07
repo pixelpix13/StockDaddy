@@ -63,7 +63,7 @@ public class ProductVariantRepository : IProductVariantRepository
             .FirstOrDefaultAsync();
     }
 
-    public async Task AddAsync(CreateProductVariantRequest variant)
+    public async Task<int> AddAsync(CreateProductVariantRequest variant)
     {
         var entity = new ProductVariant
         {
@@ -84,6 +84,7 @@ public class ProductVariantRepository : IProductVariantRepository
         };
         await _context.ProductVariants.AddAsync(entity);
         await _context.SaveChangesAsync();
+        return entity.Id;
     }
 
     public async Task UpdateAsync(int id, UpdateProductVariantRequest variant)

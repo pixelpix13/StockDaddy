@@ -56,8 +56,8 @@ public class ProductController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _productRepository.AddAsync(request);
-            return Ok();
+            var id = await _productRepository.AddAsync(request);
+            return Ok(new { id });
         }
         catch (Exception ex)
         {
