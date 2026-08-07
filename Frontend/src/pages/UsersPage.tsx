@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Users, Plus, Mail, Trash2, Pencil } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Table, Column } from '../components/common/Table';
@@ -15,16 +15,24 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_MODULES } from '@/config/permissions';
+import { usePagedList } from '@/hooks/usePagedList';
+import { ListToolbar } from '@/components/common/ListToolbar';
+import { Pagination } from '@/components/common/Pagination';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { buildRoleFilterOptions } from '@/config/list-filters';
 
 export const UsersPage: React.FC = () => {
-  const [users, setUsers] = useState<UserManagementDto[]>([]);
+  const list = usePagedList<UserManagementDto>({
+    fetchFn: useCallback((query) => userService.getUsersPaged(query), []),
+    defaultSortBy: 'username',
+    defaultSortDir: 'asc',
+  });
+
   const [roles, setRoles] = useState<RoleDto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserManagementDto | null>(null);
 
-  // Form
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,28 +45,11 @@ export const UsersPage: React.FC = () => {
   const canUpdateUsers = hasPermission(APP_MODULES.Users, 'Update');
   const canDeleteUsers = hasPermission(APP_MODULES.Users, 'Delete');
 
-  const fetchUsers = async () => {
-    setIsLoading(true);
-    try {
-      const [data, roleList] = await Promise.all([
-        userService.getUsers(),
-        tenantService.getRoles(),
-      ]);
-      setUsers(data);
-      setRoles(roleList);
-      if (roleList.length > 0 && roleId === '1' && !data.some((u) => u.roleId === 1)) {
-        setRoleId(String(roleList[0].id));
-      }
-    } catch (err) {
-      showToast('error', 'Error', 'Failed to load user accounts.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    tenantService.getRoles().then(setRoles).catch(() => {
+      showToast('error', 'Error', 'Failed to load roles.');
+    });
+  }, [showToast]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +66,7 @@ export const UsersPage: React.FC = () => {
         storeId: currentUser?.storeId || 1,
         username,
         email,
-        passwordHash: password, // Backend UserRepository hashes or processes request
+        passwordHash: password,
       };
 
       await userService.createUser(payload);
@@ -84,7 +75,7 @@ export const UsersPage: React.FC = () => {
       setUsername('');
       setEmail('');
       setPassword('');
-      fetchUsers();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Creation Failed', getApiErrorMessage(err, 'Could not create user.'));
     } finally {
@@ -97,7 +88,7 @@ export const UsersPage: React.FC = () => {
     try {
       await userService.deleteUser(id);
       showToast('success', 'User Removed', 'User soft-deleted.');
-      fetchUsers();
+      list.reload();
     } catch (err) {
       showToast('error', 'Action Failed', 'Could not delete user.');
     }
@@ -129,7 +120,7 @@ export const UsersPage: React.FC = () => {
       setIsEditModalOpen(false);
       setEditingUser(null);
       setPassword('');
-      fetchUsers();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Update Failed', getApiErrorMessage(err, 'Could not update user.'));
     } finally {
@@ -142,7 +133,15 @@ export const UsersPage: React.FC = () => {
 
   const columns: Column<UserManagementDto>[] = [
     {
+      header: 'ID',
+      sortKey: 'id',
+      accessor: (row) => (
+        <span className="font-mono text-xs text-slate-500">#{row.id}</span>
+      ),
+    },
+    {
       header: 'Username',
+      sortKey: 'username',
       accessor: (row) => (
         <div className="font-bold text-slate-100 flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center font-mono text-xs border border-blue-500/30">
@@ -154,6 +153,7 @@ export const UsersPage: React.FC = () => {
     },
     {
       header: 'Email',
+      sortKey: 'email',
       accessor: (row) => (
         <span className="text-xs text-slate-300 flex items-center gap-1.5">
           <Mail className="w-3.5 h-3.5 text-slate-400" />
@@ -198,11 +198,10 @@ export const UsersPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-6 rounded-3xl border border-slate-800">
+    <div className="page-stack">
+      <div className="page-hero flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+          <h1 className="page-hero-title">
             User Access Management <Users className="w-6 h-6 text-blue-400" />
           </h1>
           <p className="text-sm text-slate-400 mt-1">
@@ -221,18 +220,47 @@ export const UsersPage: React.FC = () => {
         </PermissionGate>
       </div>
 
-      {/* Table */}
-      <Card title={`Active User Accounts (${users.length})`}>
+      <Card title={`Active User Accounts (${list.totalCount})`}>
+        <div className="space-y-4 mb-4">
+          <ListToolbar
+            searchInput={list.searchInput}
+            onSearchChange={list.handleSearchChange}
+            onSearchCommit={list.handleSearchCommit}
+            searchPlaceholder="Search all columns…"
+            filters={
+              roles.length > 0 ? (
+                <ListFilterBar showClear={list.hasActiveFilters} onClear={list.clearFilters}>
+                  <FilterSelect
+                    label="Role"
+                    options={buildRoleFilterOptions(roles)}
+                    value={list.filters.roleId}
+                    onChange={(value) => list.setFilter('roleId', value)}
+                  />
+                </ListFilterBar>
+              ) : undefined
+            }
+          />
+        </div>
         <Table
           columns={columns}
-          data={users}
+          data={list.items}
           keyExtractor={(row) => row.id}
-          isLoading={isLoading}
+          isLoading={list.isLoading}
+          sort={list.sort}
+          onSortChange={list.toggleSort}
           emptyMessage="No staff accounts found."
+          footer={
+            <Pagination
+              page={list.page}
+              pageSize={list.pageSize}
+              totalCount={list.totalCount}
+              onPageChange={list.setPage}
+              onPageSizeChange={list.setPageSize}
+            />
+          }
         />
       </Card>
 
-      {/* Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

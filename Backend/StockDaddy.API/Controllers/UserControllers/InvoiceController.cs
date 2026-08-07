@@ -17,11 +17,11 @@ public class InvoiceController : ControllerBase
 
     // GET: api/invoice
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var invoices = await _invoiceRepository.GetAllAsync();
+            var invoices = await _invoiceRepository.GetPagedAsync(query);
             return Ok(invoices);
         }
         catch (Exception ex)

@@ -1,11 +1,16 @@
 /** Customer CRUD for CRM / POS customer picker. */
 import { apiClient } from './api.client';
+import { fetchAllItems, fetchPaged } from '@/lib/fetch-paged';
+import { PagedQuery, PagedResult } from '@/types/paging';
 import { CustomerDto, CreateCustomerRequest, UpdateCustomerRequest } from '../dtos';
 
 export const customerService = {
+  getCustomersPaged(query: PagedQuery): Promise<PagedResult<CustomerDto>> {
+    return fetchPaged<CustomerDto>('/customer', query);
+  },
+
   async getCustomers(): Promise<CustomerDto[]> {
-    const response = await apiClient.get<CustomerDto[]>('/customer');
-    return response.data;
+    return fetchAllItems<CustomerDto>('/customer');
   },
 
   async getCustomerById(id: number): Promise<CustomerDto> {

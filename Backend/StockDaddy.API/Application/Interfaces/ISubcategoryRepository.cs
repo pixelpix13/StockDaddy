@@ -3,6 +3,7 @@ using StockDaddy.Application.DTOs;
 
 public interface ISubcategoryRepository
 {
+    Task<PagedResult<SubcategoryDto>> GetPagedAsync(PagedQuery query);
     Task<List<SubcategoryDto>> GetAllAsync();
     Task<SubcategoryDto?> GetByIdAsync(int id);
     Task AddAsync(CreateSubcategoryRequest subcategory);

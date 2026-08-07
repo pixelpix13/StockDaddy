@@ -17,11 +17,11 @@ public class HsnMasterController : ControllerBase
 
     // GET: api/hsnmaster
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var list = await _hsnRepo.GetAllAsync();
+            var list = await _hsnRepo.GetPagedAsync(query);
             return Ok(list);
         }
         catch (Exception ex)

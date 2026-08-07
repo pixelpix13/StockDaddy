@@ -1,9 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ShoppingCart, Plus, Trash2, Receipt, ScanBarcode } from 'lucide-react';
 import { orchestrationService, saleService } from '@/services';
-import { VariantStockDto, PaymentMethod } from '@/dtos';
+import { VariantStockDto, PaymentMethod, SaleDto } from '@/dtos';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { usePagedList } from '@/hooks/usePagedList';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { PAYMENT_METHOD_FILTER_OPTIONS } from '@/config/list-filters';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,36 +37,28 @@ export const SalesPage: React.FC = () => {
   const storeId = user?.storeId || 1;
   const barcodeRef = useRef<HTMLInputElement>(null);
 
+  const salesList = usePagedList<SaleDto>({
+    fetchFn: useCallback((query) => saleService.getSalesPaged(query), []),
+    defaultSortBy: 'id',
+    defaultSortDir: 'desc',
+  });
+
   const [variants, setVariants] = useState<VariantStockDto[]>([]);
-  const [sales, setSales] = useState<Awaited<ReturnType<typeof saleService.getSales>>>([]);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [selectedVariantId, setSelectedVariantId] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash');
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [stock, salesData] = await Promise.all([
-        orchestrationService.getVariantStock(storeId),
-        saleService.getSales(),
-      ]);
-      setVariants(stock);
-      setSales(salesData);
-      if (stock.length > 0 && !selectedVariantId) setSelectedVariantId(String(stock[0].id));
-    } catch {
-      showToast('error', 'Load Failed', 'Could not load POS data.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadData();
-  }, []);
+    orchestrationService.getVariantStock(storeId).then((stock) => {
+      setVariants(stock);
+      if (stock.length > 0 && !selectedVariantId) setSelectedVariantId(String(stock[0].id));
+    }).catch(() => {
+      showToast('error', 'Load Failed', 'Could not load product variants.');
+    });
+  }, [storeId]);
 
   const totals = useMemo(() => {
     let subtotal = 0;
@@ -148,7 +144,8 @@ export const SalesPage: React.FC = () => {
         `#${result.saleId} · Total $${result.totalAmount.toFixed(2)} (Tax $${result.taxAmount.toFixed(2)})`
       );
       setCart([]);
-      loadData();
+      salesList.reload();
+      orchestrationService.getVariantStock(storeId).then(setVariants);
       barcodeRef.current?.focus();
     } catch (err: unknown) {
       showToast('error', 'Checkout Failed', getApiErrorMessage(err, 'Transaction failed.'));
@@ -157,10 +154,37 @@ export const SalesPage: React.FC = () => {
     }
   };
 
+  const salesColumns: Column<SaleDto>[] = [
+    {
+      header: 'ID',
+      accessor: (row) => <span className="font-mono text-xs text-blue-400">#{row.id}</span>,
+      sortKey: 'id',
+    },
+    {
+      header: 'Date',
+      accessor: (row) => new Date(row.createdAt).toLocaleString(),
+      sortKey: 'createdat',
+      className: 'text-xs text-slate-500',
+    },
+    {
+      header: 'Cashier',
+      accessor: (row) => `#${row.soldBy}`,
+      className: 'text-slate-400',
+    },
+    {
+      header: 'Amount',
+      accessor: (row) => <span className="font-bold text-emerald-400">${row.totalAmount.toFixed(2)}</span>,
+    },
+    {
+      header: 'Payment',
+      accessor: (row) => <Badge variant="secondary">{row.paymentMethod}</Badge>,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800">
-        <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+    <div className="page-stack">
+      <div className="page-hero">
+        <h1 className="page-hero-title">
           Sales & POS <ShoppingCart className="w-6 h-6 text-blue-400" />
         </h1>
         <p className="text-sm text-slate-400 mt-1">
@@ -168,7 +192,7 @@ export const SalesPage: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <PermissionGate
           module={APP_MODULES.Sales}
           action="Write"
@@ -293,34 +317,26 @@ export const SalesPage: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Sales History ({sales.length})</CardTitle>
+            <CardTitle>Sales History ({salesList.totalCount})</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <p className="text-sm text-slate-400">Loading...</p>
-            ) : sales.length === 0 ? (
-              <p className="text-sm text-slate-400">No sales yet.</p>
-            ) : (
-              <div className="space-y-2 max-h-[520px] overflow-y-auto">
-                {sales.map((sale) => (
-                  <div
-                    key={sale.id}
-                    className="flex items-center justify-between rounded-lg border border-slate-800 p-3 gap-3"
-                  >
-                    <div>
-                      <p className="font-mono text-xs text-blue-400">#SALE-{sale.id}</p>
-                      <p className="text-xs text-slate-500">
-                        {new Date(sale.createdAt).toLocaleString()} · Cashier #{sale.soldBy}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-emerald-400">${sale.totalAmount.toFixed(2)}</p>
-                      <Badge variant="secondary">{sale.paymentMethod}</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <PagedDataTable
+              columns={salesColumns}
+              list={salesList}
+              keyExtractor={(row) => row.id}
+              searchPlaceholder="Search all columns…"
+              emptyMessage="No sales yet."
+              filters={
+                <ListFilterBar showClear={salesList.hasActiveFilters} onClear={salesList.clearFilters}>
+                  <FilterSelect
+                    label="Payment"
+                    options={PAYMENT_METHOD_FILTER_OPTIONS}
+                    value={salesList.filters.paymentMethod}
+                    onChange={(value) => salesList.setFilter('paymentMethod', value)}
+                  />
+                </ListFilterBar>
+              }
+            />
           </CardContent>
         </Card>
       </div>

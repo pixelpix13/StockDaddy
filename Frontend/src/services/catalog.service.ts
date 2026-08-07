@@ -1,5 +1,7 @@
 /** Catalog taxonomy CRUD: categories, subcategories, HSN master, tax regions. */
 import { apiClient } from './api.client';
+import { fetchAllItems, fetchPaged } from '@/lib/fetch-paged';
+import { PagedQuery, PagedResult } from '@/types/paging';
 import {
   CategoryDto,
   CreateCategoryRequest,
@@ -22,9 +24,12 @@ export interface CreateSubcategoryRequest {
 }
 
 export const catalogService = {
+  getCategoriesPaged(query: PagedQuery): Promise<PagedResult<CategoryDto>> {
+    return fetchPaged<CategoryDto>('/category', query);
+  },
+
   async getCategories(): Promise<CategoryDto[]> {
-    const response = await apiClient.get<CategoryDto[]>('/category');
-    return response.data;
+    return fetchAllItems<CategoryDto>('/category');
   },
 
   async getCategoryById(id: number): Promise<CategoryDto> {
@@ -44,9 +49,12 @@ export const catalogService = {
     await apiClient.delete(`/category/${id}`);
   },
 
+  getSubcategoriesPaged(query: PagedQuery): Promise<PagedResult<SubcategoryDto>> {
+    return fetchPaged<SubcategoryDto>('/subcategory', query);
+  },
+
   async getSubcategories(): Promise<SubcategoryDto[]> {
-    const response = await apiClient.get<SubcategoryDto[]>('/subcategory');
-    return response.data;
+    return fetchAllItems<SubcategoryDto>('/subcategory');
   },
 
   async getSubcategoryById(id: number): Promise<SubcategoryDto> {
@@ -66,9 +74,12 @@ export const catalogService = {
     await apiClient.delete(`/subcategory/${id}`);
   },
 
+  getHsnCodesPaged(query: PagedQuery): Promise<PagedResult<HsnMasterDto>> {
+    return fetchPaged<HsnMasterDto>('/hsnmaster', query);
+  },
+
   async getHsnCodes(): Promise<HsnMasterDto[]> {
-    const response = await apiClient.get<HsnMasterDto[]>('/hsnmaster');
-    return response.data;
+    return fetchAllItems<HsnMasterDto>('/hsnmaster');
   },
 
   async createHsnCode(request: CreateHsnMasterRequest): Promise<void> {
@@ -83,9 +94,12 @@ export const catalogService = {
     await apiClient.delete(`/hsnmaster/${id}`);
   },
 
+  getTaxRegionsPaged(query: PagedQuery): Promise<PagedResult<TaxRegionDto>> {
+    return fetchPaged<TaxRegionDto>('/taxregion', query);
+  },
+
   async getTaxRegions(): Promise<TaxRegionDto[]> {
-    const response = await apiClient.get<TaxRegionDto[]>('/taxregion');
-    return response.data;
+    return fetchAllItems<TaxRegionDto>('/taxregion');
   },
 
   async createTaxRegion(request: CreateTaxRegionRequest): Promise<void> {

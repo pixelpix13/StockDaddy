@@ -17,11 +17,11 @@ public class SubcategoryController : ControllerBase
 
     // GET: api/subcategory
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var subcategories = await _subcategoryRepository.GetAllAsync();
+            var subcategories = await _subcategoryRepository.GetPagedAsync(query);
             return Ok(subcategories);
         }
         catch (Exception ex)

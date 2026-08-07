@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Building2, Plus } from 'lucide-react';
 import { purchaseService } from '@/services';
 import { SupplierDto } from '@/dtos';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
+import { usePagedList } from '@/hooks/usePagedList';
+import { ListToolbar } from '@/components/common/ListToolbar';
+import { Table, Column } from '@/components/common/Table';
+import { Pagination } from '@/components/common/Pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,8 +24,12 @@ import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
 
 export const SuppliersPage: React.FC = () => {
-  const [suppliers, setSuppliers] = useState<SupplierDto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const list = usePagedList<SupplierDto>({
+    fetchFn: useCallback((query) => purchaseService.getSuppliersPaged(query), []),
+    defaultSortBy: 'name',
+    defaultSortDir: 'asc',
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<SupplierDto | null>(null);
   const [name, setName] = useState('');
@@ -33,21 +41,6 @@ export const SuppliersPage: React.FC = () => {
 
   const { showToast } = useToast();
   const { user } = useAuth();
-
-  const loadSuppliers = async () => {
-    setIsLoading(true);
-    try {
-      setSuppliers(await purchaseService.getSuppliers());
-    } catch {
-      showToast('error', 'Error', 'Failed to load suppliers.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadSuppliers();
-  }, []);
 
   const resetForm = () => {
     setName('');
@@ -88,7 +81,7 @@ export const SuppliersPage: React.FC = () => {
       }
       setDialogOpen(false);
       resetForm();
-      loadSuppliers();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not save supplier.'));
     } finally {
@@ -101,17 +94,39 @@ export const SuppliersPage: React.FC = () => {
     try {
       await purchaseService.deleteSupplier(supplier.id);
       showToast('success', 'Deleted', 'Supplier removed.');
-      loadSuppliers();
+      list.reload();
     } catch {
       showToast('error', 'Failed', 'Could not delete supplier.');
     }
   };
 
+  const columns: Column<SupplierDto>[] = [
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
+    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-slate-100' },
+    { header: 'Contact', accessor: (row) => row.contactName || '—', className: 'text-slate-400' },
+    {
+      header: 'Email / Phone',
+      accessor: (row) => (
+        <span className="text-xs text-slate-400">
+          {row.email || '—'}<br />{row.phone || ''}
+        </span>
+      ),
+      sortKey: 'email',
+    },
+    { header: 'Address', accessor: (row) => row.address || '—', className: 'text-xs text-slate-400' },
+    {
+      header: 'Actions',
+      accessor: (row) => (
+        <CrudRowActions module={APP_MODULES.Supplier} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="page-stack">
+      <div className="page-hero flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+          <h1 className="page-hero-title">
             Supplier Management <Building2 className="w-6 h-6 text-blue-400" />
           </h1>
           <p className="text-sm text-slate-400 mt-1">Full CRUD for vendor contacts</p>
@@ -122,42 +137,33 @@ export const SuppliersPage: React.FC = () => {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Suppliers ({suppliers.length})</CardTitle></CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-slate-400">Loading...</p>
-          ) : suppliers.length === 0 ? (
-            <p className="text-sm text-slate-400">No suppliers yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 text-left">
-                    <th className="pb-3 pr-4">Name</th>
-                    <th className="pb-3 pr-4">Contact</th>
-                    <th className="pb-3 pr-4">Email / Phone</th>
-                    <th className="pb-3 pr-4">Address</th>
-                    <th className="pb-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {suppliers.map((row) => (
-                    <tr key={row.id} className="border-b border-slate-800/60">
-                      <td className="py-3 pr-4 font-medium text-slate-100">{row.name}</td>
-                      <td className="py-3 pr-4 text-slate-400">{row.contactName || '—'}</td>
-                      <td className="py-3 pr-4 text-xs text-slate-400">
-                        {row.email || '—'}<br />{row.phone || ''}
-                      </td>
-                      <td className="py-3 pr-4 text-xs text-slate-400">{row.address || '—'}</td>
-                      <td className="py-3">
-                        <CrudRowActions module={APP_MODULES.Supplier} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <CardHeader><CardTitle>Suppliers ({list.totalCount})</CardTitle></CardHeader>
+        <CardContent className="space-y-4 sm:space-y-5">
+          <ListToolbar
+            searchInput={list.searchInput}
+            onSearchChange={list.handleSearchChange}
+            onSearchCommit={list.handleSearchCommit}
+            searchPlaceholder="Search suppliers..."
+          />
+
+          <Table
+            columns={columns}
+            data={list.items}
+            keyExtractor={(row) => row.id}
+            isLoading={list.isLoading}
+            sort={list.sort}
+            onSortChange={list.toggleSort}
+            emptyMessage="No suppliers yet."
+            footer={
+              <Pagination
+                page={list.page}
+                pageSize={list.pageSize}
+                totalCount={list.totalCount}
+                onPageChange={list.setPage}
+                onPageSizeChange={list.setPageSize}
+              />
+            }
+          />
         </CardContent>
       </Card>
 

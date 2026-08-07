@@ -17,9 +17,9 @@ public class AdjustedInvoiceController : ControllerBase
 
     // GET: api/AdjustedInvoice
     [HttpGet]
-    public async Task<ActionResult<List<AdjustedInvoiceDto>>> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
-        var invoices = await _adjustedInvoiceRepository.GetAllAsync();
+        var invoices = await _adjustedInvoiceRepository.GetPagedAsync(query);
         return Ok(invoices);
     }
 

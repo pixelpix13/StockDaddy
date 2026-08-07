@@ -4,6 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IStockItemRepository
 {
+    Task<PagedResult<StockItemDto>> GetPagedAsync(PagedQuery query);
     Task<List<StockItemDto>> GetAllAsync();
     Task<StockItemDto?> GetByIdAsync(int id);
     Task AddAsync(CreateStockItemRequest item);

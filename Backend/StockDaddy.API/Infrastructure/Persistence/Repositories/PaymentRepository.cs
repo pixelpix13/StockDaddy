@@ -3,6 +3,7 @@ using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -14,6 +15,45 @@ public class PaymentRepository : IPaymentRepository
     {
         _context = context;
     }
+
+    public async Task<PagedResult<PaymentDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.Payments.Where(p => !p.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = $"%{q.Search}%";
+            baseQuery = baseQuery.Where(p => EF.Functions.ILike(p.ReferenceNo ?? string.Empty, pattern));
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(p => new PaymentDto
+        {
+                Id = p.Id,
+                InvoiceId = p.InvoiceId,
+                Amount = p.Amount,
+                PaymentMethod = p.PaymentMethod,
+                PaidAt = p.PaidAt,
+                ReceivedBy = p.ReceivedBy,
+                ReferenceNo = p.ReferenceNo,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<Payment> ApplySort(IQueryable<Payment> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("createdat", true) => query.OrderByDescending(p => p.CreatedAt),
+            ("createdat", false) => query.OrderBy(p => p.CreatedAt),
+            (_, true) => query.OrderByDescending(p => p.Id),
+            _ => query.OrderBy(p => p.Id),
+        };
 
     public async Task<List<PaymentDto>> GetAllAsync()
     {

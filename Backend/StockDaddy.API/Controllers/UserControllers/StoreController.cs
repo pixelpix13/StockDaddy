@@ -17,11 +17,11 @@ public class StoreController : ControllerBase
 
     // GET: api/store
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var stores = await _storeRepository.GetAllAsync();
+            var stores = await _storeRepository.GetPagedAsync(query);
             return Ok(stores);
         }
         catch (Exception ex)

@@ -1,11 +1,16 @@
 /** Stock item CRUD and restock alerts (`/api/stockitem`, `/api/productrestockalert`). */
 import { apiClient } from './api.client';
+import { fetchAllItems, fetchPaged } from '@/lib/fetch-paged';
+import { PagedQuery, PagedResult } from '@/types/paging';
 import { StockItemDto, CreateStockItemRequest, ProductRestockAlertDto } from '../dtos';
 
 export const inventoryService = {
+  getStockItemsPaged(query: PagedQuery): Promise<PagedResult<StockItemDto>> {
+    return fetchPaged<StockItemDto>('/stockitem', query);
+  },
+
   async getStockItems(): Promise<StockItemDto[]> {
-    const response = await apiClient.get<StockItemDto[]>('/stockitem');
-    return response.data;
+    return fetchAllItems<StockItemDto>('/stockitem');
   },
 
   async createStockItem(request: CreateStockItemRequest): Promise<void> {
@@ -16,8 +21,11 @@ export const inventoryService = {
     await apiClient.put(`/stockitem/${id}`, request);
   },
 
+  getRestockAlertsPaged(query: PagedQuery): Promise<PagedResult<ProductRestockAlertDto>> {
+    return fetchPaged<ProductRestockAlertDto>('/productrestockalert', query);
+  },
+
   async getRestockAlerts(): Promise<ProductRestockAlertDto[]> {
-    const response = await apiClient.get<ProductRestockAlertDto[]>('/productrestockalert');
-    return response.data;
+    return fetchAllItems<ProductRestockAlertDto>('/productrestockalert');
   },
 };

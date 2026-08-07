@@ -17,11 +17,11 @@ public class ReturnController : ControllerBase
 
     // GET: api/return
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var returns = await _returnRepository.GetAllAsync();
+            var returns = await _returnRepository.GetPagedAsync(query);
             return Ok(returns);
         }
         catch (Exception ex)

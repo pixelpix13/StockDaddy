@@ -3,6 +3,7 @@ using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -14,6 +15,42 @@ public class ReturnRepository : IReturnRepository
     {
         _context = context;
     }
+
+    public async Task<PagedResult<ReturnDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.Returns.Where(r => !r.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = $"%{q.Search}%";
+            baseQuery = baseQuery.Where(r => EF.Functions.ILike(r.Reason, pattern));
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(r => new ReturnDto
+        {
+                Id = r.Id,
+                SaleId = r.SaleId,
+                StoreId = r.StoreId,
+                Reason = r.Reason,
+                CreatedAt = r.CreatedAt,
+                UpdatedAt = r.UpdatedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<Return> ApplySort(IQueryable<Return> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("createdat", true) => query.OrderByDescending(r => r.CreatedAt),
+            ("createdat", false) => query.OrderBy(r => r.CreatedAt),
+            (_, true) => query.OrderByDescending(r => r.Id),
+            _ => query.OrderBy(r => r.Id),
+        };
 
     public async Task<List<ReturnDto>> GetAllAsync()
     {

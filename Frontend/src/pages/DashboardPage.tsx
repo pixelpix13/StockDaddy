@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   DollarSign,
   Package,
@@ -8,7 +8,6 @@ import {
   Plus,
   RefreshCw,
   ArrowUpRight,
-  Box,
 } from 'lucide-react';
 import { StatCard } from '../components/common/StatCard';
 import { Card } from '../components/common/Card';
@@ -20,50 +19,76 @@ import { VariantStockDto, SaleDto, ProductRestockAlertDto } from '../dtos';
 import { useToast } from '../context/ToastContext';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
+import { usePagedList } from '@/hooks/usePagedList';
+import { Pagination } from '@/components/common/Pagination';
+import { ListToolbar } from '@/components/common/ListToolbar';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { ALERT_STATUS_OPTIONS, PAYMENT_METHOD_FILTER_OPTIONS } from '@/config/list-filters';
 
 export const DashboardPage: React.FC = () => {
+  const salesList = usePagedList<SaleDto>({
+    fetchFn: useCallback((query) => saleService.getSalesPaged(query), []),
+    defaultSortBy: 'id',
+    defaultSortDir: 'desc',
+    defaultPageSize: 5,
+  });
+
+  const alertsList = usePagedList<ProductRestockAlertDto>({
+    fetchFn: useCallback((query) => inventoryService.getRestockAlertsPaged(query), []),
+    defaultSortBy: 'id',
+    defaultSortDir: 'desc',
+    defaultPageSize: 5,
+  });
+
   const [variants, setVariants] = useState<VariantStockDto[]>([]);
-  const [sales, setSales] = useState<SaleDto[]>([]);
-  const [alerts, setAlerts] = useState<ProductRestockAlertDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [totalRevenue, setTotalRevenue] = useState(0);
 
   const { showToast } = useToast();
 
-  const fetchDashboardData = async () => {
-    setIsLoading(true);
+  const loadStats = async () => {
+    setStatsLoading(true);
     try {
-      const [variantsData, salesData, alertsData] = await Promise.allSettled([
+      const [variantsData, salesResult] = await Promise.allSettled([
         orchestrationService.getVariantStock(),
-        saleService.getSales(),
-        inventoryService.getRestockAlerts(),
+        saleService.getSalesPaged({ page: 1, pageSize: 100, sortBy: 'id', sortDir: 'desc' }),
       ]);
 
       if (variantsData.status === 'fulfilled') setVariants(variantsData.value);
-      if (salesData.status === 'fulfilled') setSales(salesData.value);
-      if (alertsData.status === 'fulfilled') setAlerts(alertsData.value);
-    } catch (error) {
-      console.error('Dashboard data fetch error:', error);
+      if (salesResult.status === 'fulfilled') {
+        setTotalRevenue(
+          salesResult.value.items.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0)
+        );
+      }
+    } catch {
       showToast('info', 'Live Data Sync', 'Dashboard initialized with default data feed.');
     } finally {
-      setIsLoading(false);
+      setStatsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboardData();
+    loadStats();
   }, []);
 
-  const totalRevenue = sales.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0);
+  const refreshAll = () => {
+    loadStats();
+    salesList.reload();
+    alertsList.reload();
+  };
+
   const totalProductsCount = variants.length;
-  const totalSalesCount = sales.length;
+  const totalSalesCount = salesList.totalCount;
   const lowStockCount = variants.filter((v) => v.quantity <= 5).length;
+  const isLoading = statsLoading || salesList.isLoading;
 
   const salesColumns: Column<SaleDto>[] = [
     {
-      header: 'Sale ID',
+      header: 'ID',
       accessor: (row) => (
-        <span className="font-mono text-xs font-bold text-blue-400">#SALE-{row.id}</span>
+        <span className="font-mono text-xs font-bold text-blue-400">#{row.id}</span>
       ),
+      sortKey: 'id',
     },
     {
       header: 'Store',
@@ -86,14 +111,43 @@ export const DashboardPage: React.FC = () => {
           {new Date(row.createdAt || Date.now()).toLocaleDateString()}
         </span>
       ),
+      sortKey: 'createdat',
+    },
+  ];
+
+  const alertsColumns: Column<ProductRestockAlertDto>[] = [
+    {
+      header: 'ID',
+      accessor: (row) => `#${row.id}`,
+      sortKey: 'id',
+      className: 'font-mono text-xs text-slate-500',
+    },
+    {
+      header: 'Variant ID',
+      accessor: (row) => `#${row.variantId}`,
+      className: 'text-xs font-semibold text-slate-200',
+    },
+    {
+      header: 'Product ID',
+      accessor: (row) => `#${row.productId}`,
+      className: 'text-[10px] text-slate-400',
+    },
+    {
+      header: 'Status',
+      accessor: (row) => row.status,
+      className: 'text-[10px] text-slate-400',
+    },
+    {
+      header: 'Severity',
+      accessor: () => <Badge variant="error">Critical</Badge>,
     },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-6 rounded-3xl border border-slate-800">
+    <div className="page-stack">
+      <div className="page-hero flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+          <h1 className="page-hero-title">
             Executive Dashboard <LayoutDashboard className="w-6 h-6 text-blue-400" />
           </h1>
           <p className="text-sm text-slate-400 mt-1">
@@ -105,7 +159,7 @@ export const DashboardPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchDashboardData}
+            onClick={refreshAll}
             isLoading={isLoading}
             icon={<RefreshCw className="w-4 h-4" />}
           >
@@ -124,7 +178,7 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="Total Sales Revenue"
           value={`$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
@@ -155,7 +209,7 @@ export const DashboardPage: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <Card
             title="Recent Sales Transactions"
@@ -173,46 +227,88 @@ export const DashboardPage: React.FC = () => {
               </PermissionGate>
             }
           >
+            <div className="space-y-4 mb-4">
+              <ListToolbar
+                searchInput={salesList.searchInput}
+                onSearchChange={salesList.handleSearchChange}
+                onSearchCommit={salesList.handleSearchCommit}
+                searchPlaceholder="Search all columns…"
+                filters={
+                  <ListFilterBar showClear={salesList.hasActiveFilters} onClear={salesList.clearFilters}>
+                    <FilterSelect
+                      label="Payment"
+                      options={PAYMENT_METHOD_FILTER_OPTIONS}
+                      value={salesList.filters.paymentMethod}
+                      onChange={(value) => salesList.setFilter('paymentMethod', value)}
+                    />
+                  </ListFilterBar>
+                }
+              />
+            </div>
             <Table
               columns={salesColumns}
-              data={sales.slice(0, 5)}
+              data={salesList.items}
               keyExtractor={(row) => row.id}
               emptyMessage="No sales recorded yet. Click 'New Sale POS' to record your first order!"
-              isLoading={isLoading}
+              isLoading={salesList.isLoading}
+              sort={salesList.sort}
+              onSortChange={salesList.toggleSort}
+              footer={
+                <Pagination
+                  page={salesList.page}
+                  pageSize={salesList.pageSize}
+                  totalCount={salesList.totalCount}
+                  onPageChange={salesList.setPage}
+                  pageSizeOptions={[5, 10, 20]}
+                />
+              }
             />
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <Card
             title="Inventory Restock Alerts"
             subtitle="Products reaching minimum stock threshold"
           >
-            {alerts.length === 0 ? (
-              <div className="text-center py-6 text-slate-500">
-                <Box className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-xs">No active restock alerts.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {alerts.map((alert) => (
-                  <div
-                    key={alert.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800"
-                  >
-                    <div>
-                      <h4 className="text-xs font-semibold text-slate-200">
-                        Variant #{alert.variantId}
-                      </h4>
-                      <p className="text-[10px] text-slate-400">
-                        Product #{alert.productId} · {alert.status}
-                      </p>
-                    </div>
-                    <Badge variant="error">Critical</Badge>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="space-y-4 mb-4">
+              <ListToolbar
+                searchInput={alertsList.searchInput}
+                onSearchChange={alertsList.handleSearchChange}
+                onSearchCommit={alertsList.handleSearchCommit}
+                searchPlaceholder="Search all columns…"
+                filters={
+                  <ListFilterBar showClear={alertsList.hasActiveFilters} onClear={alertsList.clearFilters}>
+                    <FilterSelect
+                      label="Status"
+                      options={ALERT_STATUS_OPTIONS}
+                      value={alertsList.filters.status}
+                      onChange={(value) => alertsList.setFilter('status', value)}
+                    />
+                  </ListFilterBar>
+                }
+              />
+            </div>
+            <Table
+              columns={alertsColumns}
+              data={alertsList.items}
+              keyExtractor={(row) => row.id}
+              isLoading={alertsList.isLoading}
+              emptyMessage="No active restock alerts."
+              sort={alertsList.sort}
+              onSortChange={alertsList.toggleSort}
+              footer={
+                alertsList.totalCount > 0 ? (
+                  <Pagination
+                    page={alertsList.page}
+                    pageSize={alertsList.pageSize}
+                    totalCount={alertsList.totalCount}
+                    onPageChange={alertsList.setPage}
+                    pageSizeOptions={[5, 10, 20]}
+                  />
+                ) : undefined
+              }
+            />
           </Card>
 
           <Card title="Quick Architecture Note">

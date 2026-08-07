@@ -17,11 +17,11 @@ public class GiftOptionController : ControllerBase
 
     // GET: api/giftoption
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var options = await _giftOptionRepo.GetAllAsync();
+            var options = await _giftOptionRepo.GetPagedAsync(query);
             return Ok(options);
         }
         catch (Exception ex)

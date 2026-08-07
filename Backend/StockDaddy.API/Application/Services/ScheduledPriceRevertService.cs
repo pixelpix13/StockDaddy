@@ -19,6 +19,8 @@ public class ScheduledPriceRevertService
         _repo = repo;
     }
 
+    public async Task<PagedResult<ScheduledPriceRevert>> GetPagedAsync(PagedQuery query) => await _repo.GetPagedAsync(query);
+
     public async Task<List<ScheduledPriceRevert>> GetAllAsync() => await _repo.GetAllAsync();
 
     public async Task<ScheduledPriceRevert?> GetByIdAsync(int id) => await _repo.GetByIdAsync(id);

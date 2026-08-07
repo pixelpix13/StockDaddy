@@ -3,6 +3,7 @@ using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -14,6 +15,52 @@ public class ProductVariantRepository : IProductVariantRepository
     {
         _context = context;
     }
+
+    public async Task<PagedResult<ProductVariantDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.ProductVariants.Where(v => !v.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = $"%{q.Search}%";
+            baseQuery = baseQuery.Where(v => EF.Functions.ILike(v.VariantName, pattern) || EF.Functions.ILike(v.SkuCode, pattern) || EF.Functions.ILike(v.Barcode, pattern));
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(v => new ProductVariantDto
+        {
+                Id = v.Id,
+                ProductId = v.ProductId,
+                StoreId = v.StoreId,
+                HSNCodeId = v.HSNCodeId,
+                VariantName = v.VariantName,
+                Barcode = v.Barcode,
+                SkuCode = v.SkuCode,
+                CostPrice = v.CostPrice,
+                MarginPercent = v.MarginPercent,
+                TaxPercent = v.TaxPercent,
+                Price = v.Price,
+                Quantity = v.Quantity,
+                CreatedAt = v.CreatedAt,
+                UpdatedAt = v.UpdatedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<ProductVariant> ApplySort(IQueryable<ProductVariant> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("name", true) => query.OrderByDescending(v => v.VariantName),
+            ("name", false) => query.OrderBy(v => v.VariantName),
+            ("createdat", true) => query.OrderByDescending(v => v.CreatedAt),
+            ("createdat", false) => query.OrderBy(v => v.CreatedAt),
+            (_, true) => query.OrderByDescending(v => v.Id),
+            _ => query.OrderBy(v => v.Id),
+        };
 
     public async Task<List<ProductVariantDto>> GetAllAsync()
     {

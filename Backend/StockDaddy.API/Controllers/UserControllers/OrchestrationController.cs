@@ -94,11 +94,11 @@ public class OrchestrationController : ControllerBase
     }
 
     [HttpGet("variant-stock")]
-    public async Task<IActionResult> GetVariantStock([FromQuery] int? storeId)
+    public async Task<IActionResult> GetVariantStock([FromQuery] int? storeId, [FromQuery] PagedQuery query)
     {
         try
         {
-            var result = await _orchestrationService.GetVariantStockAsync(storeId);
+            var result = await _orchestrationService.GetVariantStockAsync(storeId, query);
             return Ok(result);
         }
         catch (Exception ex)

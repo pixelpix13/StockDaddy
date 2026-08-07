@@ -4,6 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IIntegrationEventRepository
 {
+    Task<PagedResult<IntegrationEventDto>> GetPagedAsync(PagedQuery query);
     Task<List<IntegrationEventDto>> GetAllAsync();
     Task<IntegrationEventDto?> GetByIdAsync(int id);
     Task AddAsync(CreateIntegrationEventRequest integrationEvent);

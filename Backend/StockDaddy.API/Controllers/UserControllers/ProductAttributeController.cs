@@ -17,11 +17,11 @@ public class ProductAttributeController : ControllerBase
 
     // GET: api/productattribute
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var attributes = await _productAttributeRepository.GetAllAsync();
+            var attributes = await _productAttributeRepository.GetPagedAsync(query);
             return Ok(attributes);
         }
         catch (Exception ex)

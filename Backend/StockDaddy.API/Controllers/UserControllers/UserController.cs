@@ -17,11 +17,11 @@ public class UserController : ControllerBase
 
     // GET: api/user
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var users = await _userRepository.GetAllAsync();
+            var users = await _userRepository.GetPagedAsync(query);
             return Ok(users);
         }
         catch (Exception ex)

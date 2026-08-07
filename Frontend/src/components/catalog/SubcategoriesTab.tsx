@@ -1,12 +1,13 @@
 /**
  * Subcategories tab — list + create/edit dialog with parent category picker.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { catalogService } from '@/services';
 import { CategoryDto, SubcategoryDto } from '@/dtos';
 import { useToast } from '@/context/ToastContext';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { usePagedList } from '@/hooks/usePagedList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,32 +25,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { buildCategoryFilterOptions } from '@/config/list-filters';
 
 interface SubcategoriesTabProps {
   tenantId: number;
   storeId: number;
-  categories: CategoryDto[];
-  subcategories: SubcategoryDto[];
-  onChanged: () => void;
 }
 
-export function SubcategoriesTab({
-  tenantId,
-  storeId,
-  categories,
-  subcategories,
-  onChanged,
-}: SubcategoriesTabProps) {
+export function SubcategoriesTab({ tenantId, storeId }: SubcategoriesTabProps) {
   const { showToast } = useToast();
+  const list = usePagedList<SubcategoryDto>({
+    fetchFn: useCallback((query) => catalogService.getSubcategoriesPaged(query), []),
+    defaultSortBy: 'name',
+    defaultSortDir: 'asc',
+  });
+
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<SubcategoryDto | null>(null);
   const [name, setName] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    catalogService.getCategories().then(setCategories).catch(() => {
+      showToast('error', 'Error', 'Failed to load categories for dropdown.');
+    });
+  }, [showToast]);
 
   useEffect(() => {
     if (categories.length > 0 && !selectedCategoryId) {
@@ -95,7 +102,7 @@ export function SubcategoriesTab({
         showToast('success', 'Created', 'Subcategory created.');
       }
       setDialogOpen(false);
-      onChanged();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not save subcategory.'));
     } finally {
@@ -108,18 +115,34 @@ export function SubcategoriesTab({
     try {
       await catalogService.deleteSubcategory(row.id);
       showToast('success', 'Deleted', 'Subcategory removed.');
-      onChanged();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not delete subcategory.'));
     }
   };
 
+  const columns: Column<SubcategoryDto>[] = [
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
+    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-slate-100' },
+    {
+      header: 'Category',
+      accessor: (row) => getCategoryName(row.categoryId),
+      className: 'text-slate-400',
+    },
+    {
+      header: 'Actions',
+      accessor: (row) => (
+        <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+      ),
+    },
+  ];
+
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Subcategories ({subcategories.length})</CardTitle>
+            <CardTitle>Subcategories ({list.totalCount})</CardTitle>
             <CardDescription>Nested under categories</CardDescription>
           </div>
           <PermissionGate module={APP_MODULES.Catalog} action="Write">
@@ -129,29 +152,25 @@ export function SubcategoriesTab({
           </PermissionGate>
         </CardHeader>
         <CardContent>
-          {subcategories.length === 0 ? (
-            <p className="text-sm text-slate-400">No subcategories yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {subcategories.map((sub) => (
-                <div
-                  key={sub.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/50 p-4"
-                >
-                  <div>
-                    <p className="font-semibold text-slate-100">{sub.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {getCategoryName(sub.categoryId)} · ID #{sub.id}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">Subcategory</Badge>
-                    <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(sub)} onDelete={() => handleDelete(sub)} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <PagedDataTable
+            columns={columns}
+            list={list}
+            keyExtractor={(row) => row.id}
+            searchPlaceholder="Search all columns…"
+            emptyMessage="No subcategories yet."
+            filters={
+              categories.length > 0 ? (
+                <ListFilterBar showClear={list.hasActiveFilters} onClear={list.clearFilters}>
+                  <FilterSelect
+                    label="Category"
+                    options={buildCategoryFilterOptions(categories)}
+                    value={list.filters.categoryId}
+                    onChange={(value) => list.setFilter('categoryId', value)}
+                  />
+                </ListFilterBar>
+              ) : undefined
+            }
+          />
         </CardContent>
       </Card>
 

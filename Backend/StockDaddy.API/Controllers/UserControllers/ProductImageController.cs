@@ -17,11 +17,11 @@ public class ProductImageController : ControllerBase
 
     // GET: api/productimage
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var images = await _productImageRepository.GetAllAsync();
+            var images = await _productImageRepository.GetPagedAsync(query);
             return Ok(images);
         }
         catch (Exception ex)

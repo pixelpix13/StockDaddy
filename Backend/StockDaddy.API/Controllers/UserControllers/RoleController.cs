@@ -17,11 +17,11 @@ public class RoleController : ControllerBase
 
     // GET: api/role
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var roles = await _roleRepository.GetAllAsync();
+            var roles = await _roleRepository.GetPagedAsync(query);
             return Ok(roles);
         }
         catch (Exception ex)

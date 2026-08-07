@@ -17,11 +17,11 @@ public class PaymentController : ControllerBase
 
     // GET: api/payment
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var payments = await _paymentRepository.GetAllAsync();
+            var payments = await _paymentRepository.GetPagedAsync(query);
             return Ok(payments);
         }
         catch (Exception ex)

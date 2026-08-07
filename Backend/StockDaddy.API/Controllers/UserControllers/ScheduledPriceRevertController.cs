@@ -20,8 +20,8 @@ namespace StockDaddy.API.Controllers.UserControllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<ScheduledPriceRevert>>> GetAll()
-            => Ok(await _service.GetAllAsync());
+        public async Task<ActionResult<PagedResult<ScheduledPriceRevert>>> GetAll([FromQuery] PagedQuery query)
+            => Ok(await _service.GetPagedAsync(query));
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ScheduledPriceRevert?>> GetById(int id)

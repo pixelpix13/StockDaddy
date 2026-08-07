@@ -4,6 +4,7 @@ using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -15,6 +16,49 @@ public class ProductRepository : IProductRepository
     {
         _context = context;
     }
+
+    public async Task<PagedResult<ProductDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.Products.Where(p => !p.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = $"%{q.Search}%";
+            baseQuery = baseQuery.Where(p => EF.Functions.ILike(p.Name, pattern) || EF.Functions.ILike(p.Description, pattern));
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(p => new ProductDto
+        {
+                Id = p.Id,
+                TenantId = p.TenantId,
+                StoreId = p.StoreId,
+                SubcategoryId = p.SubcategoryId,
+                Name = p.Name,
+                Description = p.Description,
+                Unit = p.Unit,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt,
+                IsDeleted = p.IsDeleted,
+                DeletedAt = p.DeletedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<Product> ApplySort(IQueryable<Product> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("name", true) => query.OrderByDescending(p => p.Name),
+            ("name", false) => query.OrderBy(p => p.Name),
+            ("createdat", true) => query.OrderByDescending(p => p.CreatedAt),
+            ("createdat", false) => query.OrderBy(p => p.CreatedAt),
+            (_, true) => query.OrderByDescending(p => p.Id),
+            _ => query.OrderBy(p => p.Id),
+        };
 
     public async Task<List<ProductDto>> GetAllAsync()
     {

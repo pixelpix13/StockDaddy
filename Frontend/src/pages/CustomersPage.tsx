@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { UserCircle, Plus } from 'lucide-react';
 import { customerService } from '@/services';
 import { CustomerDto } from '@/dtos';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { usePagedList } from '@/hooks/usePagedList';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,8 +25,12 @@ export const CustomersPage: React.FC = () => {
   const { showToast } = useToast();
   const tenantId = user?.tenantId || 1;
 
-  const [customers, setCustomers] = useState<CustomerDto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const list = usePagedList<CustomerDto>({
+    fetchFn: useCallback((query) => customerService.getCustomersPaged(query), []),
+    defaultSortBy: 'name',
+    defaultSortDir: 'asc',
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CustomerDto | null>(null);
   const [name, setName] = useState('');
@@ -32,21 +38,6 @@ export const CustomersPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const loadCustomers = async () => {
-    setIsLoading(true);
-    try {
-      setCustomers(await customerService.getCustomers());
-    } catch {
-      showToast('error', 'Error', 'Failed to load customers.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadCustomers();
-  }, []);
 
   const resetForm = () => {
     setName('');
@@ -95,7 +86,7 @@ export const CustomersPage: React.FC = () => {
       }
       setDialogOpen(false);
       resetForm();
-      loadCustomers();
+      list.reload();
     } catch {
       showToast('error', 'Failed', 'Could not save customer.');
     } finally {
@@ -108,16 +99,30 @@ export const CustomersPage: React.FC = () => {
     try {
       await customerService.deleteCustomer(row.id);
       showToast('success', 'Deleted', 'Customer removed.');
-      loadCustomers();
+      list.reload();
     } catch {
       showToast('error', 'Failed', 'Could not delete customer.');
     }
   };
 
+  const columns: Column<CustomerDto>[] = [
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
+    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-slate-100' },
+    { header: 'Email', accessor: (row) => row.email || '—', sortKey: 'email', className: 'text-slate-400' },
+    { header: 'Phone', accessor: (row) => row.phone || '—', className: 'text-slate-400' },
+    { header: 'Address', accessor: (row) => row.address || '—', className: 'text-xs text-slate-500' },
+    {
+      header: 'Actions',
+      accessor: (row) => (
+        <CrudRowActions module={APP_MODULES.Customer} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800">
-        <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+    <div className="page-stack">
+      <div className="page-hero">
+        <h1 className="page-hero-title">
           Customers <UserCircle className="w-6 h-6 text-blue-400" />
         </h1>
         <p className="text-sm text-slate-400 mt-1">Manage customer records for sales and invoicing</p>
@@ -125,7 +130,7 @@ export const CustomersPage: React.FC = () => {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Customer Directory ({customers.length})</CardTitle>
+          <CardTitle>Customer Directory ({list.totalCount})</CardTitle>
           <PermissionGate module={APP_MODULES.Customer} action="Write">
             <Button onClick={openCreate}>
               <Plus className="w-4 h-4" /> Add Customer
@@ -133,29 +138,13 @@ export const CustomersPage: React.FC = () => {
           </PermissionGate>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-slate-400">Loading...</p>
-          ) : customers.length === 0 ? (
-            <p className="text-sm text-slate-400">No customers yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {customers.map((row) => (
-                <div
-                  key={row.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/50 p-4"
-                >
-                  <div>
-                    <p className="font-semibold text-slate-100">{row.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {row.email || 'No email'} · {row.phone || 'No phone'}
-                    </p>
-                    {row.address && <p className="text-xs text-slate-500 mt-1">{row.address}</p>}
-                  </div>
-                  <CrudRowActions module={APP_MODULES.Customer} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
-                </div>
-              ))}
-            </div>
-          )}
+          <PagedDataTable
+            columns={columns}
+            list={list}
+            keyExtractor={(row) => row.id}
+            searchPlaceholder="Search customers..."
+            emptyMessage="No customers yet."
+          />
         </CardContent>
       </Card>
 

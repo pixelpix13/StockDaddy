@@ -5,6 +5,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface ISupplierRepository
 {
+    Task<PagedResult<SupplierDto>> GetPagedAsync(PagedQuery query);
     Task<List<SupplierDto>> GetAllAsync();
     Task<SupplierDto?> GetByIdAsync(int id);
     Task AddAsync(CreateSupplierRequest supplier);

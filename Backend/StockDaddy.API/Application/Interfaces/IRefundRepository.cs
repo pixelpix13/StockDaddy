@@ -4,6 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IRefundRepository
 {
+    Task<PagedResult<RefundDto>> GetPagedAsync(PagedQuery query);
     Task<List<RefundDto>> GetAllAsync();
     Task<RefundDto?> GetByIdAsync(int id);
     Task AddAsync(CreateRefundRequest refund);

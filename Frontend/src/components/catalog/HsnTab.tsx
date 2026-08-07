@@ -1,12 +1,13 @@
 /**
  * HSN master tab — GST classification codes with CGST/SGST percentages.
  */
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { catalogService } from '@/services';
 import { HsnMasterDto } from '@/dtos';
 import { useToast } from '@/context/ToastContext';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { usePagedList } from '@/hooks/usePagedList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,14 +21,18 @@ import {
 import { CrudRowActions } from '@/components/common/CrudRowActions';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { HSN_CGST_FILTER_OPTIONS } from '@/config/list-filters';
 
-interface HsnTabProps {
-  hsnCodes: HsnMasterDto[];
-  onChanged: () => void;
-}
-
-export function HsnTab({ hsnCodes, onChanged }: HsnTabProps) {
+export function HsnTab() {
   const { showToast } = useToast();
+  const list = usePagedList<HsnMasterDto>({
+    fetchFn: useCallback((query) => catalogService.getHsnCodesPaged(query), []),
+    defaultSortBy: 'name',
+    defaultSortDir: 'asc',
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<HsnMasterDto | null>(null);
   const [hsnCode, setHsnCode] = useState('');
@@ -79,7 +84,7 @@ export function HsnTab({ hsnCodes, onChanged }: HsnTabProps) {
         showToast('success', 'Created', 'HSN code created.');
       }
       setDialogOpen(false);
-      onChanged();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not save HSN code.'));
     } finally {
@@ -92,18 +97,40 @@ export function HsnTab({ hsnCodes, onChanged }: HsnTabProps) {
     try {
       await catalogService.deleteHsnCode(row.id);
       showToast('success', 'Deleted', 'HSN code removed.');
-      onChanged();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not delete HSN code.'));
     }
   };
 
+  const columns: Column<HsnMasterDto>[] = [
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
+    { header: 'HSN Code', accessor: 'hsnCode', sortKey: 'name', className: 'font-medium text-slate-100' },
+    { header: 'Description', accessor: 'description', className: 'text-slate-400' },
+    {
+      header: 'CGST %',
+      accessor: (row) => `${row.cgstPercent}%`,
+      className: 'text-emerald-400',
+    },
+    {
+      header: 'SGST %',
+      accessor: (row) => `${row.sgstPercent}%`,
+      className: 'text-emerald-400',
+    },
+    {
+      header: 'Actions',
+      accessor: (row) => (
+        <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+      ),
+    },
+  ];
+
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>HSN Master ({hsnCodes.length})</CardTitle>
+            <CardTitle>HSN Master ({list.totalCount})</CardTitle>
             <CardDescription>GST tax codes for product classification</CardDescription>
           </div>
           <PermissionGate module={APP_MODULES.Catalog} action="Write">
@@ -113,27 +140,23 @@ export function HsnTab({ hsnCodes, onChanged }: HsnTabProps) {
           </PermissionGate>
         </CardHeader>
         <CardContent>
-          {hsnCodes.length === 0 ? (
-            <p className="text-sm text-slate-400">No HSN codes yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {hsnCodes.map((row) => (
-                <div
-                  key={row.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/50 p-4"
-                >
-                  <div>
-                    <p className="font-semibold text-slate-100">{row.hsnCode}</p>
-                    <p className="text-xs text-slate-500">{row.description}</p>
-                    <p className="text-xs text-emerald-400 mt-1">
-                      CGST {row.cgstPercent}% · SGST {row.sgstPercent}%
-                    </p>
-                  </div>
-                  <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
-                </div>
-              ))}
-            </div>
-          )}
+          <PagedDataTable
+            columns={columns}
+            list={list}
+            keyExtractor={(row) => row.id}
+            searchPlaceholder="Search all columns…"
+            emptyMessage="No HSN codes yet."
+            filters={
+              <ListFilterBar showClear={list.hasActiveFilters} onClear={list.clearFilters}>
+                <FilterSelect
+                  label="CGST"
+                  options={HSN_CGST_FILTER_OPTIONS}
+                  value={list.filters.taxPercent}
+                  onChange={(value) => list.setFilter('taxPercent', value)}
+                />
+              </ListFilterBar>
+            }
+          />
         </CardContent>
       </Card>
 

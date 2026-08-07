@@ -4,6 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IGiftOptionRepository
 {
+    Task<PagedResult<GiftOptionDto>> GetPagedAsync(PagedQuery query);
     Task<List<GiftOptionDto>> GetAllAsync();
     Task<GiftOptionDto?> GetByIdAsync(int id);
     Task AddAsync(CreateGiftOptionRequest option);

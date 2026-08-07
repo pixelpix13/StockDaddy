@@ -4,6 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IProductVariantRepository
 {
+    Task<PagedResult<ProductVariantDto>> GetPagedAsync(PagedQuery query);
     Task<List<ProductVariantDto>> GetAllAsync();
     Task<ProductVariantDto?> GetByIdAsync(int id);
     Task<int> AddAsync(CreateProductVariantRequest variant);

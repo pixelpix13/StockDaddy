@@ -17,11 +17,11 @@ public class ProductRestockAlertController : ControllerBase
 
     // GET: api/productrestockalert
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var alerts = await _alertRepository.GetAllAsync();
+            var alerts = await _alertRepository.GetPagedAsync(query);
             return Ok(alerts);
         }
         catch (Exception ex)

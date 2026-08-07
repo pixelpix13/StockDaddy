@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.DTOs;
+using StockDaddy.Application.Helpers;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
-using StockDaddy.Application.DTOs;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -15,6 +16,45 @@ public class CategoryRepository : ICategoryRepository
         _context = context;
     }
 
+    public async Task<PagedResult<CategoryDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.Categories.Where(c => !c.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = RepositoryPaging.LikePattern(q.Search);
+            var idMatch = RepositoryPaging.TryParseSearchId(q.Search, out var searchId);
+            baseQuery = baseQuery.Where(c =>
+                (idMatch && c.Id == searchId) ||
+                EF.Functions.ILike(c.Name, pattern));
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(c => new CategoryDto
+        {
+            Id = c.Id,
+            StoreId = c.StoreId,
+            TenantId = c.TenantId,
+            Name = c.Name,
+            CreatedAt = c.CreatedAt,
+            UpdatedAt = c.UpdatedAt
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<Category> ApplySort(IQueryable<Category> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("name", true) => query.OrderByDescending(c => c.Name),
+            ("name", false) => query.OrderBy(c => c.Name),
+            ("createdat", true) => query.OrderByDescending(c => c.CreatedAt),
+            ("createdat", false) => query.OrderBy(c => c.CreatedAt),
+            (_, true) => query.OrderByDescending(c => c.Id),
+            _ => query.OrderBy(c => c.Id),
+        };
 
     public async Task<List<CategoryDto>> GetAllAsync()
     {

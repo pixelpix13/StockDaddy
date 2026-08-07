@@ -17,11 +17,11 @@ public class ProductController : ControllerBase
 
     // GET: api/product
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var products = await _productRepository.GetAllAsync();
+            var products = await _productRepository.GetPagedAsync(query);
             return Ok(products);
         }
         catch (Exception ex)

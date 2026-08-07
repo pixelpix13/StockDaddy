@@ -4,6 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IAdjustedInvoiceRepository
 {
+    Task<PagedResult<AdjustedInvoiceDto>> GetPagedAsync(PagedQuery query);
     Task<List<AdjustedInvoiceDto>> GetAllAsync();
     Task<AdjustedInvoiceDto?> GetByIdAsync(int id);
     Task AddAsync(CreateAdjustedInvoiceRequest invoice);

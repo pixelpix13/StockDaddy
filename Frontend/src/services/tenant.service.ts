@@ -1,16 +1,24 @@
 /** Tenant, store, and role lookups for settings screens. */
 import { apiClient } from './api.client';
+import { fetchAllItems, fetchPaged } from '@/lib/fetch-paged';
+import { PagedQuery, PagedResult } from '@/types/paging';
 import { TenantDto, StoreDto, RoleDto, CreateStoreRequest, UpdateStoreRequest } from '../dtos';
 
 export const tenantService = {
+  getTenantsPaged(query: PagedQuery): Promise<PagedResult<TenantDto>> {
+    return fetchPaged<TenantDto>('/tenant', query);
+  },
+
   async getTenants(): Promise<TenantDto[]> {
-    const response = await apiClient.get<TenantDto[]>('/tenant');
-    return response.data;
+    return fetchAllItems<TenantDto>('/tenant');
+  },
+
+  getStoresPaged(query: PagedQuery): Promise<PagedResult<StoreDto>> {
+    return fetchPaged<StoreDto>('/store', query);
   },
 
   async getStores(): Promise<StoreDto[]> {
-    const response = await apiClient.get<StoreDto[]>('/store');
-    return response.data;
+    return fetchAllItems<StoreDto>('/store');
   },
 
   async createStore(request: CreateStoreRequest): Promise<void> {
@@ -26,7 +34,6 @@ export const tenantService = {
   },
 
   async getRoles(): Promise<RoleDto[]> {
-    const response = await apiClient.get<RoleDto[]>('/role');
-    return response.data;
+    return fetchAllItems<RoleDto>('/role');
   },
 };

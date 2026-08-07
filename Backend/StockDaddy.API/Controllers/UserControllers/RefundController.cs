@@ -17,11 +17,11 @@ public class RefundController : ControllerBase
 
     // GET: api/refund
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var refunds = await _refundRepository.GetAllAsync();
+            var refunds = await _refundRepository.GetPagedAsync(query);
             return Ok(refunds);
         }
         catch (Exception ex)

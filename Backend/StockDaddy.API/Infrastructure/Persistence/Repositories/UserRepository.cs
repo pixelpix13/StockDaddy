@@ -17,6 +17,62 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
+    public async Task<PagedResult<UserDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.Users.Where(u => !u.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = RepositoryPaging.LikePattern(q.Search);
+            var idMatch = RepositoryPaging.TryParseSearchId(q.Search, out var searchId);
+            baseQuery = baseQuery.Where(u =>
+                (idMatch && u.Id == searchId) ||
+                (idMatch && u.RoleId == searchId) ||
+                EF.Functions.ILike(u.Username, pattern) ||
+                EF.Functions.ILike(u.Email, pattern));
+        }
+
+        if (q.RoleId.HasValue)
+        {
+            baseQuery = baseQuery.Where(u => u.RoleId == q.RoleId.Value);
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(u => new UserDto
+        {
+                Id = u.Id,
+                TenantId = u.TenantId,
+                RoleId = u.RoleId,
+                StoreId = u.StoreId,
+                Username = u.Username,
+                Email = u.Email,
+                CreatedAt = u.CreatedAt,
+                UpdatedAt = u.UpdatedAt,
+                IsDeleted = u.IsDeleted,
+                DeletedAt = u.DeletedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<User> ApplySort(IQueryable<User> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("name", true) => query.OrderByDescending(u => u.Username),
+            ("name", false) => query.OrderBy(u => u.Username),
+            ("username", true) => query.OrderByDescending(u => u.Username),
+            ("username", false) => query.OrderBy(u => u.Username),
+            ("email", true) => query.OrderByDescending(u => u.Email),
+            ("email", false) => query.OrderBy(u => u.Email),
+            ("createdat", true) => query.OrderByDescending(u => u.CreatedAt),
+            ("createdat", false) => query.OrderBy(u => u.CreatedAt),
+            (_, true) => query.OrderByDescending(u => u.Id),
+            _ => query.OrderBy(u => u.Id),
+        };
+
     public async Task<List<UserDto>> GetAllAsync()
     {
         return await _context.Users

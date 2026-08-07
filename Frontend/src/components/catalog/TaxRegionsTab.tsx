@@ -1,12 +1,13 @@
 /**
  * Tax regions tab — store-scoped regional tax rates.
  */
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { catalogService } from '@/services';
 import { TaxRegionDto } from '@/dtos';
 import { useToast } from '@/context/ToastContext';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { usePagedList } from '@/hooks/usePagedList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,16 +21,23 @@ import {
 import { CrudRowActions } from '@/components/common/CrudRowActions';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { TAX_REGION_RATE_OPTIONS } from '@/config/list-filters';
 
 interface TaxRegionsTabProps {
   tenantId: number;
   storeId: number;
-  taxRegions: TaxRegionDto[];
-  onChanged: () => void;
 }
 
-export function TaxRegionsTab({ tenantId, storeId, taxRegions, onChanged }: TaxRegionsTabProps) {
+export function TaxRegionsTab({ tenantId, storeId }: TaxRegionsTabProps) {
   const { showToast } = useToast();
+  const list = usePagedList<TaxRegionDto>({
+    fetchFn: useCallback((query) => catalogService.getTaxRegionsPaged(query), []),
+    defaultSortBy: 'name',
+    defaultSortDir: 'asc',
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<TaxRegionDto | null>(null);
   const [regionName, setRegionName] = useState('');
@@ -72,7 +80,7 @@ export function TaxRegionsTab({ tenantId, storeId, taxRegions, onChanged }: TaxR
         showToast('success', 'Created', 'Tax region created.');
       }
       setDialogOpen(false);
-      onChanged();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not save tax region.'));
     } finally {
@@ -85,18 +93,39 @@ export function TaxRegionsTab({ tenantId, storeId, taxRegions, onChanged }: TaxR
     try {
       await catalogService.deleteTaxRegion(row.id);
       showToast('success', 'Deleted', 'Tax region removed.');
-      onChanged();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not delete tax region.'));
     }
   };
 
+  const columns: Column<TaxRegionDto>[] = [
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
+    { header: 'Region', accessor: 'regionName', sortKey: 'name', className: 'font-medium text-slate-100' },
+    {
+      header: 'Tax %',
+      accessor: (row) => `${row.taxPercent}%`,
+      className: 'text-emerald-400',
+    },
+    {
+      header: 'Store',
+      accessor: (row) => (row.storeId ? `#${row.storeId}` : 'All'),
+      className: 'text-xs text-slate-500',
+    },
+    {
+      header: 'Actions',
+      accessor: (row) => (
+        <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+      ),
+    },
+  ];
+
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Tax Regions ({taxRegions.length})</CardTitle>
+            <CardTitle>Tax Regions ({list.totalCount})</CardTitle>
             <CardDescription>Regional tax rates for store #{storeId}</CardDescription>
           </div>
           <PermissionGate module={APP_MODULES.Catalog} action="Write">
@@ -106,26 +135,23 @@ export function TaxRegionsTab({ tenantId, storeId, taxRegions, onChanged }: TaxR
           </PermissionGate>
         </CardHeader>
         <CardContent>
-          {taxRegions.length === 0 ? (
-            <p className="text-sm text-slate-400">No tax regions yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {taxRegions.map((row) => (
-                <div
-                  key={row.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/50 p-4"
-                >
-                  <div>
-                    <p className="font-semibold text-slate-100">{row.regionName}</p>
-                    <p className="text-xs text-slate-500">
-                      {row.taxPercent}% tax · Store #{row.storeId ?? 'All'}
-                    </p>
-                  </div>
-                  <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
-                </div>
-              ))}
-            </div>
-          )}
+          <PagedDataTable
+            columns={columns}
+            list={list}
+            keyExtractor={(row) => row.id}
+            searchPlaceholder="Search all columns…"
+            emptyMessage="No tax regions yet."
+            filters={
+              <ListFilterBar showClear={list.hasActiveFilters} onClear={list.clearFilters}>
+                <FilterSelect
+                  label="Tax rate"
+                  options={TAX_REGION_RATE_OPTIONS}
+                  value={list.filters.taxPercent}
+                  onChange={(value) => list.setFilter('taxPercent', value)}
+                />
+              </ListFilterBar>
+            }
+          />
         </CardContent>
       </Card>
 

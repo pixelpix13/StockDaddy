@@ -3,6 +3,8 @@
  * Use for POS checkout, stock adjust, product+variant create, PO with line items.
  */
 import { apiClient } from './api.client';
+import { fetchAllItems, fetchPaged, normalizePagedResult } from '@/lib/fetch-paged';
+import { PagedQuery, PagedResult } from '@/types/paging';
 import {
   VariantStockDto,
   CreateProductWithVariantRequest,
@@ -17,11 +19,24 @@ import {
 import { PurchaseOrderDto } from '../dtos/purchase.dto';
 
 export const orchestrationService = {
+  getVariantStockPaged(
+    query: PagedQuery,
+    storeId?: number
+  ): Promise<PagedResult<VariantStockDto>> {
+    return fetchPaged<VariantStockDto>(
+      '/orchestration/variant-stock',
+      query,
+      storeId != null ? { storeId } : undefined
+    );
+  },
+
   async getVariantStock(storeId?: number): Promise<VariantStockDto[]> {
-    const response = await apiClient.get<VariantStockDto[]>('/orchestration/variant-stock', {
-      params: storeId ? { storeId } : undefined,
-    });
-    return response.data;
+    const result = await fetchPaged<VariantStockDto>(
+      '/orchestration/variant-stock',
+      { page: 1, pageSize: 100 },
+      storeId != null ? { storeId } : undefined
+    );
+    return result.items;
   },
 
   async getVariantByBarcode(code: string, storeId: number): Promise<VariantStockDto> {

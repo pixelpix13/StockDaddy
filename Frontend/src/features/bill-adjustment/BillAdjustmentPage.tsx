@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { FilePenLine } from 'lucide-react';
 import { saleService } from '@/services';
 import { billAdjustmentService } from './bill-adjustment.service';
 import { SaleDto, PaymentMethod } from '@/dtos';
 import { useToast } from '@/context/ToastContext';
+import { usePagedList } from '@/hooks/usePagedList';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { PAYMENT_METHOD_FILTER_OPTIONS } from '@/config/list-filters';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,29 +34,18 @@ import { APP_MODULES } from '@/config/permissions';
 /** Isolated bill correction UI — delete this folder + disable Features:BillAdjustment to remove. */
 export const BillAdjustmentPage: React.FC = () => {
   const { showToast } = useToast();
-  const [sales, setSales] = useState<SaleDto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const list = usePagedList<SaleDto>({
+    fetchFn: useCallback((query) => saleService.getSalesPaged(query), []),
+    defaultSortBy: 'id',
+    defaultSortDir: 'desc',
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<SaleDto | null>(null);
   const [editTotalAmount, setEditTotalAmount] = useState('');
   const [editPaymentMethod, setEditPaymentMethod] = useState<PaymentMethod>('Cash');
   const [editNotes, setEditNotes] = useState('');
-
-  const loadSales = async () => {
-    setIsLoading(true);
-    try {
-      setSales(await saleService.getSales());
-    } catch {
-      showToast('error', 'Load Failed', 'Could not load sales for adjustment.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadSales();
-  }, []);
 
   const openEdit = (sale: SaleDto) => {
     setEditingSale(sale);
@@ -74,7 +67,7 @@ export const BillAdjustmentPage: React.FC = () => {
       });
       showToast('success', 'Bill Adjusted', `Sale #${editingSale.id} updated.`);
       setEditDialogOpen(false);
-      loadSales();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not adjust bill.'));
     } finally {
@@ -87,16 +80,54 @@ export const BillAdjustmentPage: React.FC = () => {
     try {
       await billAdjustmentService.voidSale(sale.id);
       showToast('success', 'Voided', 'Sale removed.');
-      loadSales();
+      list.reload();
     } catch {
       showToast('error', 'Failed', 'Could not void sale.');
     }
   };
 
+  const columns: Column<SaleDto>[] = [
+    {
+      header: 'ID',
+      accessor: (row) => <span className="font-mono text-xs text-blue-400">#{row.id}</span>,
+      sortKey: 'id',
+    },
+    {
+      header: 'Date',
+      accessor: (row) => new Date(row.createdAt).toLocaleString(),
+      sortKey: 'createdat',
+      className: 'text-xs text-slate-500',
+    },
+    {
+      header: 'Cashier',
+      accessor: (row) => `#${row.soldBy}`,
+      className: 'text-slate-400',
+    },
+    {
+      header: 'Amount',
+      accessor: (row) => <span className="font-bold text-emerald-400">${row.totalAmount.toFixed(2)}</span>,
+    },
+    {
+      header: 'Payment',
+      accessor: (row) => <Badge variant="secondary">{row.paymentMethod}</Badge>,
+    },
+    {
+      header: 'Actions',
+      accessor: (row) => (
+        <CrudRowActions
+          module={APP_MODULES.BillAdjustment}
+          onEdit={() => openEdit(row)}
+          onDelete={() => handleVoid(row)}
+          deleteLabel="Void sale"
+        />
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800">
-        <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+    <div className="page-stack">
+      <div className="page-hero">
+        <h1 className="page-hero-title">
           Sales Corrections <FilePenLine className="w-6 h-6 text-blue-400" />
         </h1>
         <p className="text-sm text-slate-400 mt-1">
@@ -106,42 +137,26 @@ export const BillAdjustmentPage: React.FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Posted Sales ({sales.length})</CardTitle>
+          <CardTitle>Posted Sales ({list.totalCount})</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-slate-400">Loading...</p>
-          ) : sales.length === 0 ? (
-            <p className="text-sm text-slate-400">No sales to adjust.</p>
-          ) : (
-            <div className="space-y-2 max-h-[600px] overflow-y-auto">
-              {sales.map((sale) => (
-                <div
-                  key={sale.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-800 p-3 gap-3"
-                >
-                  <div>
-                    <p className="font-mono text-xs text-blue-400">#SALE-{sale.id}</p>
-                    <p className="text-xs text-slate-500">
-                      {new Date(sale.createdAt).toLocaleString()} · Cashier #{sale.soldBy}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <p className="font-bold text-emerald-400">${sale.totalAmount.toFixed(2)}</p>
-                      <Badge variant="secondary">{sale.paymentMethod}</Badge>
-                    </div>
-                    <CrudRowActions
-                      module={APP_MODULES.BillAdjustment}
-                      onEdit={() => openEdit(sale)}
-                      onDelete={() => handleVoid(sale)}
-                      deleteLabel="Void sale"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <PagedDataTable
+            columns={columns}
+            list={list}
+            keyExtractor={(row) => row.id}
+            searchPlaceholder="Search all columns…"
+            emptyMessage="No sales to adjust."
+            filters={
+              <ListFilterBar showClear={list.hasActiveFilters} onClear={list.clearFilters}>
+                <FilterSelect
+                  label="Payment"
+                  options={PAYMENT_METHOD_FILTER_OPTIONS}
+                  value={list.filters.paymentMethod}
+                  onChange={(value) => list.setFilter('paymentMethod', value)}
+                />
+              </ListFilterBar>
+            }
+          />
         </CardContent>
       </Card>
 

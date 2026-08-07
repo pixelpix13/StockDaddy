@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Truck, Plus, PackageCheck } from 'lucide-react';
 import { orchestrationService, purchaseService } from '@/services';
 import {
@@ -9,7 +9,10 @@ import {
 } from '@/dtos';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
-import { Button } from '@/components/ui/button';
+import { usePagedList } from '@/hooks/usePagedList';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { PURCHASE_ORDER_STATUS_OPTIONS, buildSupplierFilterOptions } from '@/config/list-filters';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +36,7 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
+import { Button } from '@/components/ui/button';
 
 interface PoLineDraft {
   productVariantId: number;
@@ -47,7 +51,12 @@ export const PurchasesPage: React.FC = () => {
   const tenantId = user?.tenantId || 1;
   const storeId = user?.storeId || 1;
 
-  const [orders, setOrders] = useState<PurchaseOrderDto[]>([]);
+  const list = usePagedList<PurchaseOrderDto>({
+    fetchFn: useCallback((query) => purchaseService.getPurchaseOrdersPaged(query), []),
+    defaultSortBy: 'id',
+    defaultSortDir: 'desc',
+  });
+
   const [suppliers, setSuppliers] = useState<SupplierDto[]>([]);
   const [variants, setVariants] = useState<VariantStockDto[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -56,7 +65,6 @@ export const PurchasesPage: React.FC = () => {
   const [editStatus, setEditStatus] = useState<PurchaseOrderStatus>('Pending');
   const [editNotes, setEditNotes] = useState('');
   const [editExpectedDelivery, setEditExpectedDelivery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [supplierId, setSupplierId] = useState('1');
@@ -67,29 +75,21 @@ export const PurchasesPage: React.FC = () => {
   const [lineCost, setLineCost] = useState('');
   const [lines, setLines] = useState<PoLineDraft[]>([]);
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [ordersRes, suppliersRes, stock] = await Promise.all([
-        purchaseService.getPurchaseOrders(),
-        purchaseService.getSuppliers(),
-        orchestrationService.getVariantStock(storeId),
-      ]);
-      setOrders(ordersRes);
-      setSuppliers(suppliersRes);
-      setVariants(stock);
-      if (suppliersRes.length > 0) setSupplierId(String(suppliersRes[0].id));
-      if (stock.length > 0 && !selectedVariantId) setSelectedVariantId(String(stock[0].id));
-    } catch {
-      showToast('error', 'Load Failed', 'Could not load purchase data.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadData();
-  }, []);
+    Promise.all([
+      purchaseService.getSuppliers(),
+      orchestrationService.getVariantStock(storeId),
+    ])
+      .then(([suppliersRes, stock]) => {
+        setSuppliers(suppliersRes);
+        setVariants(stock);
+        if (suppliersRes.length > 0) setSupplierId(String(suppliersRes[0].id));
+        if (stock.length > 0 && !selectedVariantId) setSelectedVariantId(String(stock[0].id));
+      })
+      .catch(() => {
+        showToast('error', 'Load Failed', 'Could not load purchase dropdown data.');
+      });
+  }, [storeId]);
 
   const addLine = () => {
     const variant = variants.find((v) => String(v.id) === selectedVariantId);
@@ -138,7 +138,7 @@ export const PurchasesPage: React.FC = () => {
       setDialogOpen(false);
       setLines([]);
       setNotes('');
-      loadData();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not create PO.'));
     } finally {
@@ -150,7 +150,7 @@ export const PurchasesPage: React.FC = () => {
     try {
       await orchestrationService.receivePurchaseOrder(orderId);
       showToast('success', 'Received', `PO #${orderId} received and stock updated.`);
-      loadData();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not receive order.'));
     }
@@ -178,7 +178,7 @@ export const PurchasesPage: React.FC = () => {
       });
       showToast('success', 'Updated', `PO #${editingOrder.id} updated.`);
       setEditDialogOpen(false);
-      loadData();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not update order.'));
     } finally {
@@ -191,17 +191,74 @@ export const PurchasesPage: React.FC = () => {
     try {
       await purchaseService.deletePurchaseOrder(order.id);
       showToast('success', 'Deleted', 'Purchase order removed.');
-      loadData();
+      list.reload();
     } catch {
       showToast('error', 'Failed', 'Could not delete order.');
     }
   };
 
+  const getSupplierName = (supplierId: number) =>
+    suppliers.find((s) => s.id === supplierId)?.name ?? `Supplier #${supplierId}`;
+
+  const columns: Column<PurchaseOrderDto>[] = [
+    {
+      header: 'ID',
+      accessor: (row) => <span className="font-mono text-sm text-blue-400">#{row.id}</span>,
+      sortKey: 'id',
+    },
+    {
+      header: 'Supplier',
+      accessor: (row) => getSupplierName(row.supplierId),
+      className: 'text-slate-300',
+    },
+    {
+      header: 'Order Date',
+      accessor: (row) => new Date(row.orderDate).toLocaleDateString(),
+      sortKey: 'createdat',
+      className: 'text-slate-400',
+    },
+    {
+      header: 'Status',
+      accessor: (row) => (
+        <Badge
+          variant={
+            row.status === 'Delivered'
+              ? 'success'
+              : row.status === 'Cancelled'
+              ? 'destructive'
+              : 'secondary'
+          }
+        >
+          {row.status}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Actions',
+      accessor: (row) => (
+        <div className="flex items-center gap-2">
+          {row.status !== 'Delivered' && (
+            <PermissionGate module={APP_MODULES.Purchase} action="Update">
+              <Button size="sm" variant="outline" onClick={() => handleReceive(row.id)}>
+                <PackageCheck className="w-4 h-4" /> Receive
+              </Button>
+            </PermissionGate>
+          )}
+          <CrudRowActions
+            module={APP_MODULES.Purchase}
+            onEdit={() => openEditOrder(row)}
+            onDelete={() => handleDeleteOrder(row)}
+          />
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="page-stack">
+      <div className="page-hero flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+          <h1 className="page-hero-title">
             Purchase Orders <Truck className="w-6 h-6 text-blue-400" />
           </h1>
           <p className="text-sm text-slate-400 mt-1">
@@ -217,55 +274,34 @@ export const PurchasesPage: React.FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Orders ({orders.length})</CardTitle>
+          <CardTitle>Orders ({list.totalCount})</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-slate-400">Loading...</p>
-          ) : orders.length === 0 ? (
-            <p className="text-sm text-slate-400">No purchase orders yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {orders.map((order) => (
-                <div
-                  key={order.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-800 p-4"
-                >
-                  <div>
-                    <p className="font-mono text-sm text-blue-400">#PO-{order.id}</p>
-                    <p className="text-xs text-slate-500">
-                      Supplier #{order.supplierId} · {new Date(order.orderDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge
-                      variant={
-                        order.status === 'Delivered'
-                          ? 'success'
-                          : order.status === 'Cancelled'
-                          ? 'destructive'
-                          : 'secondary'
-                      }
-                    >
-                      {order.status}
-                    </Badge>
-                    {order.status !== 'Delivered' && (
-                      <PermissionGate module={APP_MODULES.Purchase} action="Update">
-                        <Button size="sm" variant="outline" onClick={() => handleReceive(order.id)}>
-                          <PackageCheck className="w-4 h-4" /> Receive
-                        </Button>
-                      </PermissionGate>
-                    )}
-                    <CrudRowActions
-                      module={APP_MODULES.Purchase}
-                      onEdit={() => openEditOrder(order)}
-                      onDelete={() => handleDeleteOrder(order)}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <PagedDataTable
+            columns={columns}
+            list={list}
+            keyExtractor={(row) => row.id}
+            searchPlaceholder="Search all columns…"
+            emptyMessage="No purchase orders yet."
+            filters={
+              <ListFilterBar showClear={list.hasActiveFilters} onClear={list.clearFilters}>
+                <FilterSelect
+                  label="Status"
+                  options={PURCHASE_ORDER_STATUS_OPTIONS}
+                  value={list.filters.status}
+                  onChange={(value) => list.setFilter('status', value)}
+                />
+                {suppliers.length > 0 ? (
+                  <FilterSelect
+                    label="Supplier"
+                    options={buildSupplierFilterOptions(suppliers)}
+                    value={list.filters.supplierId}
+                    onChange={(value) => list.setFilter('supplierId', value)}
+                  />
+                ) : null}
+              </ListFilterBar>
+            }
+          />
         </CardContent>
       </Card>
 

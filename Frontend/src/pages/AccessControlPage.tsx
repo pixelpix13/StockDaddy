@@ -14,6 +14,10 @@ import { RolesTab } from '@/components/access-control/RolesTab';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_MODULES } from '@/config/permissions';
+import { usePagedList } from '@/hooks/usePagedList';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { buildRoleFilterOptions } from '@/config/list-filters';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -60,8 +64,13 @@ export const AccessControlPage: React.FC = () => {
   const { hasPermission } = usePermissions();
   const canUpdateAccess = hasPermission(APP_MODULES.AccessControl, 'Update');
 
+  const usersList = usePagedList<UserManagementDto>({
+    fetchFn: useCallback((query) => userService.getUsersPaged(query), []),
+    defaultSortBy: 'username',
+    defaultSortDir: 'asc',
+  });
+
   const [matrix, setMatrix] = useState<RbacMatrixDto | null>(null);
-  const [users, setUsers] = useState<UserManagementDto[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [rolePermissionIds, setRolePermissionIds] = useState<Set<number>>(new Set());
   const [userRoleDrafts, setUserRoleDrafts] = useState<Record<number, number>>({});
@@ -69,15 +78,11 @@ export const AccessControlPage: React.FC = () => {
   const [isSavingRole, setIsSavingRole] = useState(false);
   const [savingUserId, setSavingUserId] = useState<number | null>(null);
 
-  const loadData = useCallback(async () => {
+  const loadMatrix = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [matrixData, userList] = await Promise.all([
-        rbacService.getMatrix(),
-        userService.getUsers(),
-      ]);
+      const matrixData = await rbacService.getMatrix();
       setMatrix(matrixData);
-      setUsers(userList);
       setSelectedRoleId((prev) => {
         if (prev) return prev;
         return matrixData.roles.length > 0 ? String(matrixData.roles[0].id) : '';
@@ -86,7 +91,6 @@ export const AccessControlPage: React.FC = () => {
         if (prev.size > 0) return prev;
         return new Set(matrixData.roles[0]?.permissionIds ?? []);
       });
-      setUserRoleDrafts(Object.fromEntries(userList.map((u) => [u.id, u.roleId])));
     } catch (err: unknown) {
       showToast('error', 'Load Failed', getApiErrorMessage(err, 'Could not load access control data.'));
     } finally {
@@ -95,8 +99,18 @@ export const AccessControlPage: React.FC = () => {
   }, [showToast]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadMatrix();
+  }, [loadMatrix]);
+
+  useEffect(() => {
+    setUserRoleDrafts((prev) => {
+      const next = { ...prev };
+      usersList.items.forEach((u) => {
+        if (next[u.id] === undefined) next[u.id] = u.roleId;
+      });
+      return next;
+    });
+  }, [usersList.items]);
 
   const modules = useMemo(() => {
     if (!matrix) return [];
@@ -149,7 +163,7 @@ export const AccessControlPage: React.FC = () => {
         permissionIds: Array.from(rolePermissionIds),
       });
       showToast('success', 'Saved', 'Role permissions updated. Users must re-login to refresh JWT claims.');
-      await loadData();
+      await loadMatrix();
       if (currentUser?.roleId === roleId) {
         await refreshSession();
       }
@@ -167,7 +181,8 @@ export const AccessControlPage: React.FC = () => {
     try {
       await rbacService.assignUserRole(userId, { roleId });
       showToast('success', 'Role Assigned', 'User role updated. They must re-login for new permissions.');
-      await loadData();
+      await loadMatrix();
+      usersList.reload();
       if (currentUser?.id === userId) {
         await refreshSession();
       }
@@ -190,8 +205,60 @@ export const AccessControlPage: React.FC = () => {
 
   const selectedRole = roles.find((r) => r.id === parseInt(selectedRoleId, 10));
 
+  const userColumns: Column<UserManagementDto>[] = [
+    {
+      header: 'ID',
+      sortKey: 'id',
+      accessor: (row) => <span className="font-mono text-xs text-slate-500">#{row.id}</span>,
+    },
+    { header: 'Username', accessor: 'username', sortKey: 'username', className: 'font-medium text-slate-100' },
+    { header: 'Email', accessor: 'email', sortKey: 'email', className: 'text-slate-400' },
+    {
+      header: 'Current Role',
+      accessor: (row) => getRoleName(row.roleId),
+      className: 'text-xs text-slate-500',
+    },
+    {
+      header: 'Assign Role',
+      accessor: (row) => (
+        <div className="flex items-center gap-2">
+          <Label className="sr-only">Role for {row.username}</Label>
+          <Select
+            value={String(userRoleDrafts[row.id] ?? row.roleId)}
+            onValueChange={(value) =>
+              setUserRoleDrafts((prev) => ({
+                ...prev,
+                [row.id]: parseInt(value, 10),
+              }))
+            }
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {roles.map((role) => (
+                <SelectItem key={role.id} value={String(role.id)}>
+                  {role.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <PermissionGate module={APP_MODULES.AccessControl} action="Update">
+            <Button
+              size="sm"
+              onClick={() => saveUserRole(row.id)}
+              disabled={savingUserId === row.id || userRoleDrafts[row.id] === row.roleId}
+            >
+              Assign
+            </Button>
+          </PermissionGate>
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
       <PageHeader
         title="Access Control"
         description="Fine-grained RBAC — assign permissions to roles and roles to users"
@@ -209,7 +276,7 @@ export const AccessControlPage: React.FC = () => {
           <RolesTab
             roles={roles}
             isLoading={isLoading}
-            onChanged={loadData}
+            onChanged={loadMatrix}
             onSelectRole={handleNewRoleSelected}
           />
         </TabsContent>
@@ -259,17 +326,17 @@ export const AccessControlPage: React.FC = () => {
                       View-only — you need AccessControl:Update to edit this matrix.
                     </p>
                   )}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
+                  <div className="overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0 rounded-lg">
+                    <table className="w-full min-w-[520px] text-sm border-collapse">
                       <thead>
                         <tr className="border-b border-slate-800">
-                          <th className="text-left py-2 pr-4 text-slate-400 font-medium">Module</th>
+                          <th className="text-left py-3 px-3 sm:px-4 text-slate-400 font-medium">Module</th>
                           {ACTIONS.map((action) => (
-                            <th key={action} className="text-center py-2 px-2 text-slate-400 font-medium w-20">
+                            <th key={action} className="text-center py-3 px-2 sm:px-3 text-slate-400 font-medium w-20">
                               {action}
                             </th>
                           ))}
-                          <th className="text-center py-2 px-2 text-slate-400 font-medium w-24">All</th>
+                          <th className="text-center py-3 px-2 sm:px-3 text-slate-400 font-medium w-24">All</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -328,63 +395,25 @@ export const AccessControlPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <p className="text-sm text-slate-400">Loading users...</p>
-              ) : users.length === 0 ? (
-                <p className="text-sm text-slate-400">No users found.</p>
-              ) : (
-                <div className="space-y-3">
-                  {users.map((u) => (
-                    <div
-                      key={u.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-4"
-                    >
-                      <div>
-                        <p className="font-semibold text-slate-100">{u.username}</p>
-                        <p className="text-xs text-slate-500">{u.email}</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Current: {getRoleName(u.roleId)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Label className="sr-only">Role for {u.username}</Label>
-                        <Select
-                          value={String(userRoleDrafts[u.id] ?? u.roleId)}
-                          onValueChange={(value) =>
-                            setUserRoleDrafts((prev) => ({
-                              ...prev,
-                              [u.id]: parseInt(value, 10),
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="w-[160px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {roles.map((role) => (
-                              <SelectItem key={role.id} value={String(role.id)}>
-                                {role.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <PermissionGate module={APP_MODULES.AccessControl} action="Update">
-                          <Button
-                            size="sm"
-                            onClick={() => saveUserRole(u.id)}
-                            disabled={
-                              savingUserId === u.id ||
-                              userRoleDrafts[u.id] === u.roleId
-                            }
-                          >
-                            Assign
-                          </Button>
-                        </PermissionGate>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <PagedDataTable
+                columns={userColumns}
+                list={usersList}
+                keyExtractor={(row) => row.id}
+                searchPlaceholder="Search all columns…"
+                emptyMessage="No users found."
+                filters={
+                  matrix && matrix.roles.length > 0 ? (
+                    <ListFilterBar showClear={usersList.hasActiveFilters} onClear={usersList.clearFilters}>
+                      <FilterSelect
+                        label="Role"
+                        options={buildRoleFilterOptions(matrix.roles)}
+                        value={usersList.filters.roleId}
+                        onChange={(value) => usersList.setFilter('roleId', value)}
+                      />
+                    </ListFilterBar>
+                  ) : undefined
+                }
+              />
             </CardContent>
           </Card>
         </TabsContent>

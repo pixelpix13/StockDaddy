@@ -17,11 +17,11 @@ public class SupplierController : ControllerBase
 
     // GET: api/supplier
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var suppliers = await _supplierRepository.GetAllAsync();
+            var suppliers = await _supplierRepository.GetPagedAsync(query);
             return Ok(suppliers);
         }
         catch (Exception ex)

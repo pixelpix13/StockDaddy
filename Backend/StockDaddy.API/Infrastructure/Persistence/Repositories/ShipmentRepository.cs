@@ -4,6 +4,7 @@ using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Domain.Enums;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -15,6 +16,46 @@ public class ShipmentRepository : IShipmentRepository
     {
         _context = context;
     }
+
+    public async Task<PagedResult<ShipmentDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.Shipments.Where(s => !s.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = $"%{q.Search}%";
+            baseQuery = baseQuery.Where(s => EF.Functions.ILike(s.CourierName, pattern) || EF.Functions.ILike(s.TrackingNumber, pattern) || EF.Functions.ILike(s.Status.ToString(), pattern));
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(s => new ShipmentDto
+        {
+                Id = s.Id,
+                SaleId = s.SaleId,
+                StoreId = s.StoreId,
+                CourierName = s.CourierName,
+                TrackingNumber = s.TrackingNumber,
+                ShippedDate = s.ShippedDate,
+                EstimatedArrival = s.EstimatedArrival,
+                Status = s.Status,
+                CreatedAt = s.CreatedAt,
+                UpdatedAt = s.UpdatedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<Shipment> ApplySort(IQueryable<Shipment> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("createdat", true) => query.OrderByDescending(s => s.CreatedAt),
+            ("createdat", false) => query.OrderBy(s => s.CreatedAt),
+            (_, true) => query.OrderByDescending(s => s.Id),
+            _ => query.OrderBy(s => s.Id),
+        };
 
     public async Task<List<ShipmentDto>> GetAllAsync()
     {

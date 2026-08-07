@@ -3,6 +3,7 @@ using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -14,6 +15,42 @@ public class ProductAttributeRepository : IProductAttributeRepository
     {
         _context = context;
     }
+
+    public async Task<PagedResult<ProductAttributeDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.ProductAttributes.Where(a => !a.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = $"%{q.Search}%";
+            baseQuery = baseQuery.Where(a => EF.Functions.ILike(a.AttributeName, pattern) || EF.Functions.ILike(a.AttributeValue, pattern));
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(a => new ProductAttributeDto
+        {
+                Id = a.Id,
+                ProductId = a.ProductId,
+                AttributeName = a.AttributeName,
+                AttributeValue = a.AttributeValue,
+                CreatedAt = a.CreatedAt,
+                UpdatedAt = a.UpdatedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<ProductAttribute> ApplySort(IQueryable<ProductAttribute> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("createdat", true) => query.OrderByDescending(a => a.CreatedAt),
+            ("createdat", false) => query.OrderBy(a => a.CreatedAt),
+            (_, true) => query.OrderByDescending(a => a.Id),
+            _ => query.OrderBy(a => a.Id),
+        };
 
     public async Task<List<ProductAttributeDto>> GetAllAsync()
     {

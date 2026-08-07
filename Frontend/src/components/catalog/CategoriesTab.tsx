@@ -1,12 +1,13 @@
 /**
  * Categories tab for Catalog Setup — list + create/edit dialog.
  */
-import React, { useState } from 'react';
-import { Plus, Tag } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { catalogService } from '@/services';
 import { CategoryDto } from '@/dtos';
 import { useToast } from '@/context/ToastContext';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { usePagedList } from '@/hooks/usePagedList';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,23 +21,21 @@ import {
 import { CrudRowActions } from '@/components/common/CrudRowActions';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
 
 interface CategoriesTabProps {
   tenantId: number;
   storeId: number;
-  categories: CategoryDto[];
-  isLoading: boolean;
-  onChanged: () => void;
 }
 
-export function CategoriesTab({
-  tenantId,
-  storeId,
-  categories,
-  isLoading,
-  onChanged,
-}: CategoriesTabProps) {
+export function CategoriesTab({ tenantId, storeId }: CategoriesTabProps) {
   const { showToast } = useToast();
+  const list = usePagedList<CategoryDto>({
+    fetchFn: useCallback((query) => catalogService.getCategoriesPaged(query), []),
+    defaultSortBy: 'name',
+    defaultSortDir: 'asc',
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CategoryDto | null>(null);
   const [name, setName] = useState('');
@@ -67,7 +66,7 @@ export function CategoriesTab({
         showToast('success', 'Created', 'Category created.');
       }
       setDialogOpen(false);
-      onChanged();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not save category.'));
     } finally {
@@ -80,18 +79,29 @@ export function CategoriesTab({
     try {
       await catalogService.deleteCategory(row.id);
       showToast('success', 'Deleted', 'Category removed.');
-      onChanged();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not delete category.'));
     }
   };
 
+  const columns: Column<CategoryDto>[] = [
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
+    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-slate-100' },
+    {
+      header: 'Actions',
+      accessor: (row) => (
+        <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+      ),
+    },
+  ];
+
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Categories ({categories.length})</CardTitle>
+            <CardTitle>Categories ({list.totalCount})</CardTitle>
             <CardDescription>Store #{storeId}</CardDescription>
           </div>
           <PermissionGate module={APP_MODULES.Catalog} action="Write">
@@ -101,29 +111,13 @@ export function CategoriesTab({
           </PermissionGate>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-slate-400">Loading...</p>
-          ) : categories.length === 0 ? (
-            <p className="text-sm text-slate-400">No categories yet.</p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {categories.map((cat) => (
-                <div
-                  key={cat.id}
-                  className="flex items-start justify-between rounded-xl border border-slate-800 bg-slate-950/50 p-4"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Tag className="w-4 h-4 text-blue-400" />
-                      <span className="font-semibold text-slate-100">{cat.name}</span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-2">ID #{cat.id}</p>
-                  </div>
-                  <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(cat)} onDelete={() => handleDelete(cat)} />
-                </div>
-              ))}
-            </div>
-          )}
+          <PagedDataTable
+            columns={columns}
+            list={list}
+            keyExtractor={(row) => row.id}
+            searchPlaceholder="Search categories..."
+            emptyMessage="No categories yet."
+          />
         </CardContent>
       </Card>
 

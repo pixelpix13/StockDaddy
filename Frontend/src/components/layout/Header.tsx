@@ -10,7 +10,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { user } = useAuth();
 
   return (
-    <header className="h-16 glass-panel border-b border-slate-800/80 sticky top-0 z-30 px-6 flex items-center justify-between">
+    <header className="h-14 sm:h-16 glass-panel border-b border-slate-800/80 sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between gap-3">
       <div className="flex items-center gap-4">
         <button
           onClick={onToggleSidebar}
@@ -18,7 +18,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-400">
+        <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-400 shrink-0">
           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-blue-400">
             <Building className="w-3.5 h-3.5" />
             Tenant #{user?.tenantId || 1}
@@ -32,8 +32,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="hidden md:flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
           <ShieldCheck className="w-3.5 h-3.5" />
           <span>JWT Authorized</span>
         </div>

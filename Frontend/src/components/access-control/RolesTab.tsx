@@ -1,7 +1,7 @@
 /**
  * Roles list with create, rename, and delete (built-in roles cannot be deleted).
  */
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, Shield } from 'lucide-react';
 import { rbacService } from '@/services';
 import { RoleWithPermissionsDto } from '@/dtos';
@@ -20,6 +20,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Table, Column } from '@/components/common/Table';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { ROLE_TYPE_OPTIONS } from '@/config/list-filters';
 
 const PROTECTED_ROLES = new Set(['admin', 'manager', 'cashier']);
 
@@ -40,6 +43,15 @@ export function RolesTab({ roles, isLoading, onChanged, onSelectRole }: RolesTab
   const [editingRole, setEditingRole] = useState<RoleWithPermissionsDto | null>(null);
   const [roleName, setRoleName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [roleTypeFilter, setRoleTypeFilter] = useState<string | undefined>();
+
+  const filteredRoles = useMemo(() => {
+    if (!roleTypeFilter) return roles;
+    if (roleTypeFilter === 'builtin') {
+      return roles.filter((r) => PROTECTED_ROLES.has(r.name.toLowerCase()));
+    }
+    return roles.filter((r) => !PROTECTED_ROLES.has(r.name.toLowerCase()));
+  }, [roles, roleTypeFilter]);
 
   const openCreate = () => {
     setEditingRole(null);
@@ -90,13 +102,62 @@ export function RolesTab({ roles, isLoading, onChanged, onSelectRole }: RolesTab
     }
   };
 
+  const columns: Column<RoleWithPermissionsDto>[] = [
+    {
+      header: 'ID',
+      accessor: (row) => `#${row.id}`,
+      className: 'font-mono text-xs text-slate-500',
+    },
+    { header: 'Name', accessor: 'name', className: 'font-medium text-slate-100' },
+    {
+      header: 'Permissions',
+      accessor: (row) => `${row.permissionIds.length} permission(s)`,
+      className: 'text-slate-400',
+    },
+    {
+      header: 'Type',
+      accessor: (row) =>
+        PROTECTED_ROLES.has(row.name.toLowerCase()) ? (
+          <Badge variant="secondary">Built-in</Badge>
+        ) : (
+          <span className="text-slate-500">Custom</span>
+        ),
+    },
+    {
+      header: 'Actions',
+      accessor: (row) => {
+        const isProtected = PROTECTED_ROLES.has(row.name.toLowerCase());
+        return (
+          <div className="flex items-center gap-1">
+            {canWrite && (
+              <Button variant="ghost" size="sm" onClick={() => openEdit(row)} title="Rename role">
+                <Pencil className="w-4 h-4" />
+              </Button>
+            )}
+            {canDelete && !isProtected && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDelete(row)}
+                title="Delete role"
+                className="text-rose-400 hover:text-rose-300"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5" /> Roles ({roles.length})
+              <Shield className="w-5 h-5" /> Roles ({filteredRoles.length})
             </CardTitle>
             <CardDescription>
               Create custom roles, then assign permissions in the Role Permissions tab.
@@ -108,52 +169,22 @@ export function RolesTab({ roles, isLoading, onChanged, onSelectRole }: RolesTab
             </Button>
           )}
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-slate-400">Loading roles...</p>
-          ) : roles.length === 0 ? (
-            <p className="text-sm text-slate-400">No roles yet. Create one to get started.</p>
-          ) : (
-            <div className="space-y-2">
-              {roles.map((role) => {
-                const isProtected = PROTECTED_ROLES.has(role.name.toLowerCase());
-                return (
-                  <div
-                    key={role.id}
-                    className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/50 p-4"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-100">{role.name}</span>
-                        {isProtected && <Badge variant="secondary">Built-in</Badge>}
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1">
-                        {role.permissionIds.length} permission(s) · ID #{role.id}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {canWrite && (
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(role)} title="Rename role">
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {canDelete && !isProtected && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(role)}
-                          title="Delete role"
-                          className="text-rose-400 hover:text-rose-300"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+        <CardContent className="space-y-4">
+          <ListFilterBar showClear={!!roleTypeFilter} onClear={() => setRoleTypeFilter(undefined)}>
+            <FilterSelect
+              label="Type"
+              options={ROLE_TYPE_OPTIONS}
+              value={roleTypeFilter}
+              onChange={setRoleTypeFilter}
+            />
+          </ListFilterBar>
+          <Table
+            columns={columns}
+            data={filteredRoles}
+            keyExtractor={(row) => row.id}
+            isLoading={isLoading}
+            emptyMessage="No roles yet. Create one to get started."
+          />
         </CardContent>
       </Card>
 

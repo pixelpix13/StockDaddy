@@ -17,11 +17,11 @@ public class TenantController : ControllerBase
 
     // GET: api/tenant
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var tenants = await _tenantRepository.GetAllAsync();
+            var tenants = await _tenantRepository.GetPagedAsync(query);
             return Ok(tenants);
         }
         catch (Exception ex)

@@ -4,6 +4,7 @@ using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Domain.Enums;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -15,6 +16,45 @@ public class StockItemRepository : IStockItemRepository
     {
         _context = context;
     }
+
+    public async Task<PagedResult<StockItemDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.StockItems.Where(i => !i.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = $"%{q.Search}%";
+            baseQuery = baseQuery.Where(i => EF.Functions.ILike(i.Status.ToString(), pattern));
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(i => new StockItemDto
+        {
+                Id = i.Id,
+                ProductId = i.ProductId,
+                StoreId = i.StoreId,
+                Quantity = i.Quantity,
+                Status = i.Status,
+                LastUpdated = i.LastUpdated,
+                UpdatedBy = i.UpdatedBy,
+                CreatedAt = i.CreatedAt,
+                UpdatedAt = i.UpdatedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<StockItem> ApplySort(IQueryable<StockItem> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("createdat", true) => query.OrderByDescending(i => i.CreatedAt),
+            ("createdat", false) => query.OrderBy(i => i.CreatedAt),
+            (_, true) => query.OrderByDescending(i => i.Id),
+            _ => query.OrderBy(i => i.Id),
+        };
 
     public async Task<List<StockItemDto>> GetAllAsync()
     {

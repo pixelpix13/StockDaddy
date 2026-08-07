@@ -17,11 +17,11 @@ public class ProductTagController : ControllerBase
 
     // GET: api/producttag
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var tags = await _productTagRepository.GetAllAsync();
+            var tags = await _productTagRepository.GetPagedAsync(query);
             return Ok(tags);
         }
         catch (Exception ex)

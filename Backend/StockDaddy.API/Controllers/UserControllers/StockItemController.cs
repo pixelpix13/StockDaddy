@@ -17,11 +17,11 @@ public class StockItemController : ControllerBase
 
     // GET: api/stockitem
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var items = await _stockItemRepository.GetAllAsync();
+            var items = await _stockItemRepository.GetPagedAsync(query);
             return Ok(items);
         }
         catch (Exception ex)

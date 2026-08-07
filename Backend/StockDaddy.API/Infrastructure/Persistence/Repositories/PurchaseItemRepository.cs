@@ -3,6 +3,7 @@ using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -14,6 +15,38 @@ public class PurchaseItemRepository : IPurchaseItemRepository
     {
         _context = context;
     }
+
+    public async Task<PagedResult<PurchaseItemDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.PurchaseItems.Where(p => !p.IsDeleted);
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(p => new PurchaseItemDto
+        {
+                Id = p.Id,
+                PurchaseOrderId = p.PurchaseOrderId,
+                ProductVariantId = p.ProductVariantId,
+                Quantity = p.Quantity,
+                UnitCost = p.UnitCost,
+                TotalCost = p.TotalCost,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<PurchaseItem> ApplySort(IQueryable<PurchaseItem> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("createdat", true) => query.OrderByDescending(p => p.CreatedAt),
+            ("createdat", false) => query.OrderBy(p => p.CreatedAt),
+            (_, true) => query.OrderByDescending(p => p.Id),
+            _ => query.OrderBy(p => p.Id),
+        };
 
     public async Task<List<PurchaseItemDto>> GetAllAsync()
     {

@@ -17,12 +17,11 @@ public class CategoryController : ControllerBase
 
     // GET: api/category
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var categories = await _categoryRepo.GetAllAsync();
-            return Ok(categories);
+            return Ok(await _categoryRepo.GetPagedAsync(query));
         }
         catch (Exception ex)
         {

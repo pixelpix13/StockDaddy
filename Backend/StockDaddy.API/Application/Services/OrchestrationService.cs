@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using StockDaddy.Application.DTOs;
+using StockDaddy.Application.Helpers;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Domain.Enums;
 using StockDaddy.Infrastructure.Persistence;
@@ -392,9 +393,10 @@ public class OrchestrationService
         }
     }
 
-    public async Task<List<VariantStockDto>> GetVariantStockAsync(int? storeId = null)
+    public async Task<PagedResult<VariantStockDto>> GetVariantStockAsync(int? storeId = null, PagedQuery? query = null)
     {
-        var query = _context.ProductVariants
+        var q = RepositoryPaging.Normalize(query ?? new PagedQuery());
+        var baseQuery = _context.ProductVariants
             .AsNoTracking()
             .Include(v => v.Product)
                 .ThenInclude(p => p!.Subcategory)
@@ -402,28 +404,70 @@ public class OrchestrationService
 
         if (storeId.HasValue)
         {
-            query = query.Where(v => v.StoreId == storeId.Value);
+            baseQuery = baseQuery.Where(v => v.StoreId == storeId.Value);
         }
 
-        return await query
-            .OrderBy(v => v.Product!.Name)
-            .Select(v => new VariantStockDto
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = RepositoryPaging.LikePattern(q.Search);
+            var idMatch = RepositoryPaging.TryParseSearchId(q.Search, out var searchId);
+            baseQuery = baseQuery.Where(v =>
+                (idMatch && v.Id == searchId) ||
+                (idMatch && v.ProductId == searchId) ||
+                EF.Functions.ILike(v.Product!.Name, pattern) ||
+                EF.Functions.ILike(v.SkuCode, pattern) ||
+                EF.Functions.ILike(v.VariantName, pattern) ||
+                (v.Product!.Subcategory != null && EF.Functions.ILike(v.Product.Subcategory.Name, pattern)));
+        }
+
+        if (!string.IsNullOrEmpty(q.StockFilter))
+        {
+            baseQuery = q.StockFilter switch
             {
-                Id = v.Id,
-                ProductId = v.ProductId,
-                ProductName = v.Product!.Name,
-                StoreId = v.StoreId,
-                VariantName = v.VariantName,
-                SkuCode = v.SkuCode,
-                Price = v.Price,
-                CostPrice = v.CostPrice,
-                TaxPercent = v.TaxPercent,
-                HsnCodeId = v.HSNCodeId,
-                Quantity = v.Quantity,
-                SubcategoryId = v.Product.SubcategoryId,
-                SubcategoryName = v.Product.Subcategory != null ? v.Product.Subcategory.Name : null
-            })
-            .ToListAsync();
+                "out" => baseQuery.Where(v => v.Quantity == 0),
+                "low" => baseQuery.Where(v => v.Quantity > 0 && v.Quantity <= 5),
+                "in" => baseQuery.Where(v => v.Quantity > 5),
+                _ => baseQuery
+            };
+        }
+
+        if (q.SubcategoryId.HasValue)
+        {
+            baseQuery = baseQuery.Where(v => v.Product!.SubcategoryId == q.SubcategoryId.Value);
+        }
+
+        baseQuery = (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("productname", true) => baseQuery.OrderByDescending(v => v.Product!.Name),
+            ("productname", false) => baseQuery.OrderBy(v => v.Product!.Name),
+            ("skucode", true) => baseQuery.OrderByDescending(v => v.SkuCode),
+            ("skucode", false) => baseQuery.OrderBy(v => v.SkuCode),
+            ("price", true) => baseQuery.OrderByDescending(v => v.Price),
+            ("price", false) => baseQuery.OrderBy(v => v.Price),
+            ("quantity", true) => baseQuery.OrderByDescending(v => v.Quantity),
+            ("quantity", false) => baseQuery.OrderBy(v => v.Quantity),
+            (_, true) => baseQuery.OrderByDescending(v => v.Id),
+            _ => baseQuery.OrderBy(v => v.Id),
+        };
+
+        var projected = baseQuery.Select(v => new VariantStockDto
+        {
+            Id = v.Id,
+            ProductId = v.ProductId,
+            ProductName = v.Product!.Name,
+            StoreId = v.StoreId,
+            VariantName = v.VariantName,
+            SkuCode = v.SkuCode,
+            Price = v.Price,
+            CostPrice = v.CostPrice,
+            TaxPercent = v.TaxPercent,
+            HsnCodeId = v.HSNCodeId,
+            Quantity = v.Quantity,
+            SubcategoryId = v.Product.SubcategoryId,
+            SubcategoryName = v.Product.Subcategory != null ? v.Product.Subcategory.Name : null
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
     }
 
     public async Task<VariantStockDto?> GetVariantByBarcodeAsync(string code, int storeId)

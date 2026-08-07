@@ -22,7 +22,7 @@ export function CrudRowActions({ module, onEdit, onDelete, deleteLabel = 'Delete
   }
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5 sm:gap-2">
       {canUpdate && (
         <Button type="button" variant="ghost" size="sm" onClick={onEdit} title="Edit">
           <Pencil className="w-4 h-4" />

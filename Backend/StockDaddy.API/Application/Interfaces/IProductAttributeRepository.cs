@@ -5,6 +5,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IProductAttributeRepository
 {
+    Task<PagedResult<ProductAttributeDto>> GetPagedAsync(PagedQuery query);
     Task<List<ProductAttributeDto>> GetAllAsync();
     Task<ProductAttributeDto?> GetByIdAsync(int id);
     Task AddAsync(CreateProductAttributeRequest attribute);

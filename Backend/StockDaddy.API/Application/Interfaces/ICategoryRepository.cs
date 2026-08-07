@@ -4,6 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface ICategoryRepository
 {
+    Task<PagedResult<CategoryDto>> GetPagedAsync(PagedQuery query);
     Task<List<CategoryDto>> GetAllAsync();
     Task<CategoryDto?> GetByIdAsync(int id);
     Task AddAsync(CreateCategoryRequest category);

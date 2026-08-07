@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Boxes, Plus, RefreshCw } from 'lucide-react';
-import { orchestrationService } from '@/services';
+import { orchestrationService, catalogService } from '@/services';
 import { VariantStockDto } from '@/dtos';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { usePagedList } from '@/hooks/usePagedList';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { STOCK_FILTER_OPTIONS, buildSubcategoryFilterOptions } from '@/config/list-filters';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,32 +30,36 @@ export const InventoryPage: React.FC = () => {
   const { showToast } = useToast();
   const storeId = user?.storeId || 1;
 
-  const [variants, setVariants] = useState<VariantStockDto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const list = usePagedList<VariantStockDto>({
+    fetchFn: useCallback(
+      (query) => orchestrationService.getVariantStockPaged(query, storeId),
+      [storeId]
+    ),
+    defaultSortBy: 'productname',
+    defaultSortDir: 'asc',
+  });
+
+  const [dropdownVariants, setDropdownVariants] = useState<VariantStockDto[]>([]);
+  const [subcategories, setSubcategories] = useState<{ id: number; name: string }[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState('');
   const [quantityChange, setQuantityChange] = useState('');
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadInventory = async () => {
-    setIsLoading(true);
-    try {
-      const data = await orchestrationService.getVariantStock(storeId);
-      setVariants(data);
+  useEffect(() => {
+    orchestrationService.getVariantStock(storeId).then((data) => {
+      setDropdownVariants(data);
       if (data.length > 0 && !selectedVariantId) {
         setSelectedVariantId(String(data[0].id));
       }
-    } catch {
-      showToast('error', 'Load Failed', 'Could not load inventory.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadInventory();
-  }, []);
+    }).catch(() => {
+      showToast('error', 'Load Failed', 'Could not load variants for adjustment.');
+    });
+    catalogService.getSubcategories().then((subs) => {
+      setSubcategories(subs.map((s) => ({ id: s.id, name: s.name })));
+    }).catch(() => {});
+  }, [storeId]);
 
   const handleAdjust = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +84,8 @@ export const InventoryPage: React.FC = () => {
       setDialogOpen(false);
       setQuantityChange('');
       setReason('');
-      loadInventory();
+      list.reload();
+      orchestrationService.getVariantStock(storeId).then(setDropdownVariants);
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not adjust stock.'));
     } finally {
@@ -84,13 +93,39 @@ export const InventoryPage: React.FC = () => {
     }
   };
 
-  const selected = variants.find((v) => String(v.id) === selectedVariantId);
+  const selected = dropdownVariants.find((v) => String(v.id) === selectedVariantId);
+
+  const columns: Column<VariantStockDto>[] = [
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
+    { header: 'Product', accessor: 'productName', sortKey: 'productname', className: 'font-medium text-slate-100' },
+    { header: 'SKU', accessor: 'skuCode', sortKey: 'skucode', className: 'font-mono text-xs' },
+    { header: 'Category', accessor: (row) => row.subcategoryName || '—', className: 'text-slate-400' },
+    {
+      header: 'Available',
+      accessor: (row) => row.quantity,
+      sortKey: 'quantity',
+      className: 'font-bold',
+    },
+    {
+      header: 'Price',
+      accessor: (row) => `$${row.price.toFixed(2)}`,
+      sortKey: 'price',
+    },
+    {
+      header: 'Status',
+      accessor: (row) => (
+        <Badge variant={row.quantity <= 5 ? 'destructive' : row.quantity <= 20 ? 'warning' : 'success'}>
+          {row.quantity === 0 ? 'Out of Stock' : row.quantity <= 5 ? 'Low' : 'In Stock'}
+        </Badge>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="page-stack">
+      <div className="page-hero flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+          <h1 className="page-hero-title">
             Stock & Inventory <Boxes className="w-6 h-6 text-blue-400" />
           </h1>
           <p className="text-sm text-slate-400 mt-1">
@@ -98,7 +133,7 @@ export const InventoryPage: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={loadInventory} disabled={isLoading}>
+          <Button variant="outline" onClick={() => list.reload()} disabled={list.isLoading}>
             <RefreshCw className="w-4 h-4" /> Sync
           </Button>
           <PermissionGate module={APP_MODULES.Inventory} action="Update">
@@ -111,45 +146,34 @@ export const InventoryPage: React.FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Variant Stock Levels ({variants.length})</CardTitle>
+          <CardTitle>Variant Stock Levels ({list.totalCount})</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-slate-400">Loading...</p>
-          ) : variants.length === 0 ? (
-            <p className="text-sm text-slate-400">No variants found. Add products first.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 text-left">
-                    <th className="pb-3 pr-4">Product</th>
-                    <th className="pb-3 pr-4">SKU</th>
-                    <th className="pb-3 pr-4">Category</th>
-                    <th className="pb-3 pr-4">Available</th>
-                    <th className="pb-3 pr-4">Price</th>
-                    <th className="pb-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {variants.map((row) => (
-                    <tr key={row.id} className="border-b border-slate-800/60">
-                      <td className="py-3 pr-4 font-medium text-slate-100">{row.productName}</td>
-                      <td className="py-3 pr-4 font-mono text-xs">{row.skuCode}</td>
-                      <td className="py-3 pr-4 text-slate-400">{row.subcategoryName || '—'}</td>
-                      <td className="py-3 pr-4 font-bold">{row.quantity}</td>
-                      <td className="py-3 pr-4">${row.price.toFixed(2)}</td>
-                      <td className="py-3">
-                        <Badge variant={row.quantity <= 5 ? 'destructive' : row.quantity <= 20 ? 'warning' : 'success'}>
-                          {row.quantity === 0 ? 'Out of Stock' : row.quantity <= 5 ? 'Low' : 'In Stock'}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <PagedDataTable
+            columns={columns}
+            list={list}
+            keyExtractor={(row) => row.id}
+            searchPlaceholder="Search all columns…"
+            emptyMessage="No variants found. Add products first."
+            filters={
+              <ListFilterBar showClear={list.hasActiveFilters} onClear={list.clearFilters}>
+                <FilterSelect
+                  label="Stock"
+                  options={STOCK_FILTER_OPTIONS}
+                  value={list.filters.stockFilter}
+                  onChange={(value) => list.setFilter('stockFilter', value)}
+                />
+                {subcategories.length > 0 ? (
+                  <FilterSelect
+                    label="Subcategory"
+                    options={buildSubcategoryFilterOptions(subcategories)}
+                    value={list.filters.subcategoryId}
+                    onChange={(value) => list.setFilter('subcategoryId', value)}
+                  />
+                ) : null}
+              </ListFilterBar>
+            }
+          />
         </CardContent>
       </Card>
 
@@ -163,7 +187,7 @@ export const InventoryPage: React.FC = () => {
           </DialogHeader>
           <form onSubmit={handleAdjust} className="space-y-4">
             <VariantSelect
-              variants={variants}
+              variants={dropdownVariants}
               value={selectedVariantId}
               onValueChange={setSelectedVariantId}
             />

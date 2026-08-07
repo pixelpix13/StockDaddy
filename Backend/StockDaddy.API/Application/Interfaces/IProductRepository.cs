@@ -4,6 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IProductRepository
 {
+    Task<PagedResult<ProductDto>> GetPagedAsync(PagedQuery query);
     Task<List<ProductDto>> GetAllAsync();
     Task<ProductDto?> GetByIdAsync(int id);
     Task<int> AddAsync(CreateProductRequest product);

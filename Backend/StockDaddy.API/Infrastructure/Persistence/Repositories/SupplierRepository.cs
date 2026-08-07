@@ -3,6 +3,7 @@ using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -15,6 +16,51 @@ public class SupplierRepository : ISupplierRepository
         _context = context;
     }
 
+
+    public async Task<PagedResult<SupplierDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.Suppliers.Where(s => !s.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = $"%{q.Search}%";
+            baseQuery = baseQuery.Where(s => EF.Functions.ILike(s.Name, pattern) || EF.Functions.ILike(s.Email, pattern) || EF.Functions.ILike(s.ContactName, pattern));
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(s => new SupplierDto
+        {
+                Id = s.Id,
+                TenantId = s.TenantId,
+                Name = s.Name,
+                ContactName = s.ContactName,
+                Phone = s.Phone,
+                Email = s.Email,
+                Address = s.Address,
+                CreatedAt = s.CreatedAt,
+                UpdatedAt = s.UpdatedAt,
+                IsDeleted = s.IsDeleted,
+                DeletedAt = s.DeletedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<Supplier> ApplySort(IQueryable<Supplier> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("name", true) => query.OrderByDescending(s => s.Name),
+            ("name", false) => query.OrderBy(s => s.Name),
+            ("email", true) => query.OrderByDescending(s => s.Email),
+            ("email", false) => query.OrderBy(s => s.Email),
+            ("createdat", true) => query.OrderByDescending(s => s.CreatedAt),
+            ("createdat", false) => query.OrderBy(s => s.CreatedAt),
+            (_, true) => query.OrderByDescending(s => s.Id),
+            _ => query.OrderBy(s => s.Id),
+        };
 
     public async Task<List<SupplierDto>> GetAllAsync()
     {

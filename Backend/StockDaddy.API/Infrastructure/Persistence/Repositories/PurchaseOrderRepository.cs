@@ -4,6 +4,7 @@ using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Domain.Enums;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -15,6 +16,62 @@ public class PurchaseOrderRepository : IPurchaseOrderRepository
     {
         _context = context;
     }
+
+    public async Task<PagedResult<PurchaseOrderDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.PurchaseOrders.Where(o => !o.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = RepositoryPaging.LikePattern(q.Search);
+            var idMatch = RepositoryPaging.TryParseSearchId(q.Search, out var searchId);
+            baseQuery = baseQuery.Where(o =>
+                (idMatch && o.Id == searchId) ||
+                (idMatch && o.SupplierId == searchId) ||
+                EF.Functions.ILike(o.Notes ?? string.Empty, pattern) ||
+                EF.Functions.ILike(o.Status.ToString(), pattern));
+        }
+
+        if (!string.IsNullOrEmpty(q.Status) &&
+            Enum.TryParse<PurchaseOrderStatus>(q.Status, true, out var statusFilter))
+        {
+            baseQuery = baseQuery.Where(o => o.Status == statusFilter);
+        }
+
+        if (q.SupplierId.HasValue)
+        {
+            baseQuery = baseQuery.Where(o => o.SupplierId == q.SupplierId.Value);
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(o => new PurchaseOrderDto
+        {
+                Id = o.Id,
+                TenantId = o.TenantId,
+                SupplierId = o.SupplierId,
+                StoreId = o.StoreId,
+                OrderDate = o.OrderDate,
+                ExpectedDelivery = o.ExpectedDelivery,
+                Status = o.Status,
+                Notes = o.Notes,
+                CreatedAt = o.CreatedAt,
+                UpdatedAt = o.UpdatedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<PurchaseOrder> ApplySort(IQueryable<PurchaseOrder> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("createdat", true) => query.OrderByDescending(o => o.CreatedAt),
+            ("createdat", false) => query.OrderBy(o => o.CreatedAt),
+            (_, true) => query.OrderByDescending(o => o.Id),
+            _ => query.OrderBy(o => o.Id),
+        };
 
     public async Task<List<PurchaseOrderDto>> GetAllAsync()
     {

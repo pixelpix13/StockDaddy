@@ -3,6 +3,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IProductRestockAlertRepository
 {
+    Task<PagedResult<ProductRestockAlertDto>> GetPagedAsync(PagedQuery query);
     Task<List<ProductRestockAlertDto>> GetAllAsync();
     Task<ProductRestockAlertDto?> GetByIdAsync(int id);
     Task AddAsync(CreateProductRestockAlertRequest alert);

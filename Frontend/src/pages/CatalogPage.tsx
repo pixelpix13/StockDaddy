@@ -10,15 +10,13 @@ import { CategoriesTab } from '@/components/catalog/CategoriesTab';
 import { SubcategoriesTab } from '@/components/catalog/SubcategoriesTab';
 import { HsnTab } from '@/components/catalog/HsnTab';
 import { TaxRegionsTab } from '@/components/catalog/TaxRegionsTab';
-import { useCatalogData } from '@/hooks/useCatalogData';
 import { useTenantScope } from '@/hooks/useTenantScope';
 
 export const CatalogPage: React.FC = () => {
   const { tenantId, storeId } = useTenantScope();
-  const { categories, subcategories, hsnCodes, taxRegions, isLoading, reload } = useCatalogData();
 
   return (
-    <div className="space-y-6">
+    <div className="page-stack">
       <PageHeader
         title="Catalog Setup"
         description="Full CRUD for categories, subcategories, HSN codes, and tax regions"
@@ -34,36 +32,19 @@ export const CatalogPage: React.FC = () => {
         </TabsList>
 
         <TabsContent value="categories">
-          <CategoriesTab
-            tenantId={tenantId}
-            storeId={storeId}
-            categories={categories}
-            isLoading={isLoading}
-            onChanged={reload}
-          />
+          <CategoriesTab tenantId={tenantId} storeId={storeId} />
         </TabsContent>
 
         <TabsContent value="subcategories">
-          <SubcategoriesTab
-            tenantId={tenantId}
-            storeId={storeId}
-            categories={categories}
-            subcategories={subcategories}
-            onChanged={reload}
-          />
+          <SubcategoriesTab tenantId={tenantId} storeId={storeId} />
         </TabsContent>
 
         <TabsContent value="hsn">
-          <HsnTab hsnCodes={hsnCodes} onChanged={reload} />
+          <HsnTab />
         </TabsContent>
 
         <TabsContent value="tax">
-          <TaxRegionsTab
-            tenantId={tenantId}
-            storeId={storeId}
-            taxRegions={taxRegions}
-            onChanged={reload}
-          />
+          <TaxRegionsTab tenantId={tenantId} storeId={storeId} />
         </TabsContent>
       </Tabs>
     </div>

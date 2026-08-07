@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Settings, Shield, Cpu, Key, Database, Globe, Store, Plus } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { tenantService } from '@/services';
 import { StoreDto } from '@/dtos';
+import { usePagedList } from '@/hooks/usePagedList';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,28 +26,17 @@ export const SettingsPage: React.FC = () => {
   const { showToast } = useToast();
   const tenantId = user?.tenantId || 1;
 
-  const [stores, setStores] = useState<StoreDto[]>([]);
-  const [isLoadingStores, setIsLoadingStores] = useState(true);
+  const list = usePagedList<StoreDto>({
+    fetchFn: useCallback((query) => tenantService.getStoresPaged(query), []),
+    defaultSortBy: 'name',
+    defaultSortDir: 'asc',
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<StoreDto | null>(null);
   const [storeName, setStoreName] = useState('');
   const [storeLocation, setStoreLocation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const loadStores = async () => {
-    setIsLoadingStores(true);
-    try {
-      setStores(await tenantService.getStores());
-    } catch {
-      showToast('error', 'Error', 'Failed to load stores.');
-    } finally {
-      setIsLoadingStores(false);
-    }
-  };
-
-  useEffect(() => {
-    loadStores();
-  }, []);
 
   const openCreateStore = () => {
     setEditingStore(null);
@@ -81,7 +72,7 @@ export const SettingsPage: React.FC = () => {
         showToast('success', 'Created', 'Store created.');
       }
       setDialogOpen(false);
-      loadStores();
+      list.reload();
     } catch {
       showToast('error', 'Failed', 'Could not save store.');
     } finally {
@@ -94,17 +85,39 @@ export const SettingsPage: React.FC = () => {
     try {
       await tenantService.deleteStore(row.id);
       showToast('success', 'Deleted', 'Store removed.');
-      loadStores();
+      list.reload();
     } catch {
       showToast('error', 'Failed', 'Could not delete store.');
     }
   };
 
+  const columns: Column<StoreDto>[] = [
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
+    {
+      header: 'Name',
+      accessor: (row) => (
+        <span className="flex items-center gap-2 font-medium text-slate-100">
+          <Store className="w-4 h-4 text-blue-400 shrink-0" />
+          {row.name}
+        </span>
+      ),
+      sortKey: 'name',
+    },
+    { header: 'Location', accessor: (row) => row.location || '—', className: 'text-slate-400' },
+    { header: 'Tenant', accessor: (row) => `#${row.tenantId}`, className: 'text-xs text-slate-500' },
+    {
+      header: 'Actions',
+      accessor: (row) => (
+        <CrudRowActions module={APP_MODULES.Settings} onEdit={() => openEditStore(row)} onDelete={() => handleDeleteStore(row)} />
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-6 rounded-3xl border border-slate-800">
+    <div className="page-stack max-w-4xl">
+      <div className="page-hero flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+          <h1 className="page-hero-title">
             System & Security Settings <Settings className="w-6 h-6 text-blue-400" />
           </h1>
           <p className="text-sm text-slate-400 mt-1">
@@ -124,31 +137,14 @@ export const SettingsPage: React.FC = () => {
             </Button>
           </PermissionGate>
         </div>
-        {isLoadingStores ? (
-          <p className="text-sm text-slate-400">Loading stores...</p>
-        ) : stores.length === 0 ? (
-          <p className="text-sm text-slate-400">No stores configured.</p>
-        ) : (
-          <div className="space-y-2">
-            {stores.map((row) => (
-              <div
-                key={row.id}
-                className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/50 p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <Store className="w-5 h-5 text-blue-400" />
-                  <div>
-                    <p className="font-semibold text-slate-100">{row.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {row.location || 'No location'} · Tenant #{row.tenantId}
-                    </p>
-                  </div>
-                </div>
-                <CrudRowActions module={APP_MODULES.Settings} onEdit={() => openEditStore(row)} onDelete={() => handleDeleteStore(row)} />
-              </div>
-            ))}
-          </div>
-        )}
+
+        <PagedDataTable
+          columns={columns}
+          list={list}
+          keyExtractor={(row) => row.id}
+          searchPlaceholder="Search stores..."
+          emptyMessage="No stores configured."
+        />
       </Card>
 
       <Card

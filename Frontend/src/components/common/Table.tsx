@@ -1,9 +1,19 @@
 import React from 'react';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import type { SortState } from '@/hooks/usePagedList';
 
 export interface Column<T> {
   header: string;
   accessor: keyof T | ((row: T) => React.ReactNode);
+  /** Cell-only classes (not applied to header). */
+  cellClassName?: string;
+  /** @deprecated Use cellClassName */
   className?: string;
+  /** Tailwind width utility, e.g. w-24, w-32, min-w-[200px]. */
+  width?: string;
+  align?: 'left' | 'center' | 'right';
+  /** When set, column header is sortable and sends this key to the API. */
+  sortKey?: string;
 }
 
 interface TableProps<T> {
@@ -12,7 +22,23 @@ interface TableProps<T> {
   keyExtractor: (row: T) => string | number;
   emptyMessage?: string;
   isLoading?: boolean;
+  sort?: SortState;
+  onSortChange?: (sortKey: string) => void;
+  footer?: React.ReactNode;
 }
+
+const alignClass = (align?: Column<unknown>['align']) => {
+  switch (align) {
+    case 'center':
+      return 'text-center';
+    case 'right':
+      return 'text-right';
+    default:
+      return 'text-left';
+  }
+};
+
+const cellPadding = 'px-4 py-3.5 sm:px-5 sm:py-4';
 
 export function Table<T>({
   columns,
@@ -20,24 +46,52 @@ export function Table<T>({
   keyExtractor,
   emptyMessage = 'No data available',
   isLoading = false,
+  sort,
+  onSortChange,
+  footer,
 }: TableProps<T>) {
+  const headerBase = `${cellPadding} text-xs font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap`;
+
+  const renderHeader = (col: Column<T>, index: number) => {
+    const thClass = `${headerBase} ${alignClass(col.align)} ${col.width ?? ''}`.trim();
+
+    if (col.sortKey && sort && onSortChange) {
+      const isActive = sort.sortBy === col.sortKey;
+      const Icon = !isActive ? ArrowUpDown : sort.sortDir === 'asc' ? ArrowUp : ArrowDown;
+      return (
+        <th key={index} className={thClass}>
+          <button
+            type="button"
+            onClick={() => onSortChange(col.sortKey!)}
+            className={`inline-flex items-center gap-1.5 transition-colors ${
+              isActive ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
+            } ${col.align === 'right' ? 'ml-auto' : ''}`}
+          >
+            {col.header}
+            <Icon className="w-3.5 h-3.5 shrink-0 opacity-80" />
+          </button>
+        </th>
+      );
+    }
+
+    return (
+      <th key={index} className={thClass}>
+        {col.header}
+      </th>
+    );
+  };
+
   return (
-    <div className="w-full overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-900/40">
-      <table className="w-full text-left text-sm text-slate-300">
-        <thead className="bg-slate-900/80 uppercase text-xs tracking-wider text-slate-400 font-semibold border-b border-slate-800">
-          <tr>
-            {columns.map((col, index) => (
-              <th key={index} className={`px-4 py-3.5 ${col.className || ''}`}>
-                {col.header}
-              </th>
-            ))}
-          </tr>
+    <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-900/40">
+      <table className="w-full min-w-[640px] table-auto text-sm text-slate-300 border-collapse">
+        <thead className="bg-slate-900/80 border-b border-slate-800">
+          <tr>{columns.map(renderHeader)}</tr>
         </thead>
         <tbody className="divide-y divide-slate-800/60">
           {isLoading ? (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-8 text-center text-slate-400">
-                <div className="flex items-center justify-center gap-2">
+              <td colSpan={columns.length} className={`${cellPadding} text-center text-slate-400`}>
+                <div className="flex items-center justify-center gap-2 py-4">
                   <div className="w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
                   <span>Loading data...</span>
                 </div>
@@ -45,8 +99,8 @@ export function Table<T>({
             </tr>
           ) : data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-8 text-center text-slate-500 font-medium">
-                {emptyMessage}
+              <td colSpan={columns.length} className={`${cellPadding} text-center text-slate-500 font-medium`}>
+                <div className="py-4">{emptyMessage}</div>
               </td>
             </tr>
           ) : (
@@ -56,7 +110,10 @@ export function Table<T>({
                 className="hover:bg-slate-800/40 transition-colors duration-150"
               >
                 {columns.map((col, index) => (
-                  <td key={index} className={`px-4 py-3.5 ${col.className || ''}`}>
+                  <td
+                    key={index}
+                    className={`${cellPadding} align-middle ${alignClass(col.align)} ${col.width ?? ''} ${col.cellClassName ?? col.className ?? ''}`.trim()}
+                  >
                     {typeof col.accessor === 'function'
                       ? col.accessor(row)
                       : (row[col.accessor] as unknown as React.ReactNode)}
@@ -67,6 +124,11 @@ export function Table<T>({
           )}
         </tbody>
       </table>
+      {footer ? (
+        <div className="px-4 sm:px-6 py-4 border-t border-slate-800/80 bg-slate-900/30">
+          {footer}
+        </div>
+      ) : null}
     </div>
   );
 }

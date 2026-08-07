@@ -17,11 +17,11 @@ public class TaxRegionController : ControllerBase
 
     // GET: api/taxregion
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var regions = await _taxRegionRepository.GetAllAsync();
+            var regions = await _taxRegionRepository.GetPagedAsync(query);
             return Ok(regions);
         }
         catch (Exception ex)

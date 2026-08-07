@@ -17,11 +17,11 @@ public class IntegrationEventController : ControllerBase
 
     // GET: api/integrationevent
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var events = await _eventRepo.GetAllAsync();
+            var events = await _eventRepo.GetPagedAsync(query);
             return Ok(events);
         }
         catch (Exception ex)

@@ -17,11 +17,11 @@ public class CustomerController : ControllerBase
 
     // GET: api/customer
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var customers = await _customerRepo.GetAllAsync();
+            var customers = await _customerRepo.GetPagedAsync(query);
             return Ok(customers);
         }
         catch (Exception ex)

@@ -4,6 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface ICustomerRepository
 {
+    Task<PagedResult<CustomerDto>> GetPagedAsync(PagedQuery query);
     Task<List<CustomerDto>> GetAllAsync();
     Task<CustomerDto?> GetByIdAsync(int id);
     Task AddAsync(CreateCustomerRequest customer);

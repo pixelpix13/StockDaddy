@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
+using StockDaddy.Application.DTOs;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Persistence.Repositories
 {
@@ -13,6 +15,33 @@ namespace StockDaddy.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
+
+
+        public async Task<PagedResult<ScheduledPriceRevert>> GetPagedAsync(PagedQuery query)
+        {
+            var q = RepositoryPaging.Normalize(query);
+            var baseQuery = _context.ScheduledPriceReverts.AsQueryable();
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = $"%{q.Search}%";
+            baseQuery = baseQuery.Where(x => EF.Functions.ILike(x.Type, pattern) || EF.Functions.ILike(x.BatchCriteria, pattern));
+        }
+
+            baseQuery = ApplySort(baseQuery, q);
+            return await RepositoryPaging.ExecuteAsync(baseQuery, q);
+        }
+
+        private static IQueryable<ScheduledPriceRevert> ApplySort(IQueryable<ScheduledPriceRevert> query, PagedQuery q) =>
+            (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+            {
+            ("type", true) => query.OrderByDescending(x => x.Type),
+            ("type", false) => query.OrderBy(x => x.Type),
+            ("createdat", true) => query.OrderByDescending(x => x.CreatedAt),
+            ("createdat", false) => query.OrderBy(x => x.CreatedAt),
+            (_, true) => query.OrderByDescending(x => x.Id),
+            _ => query.OrderBy(x => x.Id),
+            };
 
         public async Task<List<ScheduledPriceRevert>> GetAllAsync()
             => await _context.ScheduledPriceReverts.ToListAsync();

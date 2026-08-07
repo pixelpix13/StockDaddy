@@ -3,6 +3,7 @@ using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -14,6 +15,45 @@ public class IntegrationEventRepository : IIntegrationEventRepository
     {
         _context = context;
     }
+
+    public async Task<PagedResult<IntegrationEventDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.IntegrationEvents.Where(e => !e.IsDeleted);
+
+        if (!string.IsNullOrEmpty(q.Search))
+        {
+            var pattern = $"%{q.Search}%";
+            baseQuery = baseQuery.Where(e => EF.Functions.ILike(e.EventType, pattern) || EF.Functions.ILike(e.Payload, pattern));
+        }
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(e => new IntegrationEventDto
+        {
+                Id = e.Id,
+                StoreId = e.StoreId,
+                EventType = e.EventType,
+                Payload = e.Payload,
+                TriggeredBy = 0, // Map Guid to int if needed, else adjust DTO
+                TriggeredAt = e.TriggeredAt,
+                Delivered = e.Delivered,
+                CreatedAt = e.CreatedAt,
+                UpdatedAt = e.UpdatedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<IntegrationEvent> ApplySort(IQueryable<IntegrationEvent> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("createdat", true) => query.OrderByDescending(e => e.CreatedAt),
+            ("createdat", false) => query.OrderBy(e => e.CreatedAt),
+            (_, true) => query.OrderByDescending(e => e.Id),
+            _ => query.OrderBy(e => e.Id),
+        };
 
     public async Task<List<IntegrationEventDto>> GetAllAsync()
     {

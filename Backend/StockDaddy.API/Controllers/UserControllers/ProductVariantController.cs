@@ -17,11 +17,11 @@ public class ProductVariantController : ControllerBase
 
     // GET: api/productvariant
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var variants = await _productVariantRepository.GetAllAsync();
+            var variants = await _productVariantRepository.GetPagedAsync(query);
             return Ok(variants);
         }
         catch (Exception ex)

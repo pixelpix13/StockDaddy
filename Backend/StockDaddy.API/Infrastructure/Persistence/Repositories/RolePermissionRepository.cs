@@ -3,6 +3,7 @@ using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
+using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
@@ -14,6 +15,35 @@ public class RolePermissionRepository : IRolePermissionRepository
     {
         _context = context;
     }
+
+    public async Task<PagedResult<RolePermissionDto>> GetPagedAsync(PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.RolePermissions.Where(rp => !rp.IsDeleted);
+
+        baseQuery = ApplySort(baseQuery, q);
+
+        var projected = baseQuery.Select(rp => new RolePermissionDto
+        {
+                Id = rp.Id,
+                RoleId = rp.RoleId,
+                PermissionId = rp.PermissionId,
+                CreatedAt = rp.CreatedAt,
+                UpdatedAt = rp.UpdatedAt
+            
+        });
+
+        return await RepositoryPaging.ExecuteAsync(projected, q);
+    }
+
+    private static IQueryable<RolePermission> ApplySort(IQueryable<RolePermission> query, PagedQuery q) =>
+        (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("createdat", true) => query.OrderByDescending(rp => rp.CreatedAt),
+            ("createdat", false) => query.OrderBy(rp => rp.CreatedAt),
+            (_, true) => query.OrderByDescending(rp => rp.Id),
+            _ => query.OrderBy(rp => rp.Id),
+        };
 
     public async Task<List<RolePermissionDto>> GetAllAsync()
     {

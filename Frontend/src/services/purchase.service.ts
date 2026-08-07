@@ -1,5 +1,7 @@
 /** Purchase orders, suppliers, and PO line items. */
 import { apiClient } from './api.client';
+import { fetchAllItems, fetchPaged } from '@/lib/fetch-paged';
+import { PagedQuery, PagedResult } from '@/types/paging';
 import {
   PurchaseOrderDto,
   CreatePurchaseOrderRequest,
@@ -10,9 +12,12 @@ import {
 } from '../dtos';
 
 export const purchaseService = {
+  getPurchaseOrdersPaged(query: PagedQuery): Promise<PagedResult<PurchaseOrderDto>> {
+    return fetchPaged<PurchaseOrderDto>('/purchaseorder', query);
+  },
+
   async getPurchaseOrders(): Promise<PurchaseOrderDto[]> {
-    const response = await apiClient.get<PurchaseOrderDto[]>('/purchaseorder');
-    return response.data;
+    return fetchAllItems<PurchaseOrderDto>('/purchaseorder', { sortBy: 'id', sortDir: 'desc' });
   },
 
   async getPurchaseOrderById(id: number): Promise<PurchaseOrderDto> {
@@ -32,9 +37,12 @@ export const purchaseService = {
     await apiClient.delete(`/purchaseorder/${id}`);
   },
 
+  getSuppliersPaged(query: PagedQuery): Promise<PagedResult<SupplierDto>> {
+    return fetchPaged<SupplierDto>('/supplier', query);
+  },
+
   async getSuppliers(): Promise<SupplierDto[]> {
-    const response = await apiClient.get<SupplierDto[]>('/supplier');
-    return response.data;
+    return fetchAllItems<SupplierDto>('/supplier');
   },
 
   async getSupplierById(id: number): Promise<SupplierDto> {

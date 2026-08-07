@@ -17,11 +17,11 @@ public class ShipmentController : ControllerBase
 
     // GET: api/shipment
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
         try
         {
-            var shipments = await _shipmentRepository.GetAllAsync();
+            var shipments = await _shipmentRepository.GetPagedAsync(query);
             return Ok(shipments);
         }
         catch (Exception ex)

@@ -5,6 +5,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IProductImageRepository
 {
+    Task<PagedResult<ProductImageDto>> GetPagedAsync(PagedQuery query);
     Task<List<ProductImageDto>> GetAllAsync();
     Task<ProductImageDto?> GetByIdAsync(int id);
     Task AddAsync(CreateProductImageRequest image);

@@ -17,9 +17,9 @@ public class AuditLogController : ControllerBase
 
     // GET: api/AuditLog
     [HttpGet]
-    public async Task<ActionResult<List<AuditLogDto>>> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] PagedQuery query)
     {
-        var logs = await _auditLogRepository.GetAllAsync();
+        var logs = await _auditLogRepository.GetPagedAsync(query);
         return Ok(logs);
     }
 

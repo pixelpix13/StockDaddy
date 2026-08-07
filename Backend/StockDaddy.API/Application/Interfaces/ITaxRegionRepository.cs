@@ -4,6 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface ITaxRegionRepository
 {
+    Task<PagedResult<TaxRegionDto>> GetPagedAsync(PagedQuery query);
     Task<List<TaxRegionDto>> GetAllAsync();
     Task<TaxRegionDto?> GetByIdAsync(int id);
     Task AddAsync(CreateTaxRegionRequest region);

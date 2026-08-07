@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Package, Plus } from 'lucide-react';
 import { orchestrationService, catalogService, productService, productImageService } from '@/services';
 import { VariantStockDto } from '@/dtos';
@@ -7,6 +7,10 @@ import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { usePagedList } from '@/hooks/usePagedList';
+import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
+import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
+import { STOCK_FILTER_OPTIONS, buildSubcategoryFilterOptions } from '@/config/list-filters';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,10 +39,16 @@ export const ProductsPage: React.FC = () => {
   const tenantId = user?.tenantId || 1;
   const storeId = user?.storeId || 1;
 
-  const [products, setProducts] = useState<VariantStockDto[]>([]);
+  const list = usePagedList<VariantStockDto>({
+    fetchFn: useCallback(
+      (query) => orchestrationService.getVariantStockPaged(query, storeId),
+      [storeId]
+    ),
+    defaultSortBy: 'productname',
+    defaultSortDir: 'asc',
+  });
+
   const [subcategories, setSubcategories] = useState<{ id: number; name: string; categoryId: number }[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<VariantStockDto | null>(null);
@@ -54,25 +64,13 @@ export const ProductsPage: React.FC = () => {
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
 
-  const loadProducts = async () => {
-    setIsLoading(true);
-    try {
-      const [stock, subs] = await Promise.all([
-        orchestrationService.getVariantStock(storeId),
-        catalogService.getSubcategories(),
-      ]);
-      setProducts(stock);
+  useEffect(() => {
+    catalogService.getSubcategories().then((subs) => {
       setSubcategories(subs.map((s) => ({ id: s.id, name: s.name, categoryId: s.categoryId })));
       if (subs.length > 0 && !subcategoryId) setSubcategoryId(String(subs[0].id));
-    } catch {
-      showToast('error', 'Load Failed', 'Could not load products.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadProducts();
+    }).catch(() => {
+      showToast('error', 'Load Failed', 'Could not load subcategories.');
+    });
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -107,7 +105,7 @@ export const ProductsPage: React.FC = () => {
       setCostPrice('');
       setDescription('');
       setImageUrl('');
-      loadProducts();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not create product.'));
     } finally {
@@ -120,7 +118,7 @@ export const ProductsPage: React.FC = () => {
     try {
       await productService.deleteProduct(row.productId);
       showToast('success', 'Deleted', 'Product removed.');
-      loadProducts();
+      list.reload();
     } catch {
       showToast('error', 'Failed', 'Could not delete product.');
     }
@@ -165,7 +163,7 @@ export const ProductsPage: React.FC = () => {
       });
       showToast('success', 'Updated', 'Product and variant saved.');
       setEditDialogOpen(false);
-      loadProducts();
+      list.reload();
     } catch (err: unknown) {
       showToast('error', 'Failed', getApiErrorMessage(err, 'Could not update product.'));
     } finally {
@@ -173,17 +171,44 @@ export const ProductsPage: React.FC = () => {
     }
   };
 
-  const filtered = products.filter(
-    (p) =>
-      p.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.skuCode.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const columns: Column<VariantStockDto>[] = [
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
+    { header: 'Product', accessor: 'productName', sortKey: 'productname', className: 'font-medium text-slate-100' },
+    { header: 'SKU', accessor: 'skuCode', sortKey: 'skucode', className: 'font-mono text-xs text-slate-400' },
+    {
+      header: 'Price',
+      accessor: (row) => `$${row.price.toFixed(2)}`,
+      sortKey: 'price',
+      className: 'text-emerald-400 font-semibold',
+    },
+    { header: 'Tax', accessor: (row) => `${row.taxPercent}%` },
+    {
+      header: 'Stock',
+      accessor: (row) => (
+        <Badge variant={row.quantity <= 5 ? 'destructive' : 'success'}>
+          {row.quantity} units
+        </Badge>
+      ),
+      sortKey: 'quantity',
+    },
+    { header: 'Category', accessor: (row) => row.subcategoryName || '—', className: 'text-slate-400' },
+    {
+      header: 'Actions',
+      accessor: (row) => (
+        <CrudRowActions
+          module={APP_MODULES.Product}
+          onEdit={() => openEdit(row)}
+          onDelete={() => handleDelete(row)}
+        />
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="page-stack">
+      <div className="page-hero flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+          <h1 className="page-hero-title">
             Products & Variants <Package className="w-6 h-6 text-blue-400" />
           </h1>
           <p className="text-sm text-slate-400 mt-1">
@@ -198,65 +223,35 @@ export const ProductsPage: React.FC = () => {
       </div>
 
       <Card>
-        <CardContent className="pt-6">
-          <Input
-            placeholder="Search by name or SKU..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-md"
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader>
-          <CardTitle>Catalog ({filtered.length})</CardTitle>
+          <CardTitle>Catalog ({list.totalCount})</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-slate-400">Loading...</p>
-          ) : filtered.length === 0 ? (
-            <p className="text-sm text-slate-400">No products yet. Add one from Catalog setup first if needed.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 text-left">
-                    <th className="pb-3 pr-4">Product</th>
-                    <th className="pb-3 pr-4">SKU</th>
-                    <th className="pb-3 pr-4">Price</th>
-                    <th className="pb-3 pr-4">Tax</th>
-                    <th className="pb-3 pr-4">Stock</th>
-                    <th className="pb-3 pr-4">Category</th>
-                    <th className="pb-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((row) => (
-                    <tr key={row.id} className="border-b border-slate-800/60">
-                      <td className="py-3 pr-4 font-medium text-slate-100">{row.productName}</td>
-                      <td className="py-3 pr-4 font-mono text-xs text-slate-400">{row.skuCode}</td>
-                      <td className="py-3 pr-4 text-emerald-400 font-semibold">${row.price.toFixed(2)}</td>
-                      <td className="py-3 pr-4">{row.taxPercent}%</td>
-                      <td className="py-3 pr-4">
-                        <Badge variant={row.quantity <= 5 ? 'destructive' : 'success'}>
-                          {row.quantity} units
-                        </Badge>
-                      </td>
-                      <td className="py-3 pr-4 text-slate-400">{row.subcategoryName || '—'}</td>
-                      <td className="py-3">
-                        <CrudRowActions
-                          module={APP_MODULES.Product}
-                          onEdit={() => openEdit(row)}
-                          onDelete={() => handleDelete(row)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <PagedDataTable
+            columns={columns}
+            list={list}
+            keyExtractor={(row) => row.id}
+            searchPlaceholder="Search all columns…"
+            emptyMessage="No products yet. Add one from Catalog setup first if needed."
+            filters={
+              <ListFilterBar showClear={list.hasActiveFilters} onClear={list.clearFilters}>
+                <FilterSelect
+                  label="Stock"
+                  options={STOCK_FILTER_OPTIONS}
+                  value={list.filters.stockFilter}
+                  onChange={(value) => list.setFilter('stockFilter', value)}
+                />
+                {subcategories.length > 0 ? (
+                  <FilterSelect
+                    label="Subcategory"
+                    options={buildSubcategoryFilterOptions(subcategories)}
+                    value={list.filters.subcategoryId}
+                    onChange={(value) => list.setFilter('subcategoryId', value)}
+                  />
+                ) : null}
+              </ListFilterBar>
+            }
+          />
         </CardContent>
       </Card>
 

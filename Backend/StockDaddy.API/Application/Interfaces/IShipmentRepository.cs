@@ -4,6 +4,7 @@ namespace StockDaddy.Application.Interfaces;
 
 public interface IShipmentRepository
 {
+    Task<PagedResult<ShipmentDto>> GetPagedAsync(PagedQuery query);
     Task<List<ShipmentDto>> GetAllAsync();
     Task<ShipmentDto?> GetByIdAsync(int id);
     Task AddAsync(CreateShipmentRequest shipment);
