@@ -37,6 +37,8 @@ import { CrudRowActions } from '@/components/common/CrudRowActions';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
 import { Button } from '@/components/ui/button';
+import { DatePicker, formatIsoDate, parseIsoDate } from '@/components/ui/date-picker';
+import { Combobox } from '@/components/ui/combobox';
 
 interface PoLineDraft {
   productVariantId: number;
@@ -70,6 +72,7 @@ export const PurchasesPage: React.FC = () => {
   const [supplierId, setSupplierId] = useState('1');
   const [status, setStatus] = useState<PurchaseOrderStatus>('Pending');
   const [notes, setNotes] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [selectedVariantId, setSelectedVariantId] = useState('');
   const [lineQty, setLineQty] = useState('1');
   const [lineCost, setLineCost] = useState('');
@@ -115,6 +118,10 @@ export const PurchasesPage: React.FC = () => {
       showToast('warning', 'No Items', 'Add at least one line item.');
       return;
     }
+    if (status === 'Unpaid' && !dueDate) {
+      showToast('warning', 'Due Date Required', 'Set when you will pay the supplier for credit purchases.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const now = new Date();
@@ -128,6 +135,7 @@ export const PurchasesPage: React.FC = () => {
         expectedDelivery: expected.toISOString(),
         status,
         notes: notes || 'Created from StockDaddy UI',
+        dueDate: status === 'Unpaid' && dueDate ? new Date(dueDate).toISOString() : undefined,
         items: lines.map((l) => ({
           productVariantId: l.productVariantId,
           quantity: l.quantity,
@@ -314,14 +322,18 @@ export const PurchasesPage: React.FC = () => {
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-2">
               <Label>Supplier</Label>
-              <Select value={supplierId} onValueChange={setSupplierId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {suppliers.map((s) => (
-                    <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={suppliers.map((s) => ({
+                  value: String(s.id),
+                  label: s.name,
+                  keywords: s.email ?? s.phone ?? '',
+                }))}
+                value={supplierId}
+                onValueChange={setSupplierId}
+                placeholder="Select supplier"
+                searchPlaceholder="Search suppliers…"
+                emptyText="No matching suppliers."
+              />
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
@@ -334,6 +346,18 @@ export const PurchasesPage: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            {status === 'Unpaid' ? (
+              <div className="space-y-2">
+                <Label>Pay supplier by (credit due date)</Label>
+                <DatePicker
+                  value={parseIsoDate(dueDate)}
+                  onChange={(date) => setDueDate(formatIsoDate(date))}
+                  placeholder="Select due date"
+                  fromDate={new Date()}
+                />
+                <p className="text-[11px] text-slate-500">Creates a credit reminder to pay this supplier on the due date.</p>
+              </div>
+            ) : null}
 
             <div className="rounded-xl border border-slate-800 p-4 space-y-3">
               <p className="text-xs font-semibold uppercase text-slate-400">Line Items</p>
@@ -392,7 +416,11 @@ export const PurchasesPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               <Label>Expected Delivery</Label>
-              <Input type="date" value={editExpectedDelivery} onChange={(e) => setEditExpectedDelivery(e.target.value)} />
+              <DatePicker
+                value={parseIsoDate(editExpectedDelivery)}
+                onChange={(date) => setEditExpectedDelivery(formatIsoDate(date))}
+                placeholder="Select expected delivery"
+              />
             </div>
             <div className="space-y-2">
               <Label>Notes</Label>

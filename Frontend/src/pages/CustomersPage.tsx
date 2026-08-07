@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { UserCircle, Plus } from 'lucide-react';
+import { UserCircle, Plus, History } from 'lucide-react';
 import { customerService } from '@/services';
 import { CustomerDto } from '@/dtos';
+import { CustomerSaleHistoryDto } from '@/dtos/credit.dto';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { usePagedList } from '@/hooks/usePagedList';
@@ -16,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
@@ -38,6 +40,22 @@ export const CustomersPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [historyCustomer, setHistoryCustomer] = useState<CustomerDto | null>(null);
+  const [historyItems, setHistoryItems] = useState<CustomerSaleHistoryDto[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const openHistory = async (row: CustomerDto) => {
+    setHistoryCustomer(row);
+    setHistoryLoading(true);
+    try {
+      const result = await customerService.getSalesHistory(row.id, { page: 1, pageSize: 50, sortBy: 'createdat', sortDir: 'desc' });
+      setHistoryItems(result.items);
+    } catch {
+      setHistoryItems([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setName('');
@@ -114,7 +132,12 @@ export const CustomersPage: React.FC = () => {
     {
       header: 'Actions',
       accessor: (row) => (
-        <CrudRowActions module={APP_MODULES.Customer} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+        <div className="flex items-center gap-1">
+          <Button type="button" variant="ghost" size="sm" onClick={() => openHistory(row)} title="Purchase history">
+            <History className="w-4 h-4" />
+          </Button>
+          <CrudRowActions module={APP_MODULES.Customer} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+        </div>
       ),
     },
   ];
@@ -125,7 +148,7 @@ export const CustomersPage: React.FC = () => {
         <h1 className="page-hero-title">
           Customers <UserCircle className="w-6 h-6 text-blue-400" />
         </h1>
-        <p className="text-sm text-slate-400 mt-1">Manage customer records for sales and invoicing</p>
+        <p className="text-sm text-slate-400 mt-1">Customer directory with full purchase history from POS checkouts</p>
       </div>
 
       <Card>
@@ -179,6 +202,43 @@ export const CustomersPage: React.FC = () => {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!historyCustomer} onOpenChange={(open) => !open && setHistoryCustomer(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Purchase history — {historyCustomer?.name}</DialogTitle>
+          </DialogHeader>
+          {historyLoading ? (
+            <p className="text-sm text-slate-400">Loading…</p>
+          ) : historyItems.length === 0 ? (
+            <p className="text-sm text-slate-500">No purchases yet for this customer.</p>
+          ) : (
+            <div className="space-y-4">
+              {historyItems.map((sale) => (
+                <div key={sale.id} className="rounded-xl border border-slate-800 p-4 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-mono text-sm text-blue-400">Sale #{sale.id}</span>
+                    <span className="text-xs text-slate-500">{new Date(sale.createdAt).toLocaleString()}</span>
+                    <Badge variant="secondary">{sale.paymentMethod}</Badge>
+                    <span className="font-semibold text-emerald-400">${sale.totalAmount.toFixed(2)}</span>
+                  </div>
+                  {sale.discountAmount > 0 ? (
+                    <p className="text-xs text-amber-400">Discount: −${sale.discountAmount.toFixed(2)}</p>
+                  ) : null}
+                  <ul className="text-xs text-slate-400 space-y-1">
+                    {sale.items.map((item) => (
+                      <li key={item.id}>
+                        {item.productName} ({item.skuCode}) · {item.quantity} × ${item.unitPrice.toFixed(2)} = $
+                        {item.totalPrice.toFixed(2)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

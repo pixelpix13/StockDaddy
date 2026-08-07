@@ -7,6 +7,7 @@ export const PAYMENT_METHOD_FILTER_OPTIONS: FilterOption<string>[] = [
   { label: 'Card', value: 'Card' },
   { label: 'UPI', value: 'UPI' },
   { label: 'Bank Transfer', value: 'BankTransfer' },
+  { label: 'Credit', value: 'Credit' },
 ];
 
 export const PURCHASE_ORDER_STATUS_OPTIONS: FilterOption<string>[] = [
@@ -53,6 +54,20 @@ export const ROLE_TYPE_OPTIONS: FilterOption<string>[] = [
   { label: 'All', value: 'all' },
   { label: 'Built-in', value: 'builtin' },
   { label: 'Custom', value: 'custom' },
+];
+
+export const CREDIT_PARTY_TYPE_OPTIONS: FilterOption<string>[] = [
+  { label: 'All parties', value: 'all' },
+  { label: 'Customers (collect)', value: 'Customer' },
+  { label: 'Suppliers (pay)', value: 'Supplier' },
+];
+
+export const CREDIT_STATUS_OPTIONS: FilterOption<string>[] = [
+  { label: 'All statuses', value: 'all' },
+  { label: 'Pending', value: 'Pending' },
+  { label: 'Partially paid', value: 'PartiallyPaid' },
+  { label: 'Overdue', value: 'Overdue' },
+  { label: 'Paid', value: 'Paid' },
 ];
 
 export const ACTIVITY_ACTION_OPTIONS: FilterOption<string>[] = [

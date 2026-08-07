@@ -47,6 +47,8 @@ export interface PurchaseOrderDto {
   orderDate: string;
   expectedDelivery: string;
   status: PurchaseOrderStatus;
+  totalAmount?: number;
+  dueDate?: string | null;
   notes: string;
   createdAt: string;
   updatedAt: string;

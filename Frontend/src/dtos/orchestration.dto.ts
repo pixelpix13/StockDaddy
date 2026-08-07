@@ -42,12 +42,24 @@ export interface CheckoutLineRequest {
   quantity: number;
 }
 
+export interface CheckoutCustomerRequest {
+  customerId?: number;
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+}
+
 export interface CheckoutSaleRequest {
   tenantId: number;
   storeId: number;
   soldBy: number;
   customerId?: number;
+  customer: CheckoutCustomerRequest;
   paymentMethod: PaymentMethod;
+  discountAmount?: number;
+  discountPercent?: number;
+  creditDueDate?: string;
   notes?: string;
   items: CheckoutLineRequest[];
 }
@@ -65,10 +77,13 @@ export interface CheckoutLineResponse {
 
 export interface CheckoutSaleResponse {
   saleId: number;
+  customerId: number;
   subtotal: number;
   taxAmount: number;
+  discountAmount: number;
   totalAmount: number;
   paymentMethod: PaymentMethod;
+  creditLedgerId?: number | null;
   items: CheckoutLineResponse[];
 }
 
@@ -102,6 +117,7 @@ export interface CreatePurchaseOrderWithItemsRequest {
   expectedDelivery: string;
   status?: PurchaseOrderStatus;
   notes?: string;
+  dueDate?: string;
   items: CreatePurchaseOrderLineRequest[];
 }
 

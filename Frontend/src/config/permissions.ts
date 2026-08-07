@@ -17,6 +17,7 @@ export const APP_MODULES = {
   Settings: 'Settings',
   BillAdjustment: 'BillAdjustment',
   Activity: 'Activity',
+  Credit: 'Credit',
 } as const;
 
 export type AppModule = (typeof APP_MODULES)[keyof typeof APP_MODULES];
@@ -36,6 +37,7 @@ export const MODULE_LABELS: Record<AppModule, string> = {
   Settings: 'Settings',
   BillAdjustment: 'Bill Adjustment',
   Activity: 'Activity Log',
+  Credit: 'Credit & Reminders',
 };
 
 export interface NavItemConfig {
@@ -56,6 +58,7 @@ export const NAV_ITEMS: NavItemConfig[] = [
   { label: 'Suppliers', path: '/suppliers', module: APP_MODULES.Supplier },
   { label: 'Customers', path: '/customers', module: APP_MODULES.Customer },
   { label: 'Activity Log', path: '/activity', module: APP_MODULES.Activity },
+  { label: 'Credit & Reminders', path: '/credit', module: APP_MODULES.Credit },
   { label: 'User Management', path: '/users', module: APP_MODULES.Users },
   { label: 'Access Control', path: '/access-control', module: APP_MODULES.AccessControl },
   { label: 'Settings', path: '/settings', module: APP_MODULES.Settings },

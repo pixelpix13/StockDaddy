@@ -29,4 +29,8 @@ export const customerService = {
   async deleteCustomer(id: number): Promise<void> {
     await apiClient.delete(`/customer/${id}`);
   },
+
+  getSalesHistory(customerId: number, query: PagedQuery): Promise<PagedResult<import('../dtos/credit.dto').CustomerSaleHistoryDto>> {
+    return fetchPaged(`/customer/${customerId}/sales`, query);
+  },
 };

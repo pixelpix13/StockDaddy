@@ -1,4 +1,4 @@
-export type PaymentMethod = 'Cash' | 'Card' | 'UPI' | 'BankTransfer';
+export type PaymentMethod = 'Cash' | 'Card' | 'UPI' | 'BankTransfer' | 'Credit';
 
 export interface SaleItemDto {
   id: number;
@@ -14,7 +14,12 @@ export interface SaleDto {
   tenantId: number;
   storeId?: number;
   customerId?: number;
+  customerName?: string;
   soldBy: number;
+  soldByName?: string;
+  subtotalAmount?: number;
+  taxAmount?: number;
+  discountAmount?: number;
   totalAmount: number;
   paymentMethod: PaymentMethod;
   notes?: string;
