@@ -108,6 +108,12 @@ public static class PermissionSeeder
             }
 
             foreach (var permission in permissions.Where(p =>
+                         p.Module == "Credit"))
+            {
+                AddMapping(toAdd, existingSet, managerRole.Id, permission.Id, now);
+            }
+
+            foreach (var permission in permissions.Where(p =>
                          p.Module is "Dashboard" or "Catalog" or "Product" or "Inventory" or "Sales" or "Purchase" or "Supplier" or "Customer"
                          && p.Action == PermissionAction.Read))
             {

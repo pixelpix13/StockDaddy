@@ -5,5 +5,6 @@ public enum PaymentMethod
     Cash,
     Card,
     UPI,
-    BankTransfer
+    BankTransfer,
+    Credit
 }

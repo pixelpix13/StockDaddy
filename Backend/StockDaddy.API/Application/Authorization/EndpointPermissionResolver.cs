@@ -45,6 +45,7 @@ public static class EndpointPermissionResolver
         ["ScheduledPriceRevert"] = "Product",
         ["GiftOption"] = "Product",
         ["AuditLog"] = "Activity",
+        ["CreditLedger"] = "Credit",
         ["IntegrationEvent"] = "Settings",
     };
 

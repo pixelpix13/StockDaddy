@@ -32,13 +32,27 @@ public class CheckoutLineRequest
     public int Quantity { get; set; }
 }
 
+public class CheckoutCustomerRequest
+{
+    public int? CustomerId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+}
+
 public class CheckoutSaleRequest
 {
     public int TenantId { get; set; }
     public int StoreId { get; set; }
     public int SoldBy { get; set; }
     public int? CustomerId { get; set; }
+    public CheckoutCustomerRequest? Customer { get; set; }
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
+    public decimal DiscountAmount { get; set; }
+    public decimal DiscountPercent { get; set; }
+    /// <summary>Required when PaymentMethod is Credit — when payment is expected.</summary>
+    public DateTime? CreditDueDate { get; set; }
     public string? Notes { get; set; }
     public List<CheckoutLineRequest> Items { get; set; } = new();
 }
@@ -58,10 +72,13 @@ public class CheckoutLineResponse
 public class CheckoutSaleResponse
 {
     public int SaleId { get; set; }
+    public int CustomerId { get; set; }
     public decimal Subtotal { get; set; }
     public decimal TaxAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
     public decimal TotalAmount { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
+    public int? CreditLedgerId { get; set; }
     public List<CheckoutLineResponse> Items { get; set; } = new();
 }
 
@@ -97,6 +114,8 @@ public class CreatePurchaseOrderWithItemsRequest
     public DateTime ExpectedDelivery { get; set; }
     public PurchaseOrderStatus Status { get; set; } = PurchaseOrderStatus.Pending;
     public string Notes { get; set; } = string.Empty;
+    public decimal? TotalAmount { get; set; }
+    public DateTime? DueDate { get; set; }
     public List<CreatePurchaseOrderLineRequest> Items { get; set; } = new();
 }
 

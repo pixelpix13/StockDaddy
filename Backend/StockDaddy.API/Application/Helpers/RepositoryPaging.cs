@@ -45,7 +45,9 @@ public static class RepositoryPaging
             SubcategoryId = query.SubcategoryId,
             TaxPercent = query.TaxPercent,
             Entity = string.IsNullOrWhiteSpace(query.Entity) ? null : query.Entity.Trim(),
-            UserId = query.UserId
+            UserId = query.UserId,
+            CustomerId = query.CustomerId,
+            PartyType = string.IsNullOrWhiteSpace(query.PartyType) ? null : query.PartyType.Trim()
         };
     }
 

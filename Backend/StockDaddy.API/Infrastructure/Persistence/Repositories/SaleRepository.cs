@@ -32,13 +32,20 @@ public class SaleRepository : ISaleRepository
                 (idMatch && s.SoldBy == searchId) ||
                 EF.Functions.ILike(s.Notes ?? string.Empty, pattern) ||
                 EF.Functions.ILike(s.PaymentMethod.ToString(), pattern) ||
-                EF.Functions.ILike(s.TotalAmount.ToString(), pattern));
+                EF.Functions.ILike(s.TotalAmount.ToString(), pattern) ||
+                _context.Users.Any(u => u.Id == s.SoldBy && !u.IsDeleted && EF.Functions.ILike(u.Username, pattern)) ||
+                _context.Customers.Any(c => c.Id == s.CustomerId && !c.IsDeleted && EF.Functions.ILike(c.Name, pattern)));
         }
 
         if (!string.IsNullOrEmpty(q.PaymentMethod) &&
             Enum.TryParse<PaymentMethod>(q.PaymentMethod, true, out var paymentFilter))
         {
             baseQuery = baseQuery.Where(s => s.PaymentMethod == paymentFilter);
+        }
+
+        if (q.CustomerId.HasValue)
+        {
+            baseQuery = baseQuery.Where(s => s.CustomerId == q.CustomerId.Value);
         }
 
         baseQuery = ApplySort(baseQuery, q);
@@ -49,7 +56,15 @@ public class SaleRepository : ISaleRepository
                 TenantId = s.TenantId,
                 StoreId = s.StoreId,
                 CustomerId = s.CustomerId,
+                CustomerName = s.Customer != null ? s.Customer.Name : null,
                 SoldBy = s.SoldBy,
+                SoldByName = _context.Users
+                    .Where(u => u.Id == s.SoldBy && !u.IsDeleted)
+                    .Select(u => u.Username)
+                    .FirstOrDefault(),
+                SubtotalAmount = s.SubtotalAmount,
+                TaxAmount = s.TaxAmount,
+                DiscountAmount = s.DiscountAmount,
                 TotalAmount = s.TotalAmount,
                 PaymentMethod = s.PaymentMethod,
                 Notes = s.Notes,

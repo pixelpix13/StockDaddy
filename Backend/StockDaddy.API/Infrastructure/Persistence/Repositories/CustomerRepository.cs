@@ -142,4 +142,77 @@ public class CustomerRepository : ICustomerRepository
         _context.Customers.Update(entity);
         await _context.SaveChangesAsync();
     }
+
+    public async Task<PagedResult<CustomerSaleHistoryDto>> GetSalesHistoryAsync(int customerId, PagedQuery query)
+    {
+        var q = RepositoryPaging.Normalize(query);
+        var baseQuery = _context.Sales
+            .Where(s => !s.IsDeleted && s.CustomerId == customerId);
+
+        baseQuery = (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
+        {
+            ("createdat", false) => baseQuery.OrderBy(s => s.CreatedAt),
+            ("createdat", true) => baseQuery.OrderByDescending(s => s.CreatedAt),
+            ("totalamount", false) => baseQuery.OrderBy(s => s.TotalAmount),
+            ("totalamount", true) => baseQuery.OrderByDescending(s => s.TotalAmount),
+            (_, true) => baseQuery.OrderByDescending(s => s.Id),
+            _ => baseQuery.OrderByDescending(s => s.CreatedAt),
+        };
+
+        var totalCount = await baseQuery.CountAsync();
+        var sales = await baseQuery
+            .Skip((q.Page - 1) * q.PageSize)
+            .Take(q.PageSize)
+            .Select(s => new { s.Id, s.CreatedAt, s.SubtotalAmount, s.TaxAmount, s.DiscountAmount, s.TotalAmount, s.PaymentMethod })
+            .ToListAsync();
+
+        var saleIds = sales.Select(s => s.Id).ToList();
+        var items = await _context.SaleItems
+            .Where(i => !i.IsDeleted && saleIds.Contains(i.SaleId))
+            .Join(_context.ProductVariants.Where(v => !v.IsDeleted),
+                i => i.ProductVariantId,
+                v => v.Id,
+                (i, v) => new { i, v })
+            .Join(_context.Products.Where(p => !p.IsDeleted),
+                x => x.v.ProductId,
+                p => p.Id,
+                (x, p) => new
+                {
+                    x.i.SaleId,
+                    Item = new SaleItemDetailDto
+                    {
+                        Id = x.i.Id,
+                        ProductVariantId = x.i.ProductVariantId,
+                        VariantName = x.v.VariantName,
+                        SkuCode = x.v.SkuCode,
+                        ProductName = p.Name,
+                        Quantity = x.i.Quantity,
+                        UnitPrice = x.i.UnitPrice,
+                        TotalPrice = x.i.TotalPrice
+                    }
+                })
+            .ToListAsync();
+
+        var itemsBySale = items.GroupBy(i => i.SaleId).ToDictionary(g => g.Key, g => g.Select(x => x.Item).ToList());
+
+        var resultItems = sales.Select(s => new CustomerSaleHistoryDto
+        {
+            Id = s.Id,
+            CreatedAt = s.CreatedAt,
+            SubtotalAmount = s.SubtotalAmount,
+            TaxAmount = s.TaxAmount,
+            DiscountAmount = s.DiscountAmount,
+            TotalAmount = s.TotalAmount,
+            PaymentMethod = s.PaymentMethod.ToString(),
+            Items = itemsBySale.TryGetValue(s.Id, out var saleItems) ? saleItems : new List<SaleItemDetailDto>()
+        }).ToList();
+
+        return new PagedResult<CustomerSaleHistoryDto>
+        {
+            Items = resultItems,
+            Page = q.Page,
+            PageSize = q.PageSize,
+            TotalCount = totalCount
+        };
+    }
 }

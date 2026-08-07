@@ -13,6 +13,8 @@ public class PurchaseOrderDto
     public DateTime ExpectedDelivery { get; set; }
 
     public PurchaseOrderStatus Status { get; set; }
+    public decimal TotalAmount { get; set; }
+    public DateTime? DueDate { get; set; }
     public string Notes { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }

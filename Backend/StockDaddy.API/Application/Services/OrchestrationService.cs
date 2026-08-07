@@ -100,9 +100,22 @@ public class OrchestrationService
             return null;
         }
 
+        var customerInput = request.Customer;
+        if (customerInput == null || string.IsNullOrWhiteSpace(customerInput.Name) || string.IsNullOrWhiteSpace(customerInput.Phone))
+        {
+            throw new InvalidOperationException("Customer name and phone are required for checkout.");
+        }
+
+        if (request.PaymentMethod == PaymentMethod.Credit && !request.CreditDueDate.HasValue)
+        {
+            throw new InvalidOperationException("Credit due date is required for credit sales.");
+        }
+
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
+            var customerId = await ResolveCustomerForCheckoutAsync(request.TenantId, customerInput);
+
             var variantIds = request.Items.Select(i => i.ProductVariantId).Distinct().ToList();
             var variants = await _context.ProductVariants
                 .Include(v => v.Product)
@@ -152,15 +165,26 @@ public class OrchestrationService
                 });
             }
 
-            var totalAmount = subtotal + taxTotal;
+            var grossTotal = subtotal + taxTotal;
+            var discount = request.DiscountAmount;
+            if (request.DiscountPercent > 0)
+            {
+                discount = Math.Max(discount, Math.Round(grossTotal * request.DiscountPercent / 100m, 2));
+            }
+
+            discount = Math.Min(Math.Max(discount, 0), grossTotal);
+            var totalAmount = grossTotal - discount;
             var now = DateTime.UtcNow;
 
             var sale = new Sale
             {
                 TenantId = request.TenantId,
                 StoreId = request.StoreId,
-                CustomerId = request.CustomerId,
+                CustomerId = customerId,
                 SoldBy = request.SoldBy,
+                SubtotalAmount = subtotal,
+                TaxAmount = taxTotal,
+                DiscountAmount = discount,
                 TotalAmount = totalAmount,
                 PaymentMethod = request.PaymentMethod,
                 Notes = request.Notes,
@@ -196,16 +220,47 @@ public class OrchestrationService
                 }
             }
 
+            int? creditLedgerId = null;
+            if (request.PaymentMethod == PaymentMethod.Credit)
+            {
+                var customer = await _context.Customers.FirstAsync(c => c.Id == customerId);
+                var ledger = new CreditLedger
+                {
+                    TenantId = request.TenantId,
+                    PartyType = CreditPartyType.Customer,
+                    Status = CreditStatus.Pending,
+                    CustomerId = customerId,
+                    SaleId = sale.Id,
+                    PartyName = customer.Name,
+                    PartyPhone = customer.Phone,
+                    PartyEmail = customer.Email,
+                    PartyAddress = customer.Address,
+                    Amount = totalAmount,
+                    AmountPaid = 0,
+                    DueDate = request.CreditDueDate!.Value.ToUniversalTime(),
+                    Notes = $"Sale #{sale.Id} on credit",
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    IsDeleted = false
+                };
+                await _context.CreditLedgers.AddAsync(ledger);
+                await _context.SaveChangesAsync();
+                creditLedgerId = ledger.Id;
+            }
+
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
             return new CheckoutSaleResponse
             {
                 SaleId = sale.Id,
+                CustomerId = customerId,
                 Subtotal = subtotal,
                 TaxAmount = taxTotal,
+                DiscountAmount = discount,
                 TotalAmount = totalAmount,
                 PaymentMethod = request.PaymentMethod,
+                CreditLedgerId = creditLedgerId,
                 Items = lineResponses
             };
         }
@@ -214,6 +269,51 @@ public class OrchestrationService
             await transaction.RollbackAsync();
             throw;
         }
+    }
+
+    private async Task<int> ResolveCustomerForCheckoutAsync(int tenantId, CheckoutCustomerRequest customer)
+    {
+        var now = DateTime.UtcNow;
+        Customer? entity = null;
+
+        if (customer.CustomerId.HasValue)
+        {
+            entity = await _context.Customers
+                .FirstOrDefaultAsync(c => c.Id == customer.CustomerId.Value && c.TenantId == tenantId && !c.IsDeleted);
+        }
+
+        if (entity == null && !string.IsNullOrWhiteSpace(customer.Phone))
+        {
+            var phone = customer.Phone.Trim();
+            entity = await _context.Customers
+                .FirstOrDefaultAsync(c => c.TenantId == tenantId && !c.IsDeleted && c.Phone == phone);
+        }
+
+        if (entity == null)
+        {
+            entity = new Customer
+            {
+                TenantId = tenantId,
+                Name = customer.Name.Trim(),
+                Phone = customer.Phone.Trim(),
+                Email = customer.Email?.Trim() ?? string.Empty,
+                Address = customer.Address?.Trim() ?? string.Empty,
+                CreatedAt = now,
+                UpdatedAt = now,
+                IsDeleted = false
+            };
+            await _context.Customers.AddAsync(entity);
+            await _context.SaveChangesAsync();
+            return entity.Id;
+        }
+
+        entity.Name = customer.Name.Trim();
+        entity.Phone = customer.Phone.Trim();
+        entity.Email = customer.Email?.Trim() ?? entity.Email;
+        entity.Address = customer.Address?.Trim() ?? entity.Address;
+        entity.UpdatedAt = now;
+        await _context.SaveChangesAsync();
+        return entity.Id;
     }
 
     public async Task<AdjustStockResponse?> AdjustStockAsync(AdjustStockRequest request)
@@ -262,6 +362,7 @@ public class OrchestrationService
         try
         {
             var now = DateTime.UtcNow;
+            var totalAmount = request.Items.Sum(line => line.UnitCost * line.Quantity);
             var order = new PurchaseOrder
             {
                 TenantId = request.TenantId,
@@ -270,6 +371,8 @@ public class OrchestrationService
                 OrderDate = request.OrderDate,
                 ExpectedDelivery = request.ExpectedDelivery,
                 Status = request.Status,
+                TotalAmount = totalAmount,
+                DueDate = request.DueDate,
                 Notes = request.Notes,
                 CreatedAt = now,
                 UpdatedAt = now,
@@ -299,6 +402,35 @@ public class OrchestrationService
 
             await _context.SaveChangesAsync();
 
+            if (request.Status == PurchaseOrderStatus.Unpaid && request.DueDate.HasValue)
+            {
+                var supplier = await _context.Suppliers
+                    .FirstOrDefaultAsync(s => s.Id == request.SupplierId && !s.IsDeleted);
+                if (supplier != null)
+                {
+                    await _context.CreditLedgers.AddAsync(new CreditLedger
+                    {
+                        TenantId = request.TenantId,
+                        PartyType = CreditPartyType.Supplier,
+                        Status = CreditStatus.Pending,
+                        SupplierId = supplier.Id,
+                        PurchaseOrderId = order.Id,
+                        PartyName = supplier.Name,
+                        PartyPhone = supplier.Phone,
+                        PartyEmail = supplier.Email,
+                        PartyAddress = supplier.Address,
+                        Amount = totalAmount,
+                        AmountPaid = 0,
+                        DueDate = request.DueDate.Value.ToUniversalTime(),
+                        Notes = $"Purchase order #{order.Id} on credit",
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                        IsDeleted = false
+                    });
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             itemDtos = await _context.PurchaseItems
                 .Where(i => i.PurchaseOrderId == order.Id && !i.IsDeleted)
                 .Select(i => new PurchaseItemDto
@@ -327,6 +459,8 @@ public class OrchestrationService
                     OrderDate = order.OrderDate,
                     ExpectedDelivery = order.ExpectedDelivery,
                     Status = order.Status,
+                    TotalAmount = order.TotalAmount,
+                    DueDate = order.DueDate,
                     Notes = order.Notes,
                     CreatedAt = order.CreatedAt,
                     UpdatedAt = order.UpdatedAt
@@ -594,6 +728,8 @@ public class OrchestrationService
         OrderDate = order.OrderDate,
         ExpectedDelivery = order.ExpectedDelivery,
         Status = order.Status,
+        TotalAmount = order.TotalAmount,
+        DueDate = order.DueDate,
         Notes = order.Notes,
         CreatedAt = order.CreatedAt,
         UpdatedAt = order.UpdatedAt

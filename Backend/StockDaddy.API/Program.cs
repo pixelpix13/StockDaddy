@@ -78,6 +78,7 @@ builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
 builder.Services.AddScoped<IIntegrationEventRepository, IntegrationEventRepository>();
 builder.Services.AddScoped<IAdjustedInvoiceRepository, AdjustedInvoiceRepository>();
+builder.Services.AddScoped<ICreditLedgerRepository, CreditLedgerRepository>();
 builder.Services.AddScoped<IScheduledPriceRevertRepository, ScheduledPriceRevertRepository>();
 
 // ===============================

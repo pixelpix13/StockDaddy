@@ -24,4 +24,8 @@ public class PagedQuery
     public string? Entity { get; set; }
     /// <summary>Filter audit logs by user who performed the action.</summary>
     public int? UserId { get; set; }
+    /// <summary>Filter sales by customer.</summary>
+    public int? CustomerId { get; set; }
+    /// <summary>Filter credit ledger by party type (Customer/Supplier).</summary>
+    public string? PartyType { get; set; }
 }

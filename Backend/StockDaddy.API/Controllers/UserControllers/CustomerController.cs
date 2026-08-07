@@ -84,6 +84,18 @@ public class CustomerController : ControllerBase
         }
     }
 
+    // GET: api/customer/{id}/sales
+    [HttpGet("{id}/sales")]
+    public async Task<IActionResult> GetSalesHistory(int id, [FromQuery] PagedQuery query)
+    {
+        var customer = await _customerRepo.GetByIdAsync(id);
+        if (customer == null)
+            return NotFound($"Customer with ID {id} not found.");
+
+        var history = await _customerRepo.GetSalesHistoryAsync(id, query);
+        return Ok(history);
+    }
+
     // DELETE: api/customer/{id}
     [HttpDelete("{id}")]
     public async Task<IActionResult> SoftDelete(int id)

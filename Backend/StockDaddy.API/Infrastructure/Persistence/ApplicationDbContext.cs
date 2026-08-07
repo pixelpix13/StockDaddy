@@ -46,6 +46,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<AdjustedInvoice> AdjustedInvoices => Set<AdjustedInvoice>();
     public DbSet<HsnMaster> HsnMaster => Set<HsnMaster>();
     public DbSet<ScheduledPriceRevert> ScheduledPriceReverts => Set<ScheduledPriceRevert>();
+    public DbSet<CreditLedger> CreditLedgers => Set<CreditLedger>();
 
     // ========== Fluent Configuration ==========
     protected override void OnModelCreating(ModelBuilder modelBuilder)

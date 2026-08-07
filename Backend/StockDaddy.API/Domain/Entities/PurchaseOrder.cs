@@ -15,6 +15,9 @@ public class PurchaseOrder
 
     public PurchaseOrderStatus Status { get; set; } = PurchaseOrderStatus.Pending;
 
+    public decimal TotalAmount { get; set; }
+    public DateTime? DueDate { get; set; }
+
     public string Notes { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

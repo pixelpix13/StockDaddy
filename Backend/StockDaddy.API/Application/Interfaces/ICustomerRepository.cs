@@ -10,4 +10,5 @@ public interface ICustomerRepository
     Task AddAsync(CreateCustomerRequest customer);
     Task UpdateAsync(int id, UpdateCustomerRequest customer);
     Task SoftDeleteAsync(int id);
+    Task<PagedResult<CustomerSaleHistoryDto>> GetSalesHistoryAsync(int customerId, PagedQuery query);
 }
