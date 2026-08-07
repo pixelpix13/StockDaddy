@@ -1,0 +1,197 @@
+import React, { useEffect, useState } from 'react';
+import { Building2, Plus } from 'lucide-react';
+import { purchaseService } from '@/services';
+import { SupplierDto } from '@/dtos';
+import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { getApiErrorMessage } from '@/lib/api-error';
+import { CrudRowActions } from '@/components/common/CrudRowActions';
+
+export const SuppliersPage: React.FC = () => {
+  const [suppliers, setSuppliers] = useState<SupplierDto[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<SupplierDto | null>(null);
+  const [name, setName] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { showToast } = useToast();
+  const { user } = useAuth();
+
+  const loadSuppliers = async () => {
+    setIsLoading(true);
+    try {
+      setSuppliers(await purchaseService.getSuppliers());
+    } catch {
+      showToast('error', 'Error', 'Failed to load suppliers.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSuppliers();
+  }, []);
+
+  const resetForm = () => {
+    setName('');
+    setContactName('');
+    setEmail('');
+    setPhone('');
+    setAddress('');
+    setEditing(null);
+  };
+
+  const openCreate = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const openEdit = (supplier: SupplierDto) => {
+    setEditing(supplier);
+    setName(supplier.name);
+    setContactName(supplier.contactName || '');
+    setEmail(supplier.email || '');
+    setPhone(supplier.phone || '');
+    setAddress(supplier.address || '');
+    setDialogOpen(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setIsSubmitting(true);
+    try {
+      const payload = { name, contactName, email, phone, address };
+      if (editing) {
+        await purchaseService.updateSupplier(editing.id, payload);
+        showToast('success', 'Updated', `Supplier "${name}" updated.`);
+      } else {
+        await purchaseService.createSupplier({ tenantId: user?.tenantId || 1, ...payload });
+        showToast('success', 'Created', `Supplier "${name}" created.`);
+      }
+      setDialogOpen(false);
+      resetForm();
+      loadSuppliers();
+    } catch (err: unknown) {
+      showToast('error', 'Failed', getApiErrorMessage(err, 'Could not save supplier.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (supplier: SupplierDto) => {
+    if (!confirm(`Delete supplier "${supplier.name}"?`)) return;
+    try {
+      await purchaseService.deleteSupplier(supplier.id);
+      showToast('success', 'Deleted', 'Supplier removed.');
+      loadSuppliers();
+    } catch {
+      showToast('error', 'Failed', 'Could not delete supplier.');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+            Supplier Management <Building2 className="w-6 h-6 text-blue-400" />
+          </h1>
+          <p className="text-sm text-slate-400 mt-1">Full CRUD for vendor contacts</p>
+        </div>
+        <Button onClick={openCreate}><Plus className="w-4 h-4" /> Add Supplier</Button>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle>Suppliers ({suppliers.length})</CardTitle></CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-sm text-slate-400">Loading...</p>
+          ) : suppliers.length === 0 ? (
+            <p className="text-sm text-slate-400">No suppliers yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 text-left">
+                    <th className="pb-3 pr-4">Name</th>
+                    <th className="pb-3 pr-4">Contact</th>
+                    <th className="pb-3 pr-4">Email / Phone</th>
+                    <th className="pb-3 pr-4">Address</th>
+                    <th className="pb-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {suppliers.map((row) => (
+                    <tr key={row.id} className="border-b border-slate-800/60">
+                      <td className="py-3 pr-4 font-medium text-slate-100">{row.name}</td>
+                      <td className="py-3 pr-4 text-slate-400">{row.contactName || '—'}</td>
+                      <td className="py-3 pr-4 text-xs text-slate-400">
+                        {row.email || '—'}<br />{row.phone || ''}
+                      </td>
+                      <td className="py-3 pr-4 text-xs text-slate-400">{row.address || '—'}</td>
+                      <td className="py-3">
+                        <CrudRowActions onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Edit Supplier' : 'Add Supplier'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Company Name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Contact Person</Label>
+              <Input value={contactName} onChange={(e) => setContactName(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Address</Label>
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>{editing ? 'Update' : 'Create'}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
