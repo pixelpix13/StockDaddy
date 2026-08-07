@@ -44,7 +44,7 @@ public static class EndpointPermissionResolver
         ["AdjustedInvoice"] = "BillAdjustment",
         ["ScheduledPriceRevert"] = "Product",
         ["GiftOption"] = "Product",
-        ["AuditLog"] = "AccessControl",
+        ["AuditLog"] = "Activity",
         ["IntegrationEvent"] = "Settings",
     };
 

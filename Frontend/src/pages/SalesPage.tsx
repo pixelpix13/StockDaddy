@@ -222,9 +222,13 @@ export const SalesPage: React.FC = () => {
                 onChange={(e) => setBarcodeInput(e.target.value)}
                 placeholder="Scan or type SKU, press Enter"
                 autoComplete="off"
+                inputMode="text"
+                enterKeyHint="done"
+                autoFocus
+                className="text-base min-h-12"
               />
               <p className="text-[11px] text-slate-500">
-                USB scanners work here — focus this field and scan. Camera scanning can be added in Phase 2.
+                USB scanners and phone keyboards work here — focus this field and scan or type.
               </p>
             </form>
 

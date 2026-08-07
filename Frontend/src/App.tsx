@@ -24,6 +24,7 @@ import { CustomersPage } from './pages/CustomersPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { FEATURES } from './config/features';
 import { BillAdjustmentPage } from './features/bill-adjustment/BillAdjustmentPage';
+import { ActivityPage } from './pages/ActivityPage';
 
 export const App: React.FC = () => {
   return (
@@ -59,6 +60,9 @@ export const App: React.FC = () => {
                 </Route>
                 <Route element={<PermissionRoute module={APP_MODULES.Customer} />}>
                   <Route path="/customers" element={<CustomersPage />} />
+                </Route>
+                <Route element={<PermissionRoute module={APP_MODULES.Activity} />}>
+                  <Route path="/activity" element={<ActivityPage />} />
                 </Route>
                 <Route element={<PermissionRoute module={APP_MODULES.Users} />}>
                   <Route path="/users" element={<UsersPage />} />

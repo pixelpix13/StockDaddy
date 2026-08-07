@@ -23,6 +23,7 @@ public static class PermissionKeys
         "AccessControl",
         "Settings",
         "BillAdjustment",
+        "Activity",
     ];
 
     public static string Format(string module, PermissionAction action) =>

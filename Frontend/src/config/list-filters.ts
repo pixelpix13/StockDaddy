@@ -55,6 +55,33 @@ export const ROLE_TYPE_OPTIONS: FilterOption<string>[] = [
   { label: 'Custom', value: 'custom' },
 ];
 
+export const ACTIVITY_ACTION_OPTIONS: FilterOption<string>[] = [
+  { label: 'All actions', value: 'all' },
+  { label: 'Create', value: 'Create' },
+  { label: 'Update', value: 'Update' },
+  { label: 'Delete', value: 'Delete' },
+];
+
+export const ACTIVITY_ENTITY_OPTIONS: FilterOption<string>[] = [
+  { label: 'All entities', value: 'all' },
+  { label: 'Catalog — Category', value: 'Category' },
+  { label: 'Catalog — Subcategory', value: 'Subcategory' },
+  { label: 'Catalog — HSN', value: 'HsnMaster' },
+  { label: 'Catalog — Tax Region', value: 'TaxRegion' },
+  { label: 'Product', value: 'Product' },
+  { label: 'Product Variant', value: 'ProductVariant' },
+  { label: 'Inventory', value: 'StockItem' },
+  { label: 'Sales', value: 'Sale' },
+  { label: 'Purchase Order', value: 'PurchaseOrder' },
+  { label: 'Supplier', value: 'Supplier' },
+  { label: 'Customer', value: 'Customer' },
+  { label: 'Users', value: 'User' },
+  { label: 'Access Control', value: 'Rbac' },
+  { label: 'Settings — Store', value: 'Store' },
+  { label: 'Orchestration', value: 'Orchestration' },
+  { label: 'Bill Adjustment', value: 'BillAdjustment' },
+];
+
 export function buildCategoryFilterOptions(
   categories: { id: number; name: string }[]
 ): FilterOption<number>[] {
@@ -88,5 +115,14 @@ export function buildSubcategoryFilterOptions(
   return [
     { label: 'All', value: 'all' },
     ...subcategories.map((s) => ({ label: s.name, value: s.id })),
+  ];
+}
+
+export function buildUserFilterOptions(
+  users: { id: number; username: string }[]
+): FilterOption<number>[] {
+  return [
+    { label: 'All users', value: 'all' },
+    ...users.map((u) => ({ label: u.username, value: u.id })),
   ];
 }

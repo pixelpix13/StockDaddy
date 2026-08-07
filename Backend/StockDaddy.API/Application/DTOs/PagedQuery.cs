@@ -20,4 +20,8 @@ public class PagedQuery
     public int? SupplierId { get; set; }
     public int? SubcategoryId { get; set; }
     public decimal? TaxPercent { get; set; }
+    /// <summary>Filter audit logs by entity/controller name (TableName).</summary>
+    public string? Entity { get; set; }
+    /// <summary>Filter audit logs by user who performed the action.</summary>
+    public int? UserId { get; set; }
 }

@@ -16,9 +16,27 @@ export const APP_MODULES = {
   AccessControl: 'AccessControl',
   Settings: 'Settings',
   BillAdjustment: 'BillAdjustment',
+  Activity: 'Activity',
 } as const;
 
 export type AppModule = (typeof APP_MODULES)[keyof typeof APP_MODULES];
+
+/** Human-readable labels for Access Control permission matrix rows. */
+export const MODULE_LABELS: Record<AppModule, string> = {
+  Dashboard: 'Dashboard',
+  Catalog: 'Catalog Setup',
+  Product: 'Products',
+  Inventory: 'Inventory',
+  Sales: 'Sales & POS',
+  Purchase: 'Purchases',
+  Supplier: 'Suppliers',
+  Customer: 'Customers',
+  Users: 'User Management',
+  AccessControl: 'Access Control',
+  Settings: 'Settings',
+  BillAdjustment: 'Bill Adjustment',
+  Activity: 'Activity Log',
+};
 
 export interface NavItemConfig {
   label: string;
@@ -37,6 +55,7 @@ export const NAV_ITEMS: NavItemConfig[] = [
   { label: 'Purchases', path: '/purchases', module: APP_MODULES.Purchase },
   { label: 'Suppliers', path: '/suppliers', module: APP_MODULES.Supplier },
   { label: 'Customers', path: '/customers', module: APP_MODULES.Customer },
+  { label: 'Activity Log', path: '/activity', module: APP_MODULES.Activity },
   { label: 'User Management', path: '/users', module: APP_MODULES.Users },
   { label: 'Access Control', path: '/access-control', module: APP_MODULES.AccessControl },
   { label: 'Settings', path: '/settings', module: APP_MODULES.Settings },

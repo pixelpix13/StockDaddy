@@ -10,6 +10,8 @@ export interface ListFilters {
   supplierId?: number;
   subcategoryId?: number;
   taxPercent?: number;
+  entity?: string;
+  userId?: number;
 }
 
 export interface PagedQuery extends ListFilters {
@@ -48,5 +50,7 @@ export function buildPagedParams(query: PagedQuery): Record<string, string | num
   if (query.supplierId != null) params.supplierId = query.supplierId;
   if (query.subcategoryId != null) params.subcategoryId = query.subcategoryId;
   if (query.taxPercent != null) params.taxPercent = query.taxPercent;
+  if (query.entity) params.entity = query.entity;
+  if (query.userId != null) params.userId = query.userId;
   return params;
 }

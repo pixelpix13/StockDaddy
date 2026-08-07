@@ -12,3 +12,4 @@ export * from './catalog.service';
 export * from './customer.service';
 export * from './product-image.service';
 export * from './rbac.service';
+export * from './activity.service';

@@ -43,7 +43,9 @@ public static class RepositoryPaging
                 : query.StockFilter.Trim().ToLowerInvariant(),
             SupplierId = query.SupplierId,
             SubcategoryId = query.SubcategoryId,
-            TaxPercent = query.TaxPercent
+            TaxPercent = query.TaxPercent,
+            Entity = string.IsNullOrWhiteSpace(query.Entity) ? null : query.Entity.Trim(),
+            UserId = query.UserId
         };
     }
 

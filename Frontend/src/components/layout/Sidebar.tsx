@@ -13,6 +13,7 @@ import {
   LogOut,
   UserCircle,
   Shield,
+  History,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BrandLogo } from '../common/BrandLogo';
@@ -32,6 +33,7 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
   '/purchases': <Truck className="w-5 h-5" />,
   '/suppliers': <Building2 className="w-5 h-5" />,
   '/customers': <UserCircle className="w-5 h-5" />,
+  '/activity': <History className="w-5 h-5" />,
   '/users': <Users className="w-5 h-5" />,
   '/access-control': <Shield className="w-5 h-5" />,
   '/settings': <Settings className="w-5 h-5" />,

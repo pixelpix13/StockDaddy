@@ -25,6 +25,7 @@ builder.Services.Configure<FeatureOptions>(builder.Configuration.GetSection("Fea
 builder.Services.AddControllers(options =>
     {
         options.Filters.Add<StockDaddy.Application.Authorization.PermissionAuthorizationFilter>();
+        options.Filters.Add<StockDaddy.Application.Authorization.ActivityAuditFilter>();
     })
     .AddJsonOptions(options =>
     {

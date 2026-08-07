@@ -9,3 +9,4 @@ export * from './orchestration.dto';
 export * from './catalog.dto';
 export * from './customer.dto';
 export * from './rbac.dto';
+export * from './activity.dto';

@@ -96,7 +96,13 @@ public static class PermissionSeeder
         if (managerRole != null)
         {
             foreach (var permission in permissions.Where(p =>
-                         p.Module is not ("Users" or "AccessControl" or "Settings" or "BillAdjustment")))
+                         p.Module is not ("Users" or "AccessControl" or "Settings" or "BillAdjustment" or "Activity")))
+            {
+                AddMapping(toAdd, existingSet, managerRole.Id, permission.Id, now);
+            }
+
+            foreach (var permission in permissions.Where(p =>
+                         p.Module == "Activity" && p.Action == PermissionAction.Read))
             {
                 AddMapping(toAdd, existingSet, managerRole.Id, permission.Id, now);
             }

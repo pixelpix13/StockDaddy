@@ -13,7 +13,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { RolesTab } from '@/components/access-control/RolesTab';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { usePermissions } from '@/hooks/usePermissions';
-import { APP_MODULES } from '@/config/permissions';
+import { APP_MODULES, MODULE_LABELS } from '@/config/permissions';
 import { usePagedList } from '@/hooks/usePagedList';
 import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
 import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
@@ -288,6 +288,7 @@ export const AccessControlPage: React.FC = () => {
                 <CardTitle>Permission Matrix</CardTitle>
                 <CardDescription>
                   Select a role and toggle module permissions. Each maps to API endpoint access.
+                  Activity Log Read grants access to the audit trail; admins see all users, others see only their own.
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -347,7 +348,9 @@ export const AccessControlPage: React.FC = () => {
 
                           return (
                             <tr key={module} className="border-b border-slate-800/60">
-                              <td className="py-3 pr-4 font-medium text-slate-200">{module}</td>
+                              <td className="py-3 pr-4 font-medium text-slate-200">
+                                {MODULE_LABELS[module as keyof typeof MODULE_LABELS] ?? module}
+                              </td>
                               {ACTIONS.map((action) => {
                                 const perm = modulePerms.find((p) => p.action === action);
                                 return (
