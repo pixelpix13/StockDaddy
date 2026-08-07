@@ -1,5 +1,6 @@
 
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.Helpers;
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
@@ -65,6 +66,9 @@ public class UserRepository : IUserRepository
             StoreId = user.StoreId,
             Username = user.Username,
             Email = user.Email,
+            PasswordHash = string.IsNullOrWhiteSpace(user.PasswordHash)
+                ? string.Empty
+                : PasswordHasher.Hash(user.PasswordHash),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             IsDeleted = false
@@ -81,6 +85,10 @@ public class UserRepository : IUserRepository
         entity.StoreId = user.StoreId;
         entity.Username = user.Username;
         entity.Email = user.Email;
+        if (!string.IsNullOrWhiteSpace(user.PasswordHash))
+        {
+            entity.PasswordHash = PasswordHasher.Hash(user.PasswordHash);
+        }
         entity.UpdatedAt = DateTime.UtcNow;
         _context.Users.Update(entity);
         await _context.SaveChangesAsync();
