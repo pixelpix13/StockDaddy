@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { VariantSelect } from '@/components/catalog/VariantSelect';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 import { getApiErrorMessage } from '@/lib/api-error';
 
 export const InventoryPage: React.FC = () => {
@@ -99,9 +101,11 @@ export const InventoryPage: React.FC = () => {
           <Button variant="outline" onClick={loadInventory} disabled={isLoading}>
             <RefreshCw className="w-4 h-4" /> Sync
           </Button>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="w-4 h-4" /> Adjust Stock
-          </Button>
+          <PermissionGate module={APP_MODULES.Inventory} action="Update">
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="w-4 h-4" /> Adjust Stock
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 

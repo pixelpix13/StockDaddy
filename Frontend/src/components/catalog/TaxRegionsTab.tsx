@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 
 interface TaxRegionsTabProps {
   tenantId: number;
@@ -97,9 +99,11 @@ export function TaxRegionsTab({ tenantId, storeId, taxRegions, onChanged }: TaxR
             <CardTitle>Tax Regions ({taxRegions.length})</CardTitle>
             <CardDescription>Regional tax rates for store #{storeId}</CardDescription>
           </div>
-          <Button onClick={openCreate}>
-            <Plus className="w-4 h-4" /> Add Region
-          </Button>
+          <PermissionGate module={APP_MODULES.Catalog} action="Write">
+            <Button onClick={openCreate}>
+              <Plus className="w-4 h-4" /> Add Region
+            </Button>
+          </PermissionGate>
         </CardHeader>
         <CardContent>
           {taxRegions.length === 0 ? (
@@ -117,7 +121,7 @@ export function TaxRegionsTab({ tenantId, storeId, taxRegions, onChanged }: TaxR
                       {row.taxPercent}% tax · Store #{row.storeId ?? 'All'}
                     </p>
                   </div>
-                  <CrudRowActions onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+                  <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
                 </div>
               ))}
             </div>

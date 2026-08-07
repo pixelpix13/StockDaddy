@@ -22,7 +22,10 @@ builder.Services.Configure<FeatureOptions>(builder.Configuration.GetSection("Fea
 // ===============================
 // 1. Add Controllers and AutoMapper
 // ===============================
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<StockDaddy.Application.Authorization.PermissionAuthorizationFilter>();
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -117,6 +120,7 @@ builder.Services.AddScoped<IntegrationEventService>();
 builder.Services.AddScoped<AdjustedInvoiceService>();
 builder.Services.AddScoped<ScheduledPriceRevertService>();
 builder.Services.AddScoped<OrchestrationService>();
+builder.Services.AddScoped<RbacService>();
 builder.Services.AddHostedService<ScheduledPriceRevertBackgroundService>();
 
 // ===============================

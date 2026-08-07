@@ -2,6 +2,7 @@
  * Shared Axios instance for all API services.
  * - Attaches JWT from localStorage on every request.
  * - On 401, clears session and redirects to `/login`.
+ * - On 403, dispatches a global event for toast display (permission denied).
  */
 import axios from 'axios';
 
@@ -30,6 +31,13 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 403) {
+      const message =
+        typeof error.response.data?.message === 'string'
+          ? error.response.data.message
+          : 'You do not have permission for this action.';
+      window.dispatchEvent(new CustomEvent('stockdaddy:forbidden', { detail: message }));
+    }
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('stockdaddy_token');
       localStorage.removeItem('stockdaddy_user');

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 
@@ -53,6 +54,7 @@ public class AuthController : ControllerBase
     // GET: api/auth/me
     [HttpGet("me")]
     [Authorize]
+    [SkipPermissionCheck]
     public async Task<IActionResult> GetMe()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

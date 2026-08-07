@@ -12,34 +12,40 @@ import {
   FolderTree,
   LogOut,
   UserCircle,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { BrandLogo } from '../common/BrandLogo';
+import { NAV_ITEMS } from '@/config/permissions';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const { user, logout } = useAuth();
+const NAV_ICONS: Record<string, React.ReactNode> = {
+  '/': <LayoutDashboard className="w-5 h-5" />,
+  '/catalog': <FolderTree className="w-5 h-5" />,
+  '/products': <Package className="w-5 h-5" />,
+  '/inventory': <Boxes className="w-5 h-5" />,
+  '/sales': <ShoppingCart className="w-5 h-5" />,
+  '/purchases': <Truck className="w-5 h-5" />,
+  '/suppliers': <Building2 className="w-5 h-5" />,
+  '/customers': <UserCircle className="w-5 h-5" />,
+  '/users': <Users className="w-5 h-5" />,
+  '/access-control': <Shield className="w-5 h-5" />,
+  '/settings': <Settings className="w-5 h-5" />,
+};
 
-  const navItems = [
-    { label: 'Dashboard', path: '/', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { label: 'Catalog Setup', path: '/catalog', icon: <FolderTree className="w-5 h-5" /> },
-    { label: 'Products', path: '/products', icon: <Package className="w-5 h-5" /> },
-    { label: 'Inventory', path: '/inventory', icon: <Boxes className="w-5 h-5" /> },
-    { label: 'Sales & POS', path: '/sales', icon: <ShoppingCart className="w-5 h-5" /> },
-    { label: 'Purchases', path: '/purchases', icon: <Truck className="w-5 h-5" /> },
-    { label: 'Suppliers', path: '/suppliers', icon: <Building2 className="w-5 h-5" /> },
-    { label: 'Customers', path: '/customers', icon: <UserCircle className="w-5 h-5" /> },
-    { label: 'User Management', path: '/users', icon: <Users className="w-5 h-5" /> },
-    { label: 'Settings', path: '/settings', icon: <Settings className="w-5 h-5" /> },
-  ];
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const { user, logout, hasPermission } = useAuth();
+
+  const visibleNavItems = NAV_ITEMS.filter((item) =>
+    hasPermission(item.module, item.action ?? 'Read')
+  );
 
   return (
     <>
-      {/* Mobile Backdrop */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm md:hidden"
@@ -47,21 +53,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         />
       )}
 
-      {/* Sidebar Container */}
       <aside
         className={`fixed top-0 left-0 z-40 h-screen w-64 glass-panel border-r border-slate-800/80 flex flex-col justify-between transition-transform duration-300 ease-in-out md:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Brand */}
         <div>
           <div className="flex items-center gap-3 px-6 h-16 border-b border-slate-800/80">
             <BrandLogo size="md" showText />
           </div>
 
-          {/* Navigation Links */}
           <nav className="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-10rem)]">
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
@@ -74,14 +77,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   }`
                 }
               >
-                {item.icon}
+                {NAV_ICONS[item.path]}
                 <span>{item.label}</span>
               </NavLink>
             ))}
           </nav>
         </div>
 
-        {/* User Footer */}
         <div className="p-4 border-t border-slate-800/80">
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
             <div className="flex items-center gap-3 overflow-hidden">
@@ -90,7 +92,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </div>
               <div className="truncate">
                 <p className="text-xs font-semibold text-slate-200 truncate">{user?.username}</p>
-                <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
+                <p className="text-[10px] text-slate-400 truncate">
+                  {user?.roleName || user?.email}
+                </p>
               </div>
             </div>
             <button

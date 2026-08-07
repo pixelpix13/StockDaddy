@@ -16,6 +16,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
@@ -116,9 +118,11 @@ export const SettingsPage: React.FC = () => {
 
       <Card title="Store Locations" subtitle="Full CRUD for tenant store branches">
         <div className="flex justify-end mb-4">
-          <Button onClick={openCreateStore}>
-            <Plus className="w-4 h-4" /> Add Store
-          </Button>
+          <PermissionGate module={APP_MODULES.Settings} action="Write">
+            <Button onClick={openCreateStore}>
+              <Plus className="w-4 h-4" /> Add Store
+            </Button>
+          </PermissionGate>
         </div>
         {isLoadingStores ? (
           <p className="text-sm text-slate-400">Loading stores...</p>
@@ -140,7 +144,7 @@ export const SettingsPage: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <CrudRowActions onEdit={() => openEditStore(row)} onDelete={() => handleDeleteStore(row)} />
+                <CrudRowActions module={APP_MODULES.Settings} onEdit={() => openEditStore(row)} onDelete={() => handleDeleteStore(row)} />
               </div>
             ))}
           </div>

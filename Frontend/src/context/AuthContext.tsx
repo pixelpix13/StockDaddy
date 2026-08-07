@@ -1,9 +1,10 @@
 /**
- * Global auth state: JWT token + current user profile.
+ * Global auth state: JWT token + current user profile with RBAC permissions.
  * On mount, re-validates stored token via `GET /api/auth/me`.
  */
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { UserDto, LoginRequest, RegisterRequest } from '../dtos';
+import { PermissionAction, permissionKey } from '../dtos/rbac.dto';
 import { authService } from '../services';
 
 interface AuthContextType {
@@ -14,6 +15,8 @@ interface AuthContextType {
   login: (request: LoginRequest) => Promise<void>;
   register: (request: RegisterRequest) => Promise<void>;
   logout: () => void;
+  refreshSession: () => Promise<void>;
+  hasPermission: (module: string, action?: PermissionAction) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,6 +65,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
   };
 
+  const refreshSession = useCallback(async () => {
+    const currentUser = await authService.getCurrentUser();
+    setUser(currentUser);
+  }, []);
+
+  const hasPermission = useCallback(
+    (module: string, action: PermissionAction = 'Read') => {
+      const key = permissionKey(module, action).toLowerCase();
+      return (user?.permissions ?? []).some((p) => p.toLowerCase() === key);
+    },
+    [user?.permissions]
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -72,6 +88,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         logout,
+        refreshSession,
+        hasPermission,
       }}
     >
       {children}

@@ -5,6 +5,7 @@ public class UserDto
     public int Id { get; set; }
     public int TenantId { get; set; }
     public int RoleId { get; set; }
+    public string RoleName { get; set; } = string.Empty;
     public int? StoreId { get; set; }
 
     public string Username { get; set; } = string.Empty;
@@ -15,4 +16,7 @@ public class UserDto
 
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
+
+    /// <summary>Effective permission keys, e.g. "Product:Read".</summary>
+    public List<string> Permissions { get; set; } = [];
 }

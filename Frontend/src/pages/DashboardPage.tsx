@@ -18,6 +18,8 @@ import { Button } from '../components/common/Button';
 import { orchestrationService, saleService, inventoryService } from '../services';
 import { VariantStockDto, SaleDto, ProductRestockAlertDto } from '../dtos';
 import { useToast } from '../context/ToastContext';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 
 export const DashboardPage: React.FC = () => {
   const [variants, setVariants] = useState<VariantStockDto[]>([]);
@@ -109,14 +111,16 @@ export const DashboardPage: React.FC = () => {
           >
             Refresh
           </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => (window.location.href = '/sales')}
-            icon={<Plus className="w-4 h-4" />}
-          >
-            New Sale POS
-          </Button>
+          <PermissionGate module={APP_MODULES.Sales} action="Write">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => (window.location.href = '/sales')}
+              icon={<Plus className="w-4 h-4" />}
+            >
+              New Sale POS
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -157,14 +161,16 @@ export const DashboardPage: React.FC = () => {
             title="Recent Sales Transactions"
             subtitle="Latest orders processed through POS and web store"
             action={
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => (window.location.href = '/sales')}
-                icon={<ArrowUpRight className="w-4 h-4" />}
-              >
-                View All
-              </Button>
+              <PermissionGate module={APP_MODULES.Sales} action="Read">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => (window.location.href = '/sales')}
+                  icon={<ArrowUpRight className="w-4 h-4" />}
+                >
+                  View All
+                </Button>
+              </PermissionGate>
             }
           >
             <Table

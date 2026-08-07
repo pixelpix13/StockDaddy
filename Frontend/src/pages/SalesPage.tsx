@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { VariantSelect } from '@/components/catalog/VariantSelect';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 import { getApiErrorMessage } from '@/lib/api-error';
 
 interface CartLine {
@@ -167,6 +169,19 @@ export const SalesPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PermissionGate
+          module={APP_MODULES.Sales}
+          action="Write"
+          fallback={
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-sm text-slate-400">
+                  You have read-only access to sales. POS checkout requires Sales:Write permission.
+                </p>
+              </CardContent>
+            </Card>
+          }
+        >
         <Card>
           <CardHeader>
             <CardTitle>POS Cart</CardTitle>
@@ -274,6 +289,7 @@ export const SalesPage: React.FC = () => {
             </Button>
           </CardContent>
         </Card>
+        </PermissionGate>
 
         <Card>
           <CardHeader>

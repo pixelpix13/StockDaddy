@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,11 +20,13 @@ public class AuthService : IAuthService
 {
     private readonly ApplicationDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly RbacService _rbacService;
 
-    public AuthService(ApplicationDbContext context, IConfiguration configuration)
+    public AuthService(ApplicationDbContext context, IConfiguration configuration, RbacService rbacService)
     {
         _context = context;
         _configuration = configuration;
+        _rbacService = rbacService;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request)
@@ -40,13 +43,12 @@ public class AuthService : IAuthService
             return null;
         }
 
-        // Verify password
         if (!PasswordHasher.Verify(request.Password, user.PasswordHash))
         {
             return null;
         }
 
-        return GenerateAuthResponse(user);
+        return await GenerateAuthResponseAsync(user);
     }
 
     public async Task<AuthResponse?> RegisterAsync(RegisterRequest request)
@@ -57,7 +59,7 @@ public class AuthService : IAuthService
 
         if (existingUser)
         {
-            return null; // User already exists
+            return null;
         }
 
         var user = new User
@@ -76,35 +78,46 @@ public class AuthService : IAuthService
         await _context.Users.AddAsync(user);
         await _context.SaveChangesAsync();
 
-        // Reload with Role if possible
         var role = await _context.Roles.FindAsync(user.RoleId);
         user.Role = role;
 
-        return GenerateAuthResponse(user);
+        return await GenerateAuthResponseAsync(user);
     }
 
     public async Task<UserDto?> GetCurrentUserAsync(int userId)
     {
-        return await _context.Users
-            .Where(u => u.Id == userId && !u.IsDeleted)
-            .Select(u => new UserDto
-            {
-                Id = u.Id,
-                TenantId = u.TenantId,
-                RoleId = u.RoleId,
-                StoreId = u.StoreId,
-                Username = u.Username,
-                Email = u.Email,
-                CreatedAt = u.CreatedAt,
-                UpdatedAt = u.UpdatedAt,
-                IsDeleted = u.IsDeleted,
-                DeletedAt = u.DeletedAt
-            })
-            .FirstOrDefaultAsync();
+        var user = await _context.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+
+        if (user == null)
+        {
+            return null;
+        }
+
+        var permissions = await _rbacService.GetPermissionKeysForRoleAsync(user.RoleId);
+
+        return new UserDto
+        {
+            Id = user.Id,
+            TenantId = user.TenantId,
+            RoleId = user.RoleId,
+            RoleName = user.Role?.Name ?? string.Empty,
+            StoreId = user.StoreId,
+            Username = user.Username,
+            Email = user.Email,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+            IsDeleted = user.IsDeleted,
+            DeletedAt = user.DeletedAt,
+            Permissions = permissions
+        };
     }
 
-    private AuthResponse GenerateAuthResponse(User user)
+    private async Task<AuthResponse> GenerateAuthResponseAsync(User user)
     {
+        var permissions = await _rbacService.GetPermissionKeysForRoleAsync(user.RoleId);
+
         var jwtSettings = _configuration.GetSection("Jwt");
         var secret = jwtSettings["Secret"] ?? "StockDaddy_Super_Secret_Key_For_JWT_Authentication_2026_Minimum_32_Chars!";
         var issuer = jwtSettings["Issuer"] ?? "StockDaddyAPI";
@@ -116,11 +129,11 @@ public class AuthService : IAuthService
 
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim("tenantId", user.TenantId.ToString()),
-            new Claim("roleId", user.RoleId.ToString())
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.Username),
+            new(ClaimTypes.Email, user.Email),
+            new("tenantId", user.TenantId.ToString()),
+            new("roleId", user.RoleId.ToString())
         };
 
         if (user.StoreId.HasValue)
@@ -131,6 +144,11 @@ public class AuthService : IAuthService
         if (user.Role != null)
         {
             claims.Add(new Claim(ClaimTypes.Role, user.Role.Name));
+        }
+
+        foreach (var permission in permissions)
+        {
+            claims.Add(new Claim(PermissionKeys.ClaimType, permission));
         }
 
         var expiration = DateTime.UtcNow.AddMinutes(expiryMinutes);
@@ -154,15 +172,16 @@ public class AuthService : IAuthService
                 Id = user.Id,
                 TenantId = user.TenantId,
                 RoleId = user.RoleId,
+                RoleName = user.Role?.Name ?? string.Empty,
                 StoreId = user.StoreId,
                 Username = user.Username,
                 Email = user.Email,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
                 IsDeleted = user.IsDeleted,
-                DeletedAt = user.DeletedAt
+                DeletedAt = user.DeletedAt,
+                Permissions = permissions
             }
         };
     }
-
 }

@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 
 interface CategoriesTabProps {
   tenantId: number;
@@ -92,9 +94,11 @@ export function CategoriesTab({
             <CardTitle>Categories ({categories.length})</CardTitle>
             <CardDescription>Store #{storeId}</CardDescription>
           </div>
-          <Button onClick={openCreate}>
-            <Plus className="w-4 h-4" /> Add Category
-          </Button>
+          <PermissionGate module={APP_MODULES.Catalog} action="Write">
+            <Button onClick={openCreate}>
+              <Plus className="w-4 h-4" /> Add Category
+            </Button>
+          </PermissionGate>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -115,7 +119,7 @@ export function CategoriesTab({
                     </div>
                     <p className="text-xs text-slate-500 mt-2">ID #{cat.id}</p>
                   </div>
-                  <CrudRowActions onEdit={() => openEdit(cat)} onDelete={() => handleDelete(cat)} />
+                  <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(cat)} onDelete={() => handleDelete(cat)} />
                 </div>
               ))}
             </div>

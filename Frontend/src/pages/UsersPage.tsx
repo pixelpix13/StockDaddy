@@ -6,14 +6,19 @@ import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { Modal } from '../components/common/Modal';
 import { Badge } from '../components/common/Badge';
-import { userService } from '../services';
+import { userService, tenantService } from '../services';
 import { UserManagementDto, CreateUserManagementRequest, UpdateUserManagementRequest } from '../dtos';
+import { RoleDto } from '../dtos/tenant.dto';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { usePermissions } from '@/hooks/usePermissions';
+import { APP_MODULES } from '@/config/permissions';
 
 export const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<UserManagementDto[]>([]);
+  const [roles, setRoles] = useState<RoleDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -28,12 +33,22 @@ export const UsersPage: React.FC = () => {
 
   const { showToast } = useToast();
   const { user: currentUser } = useAuth();
+  const { hasPermission } = usePermissions();
+  const canUpdateUsers = hasPermission(APP_MODULES.Users, 'Update');
+  const canDeleteUsers = hasPermission(APP_MODULES.Users, 'Delete');
 
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const data = await userService.getUsers();
+      const [data, roleList] = await Promise.all([
+        userService.getUsers(),
+        tenantService.getRoles(),
+      ]);
       setUsers(data);
+      setRoles(roleList);
+      if (roleList.length > 0 && roleId === '1' && !data.some((u) => u.roleId === 1)) {
+        setRoleId(String(roleList[0].id));
+      }
     } catch (err) {
       showToast('error', 'Error', 'Failed to load user accounts.');
     } finally {
@@ -122,6 +137,9 @@ export const UsersPage: React.FC = () => {
     }
   };
 
+  const getRoleName = (id: number) =>
+    roles.find((r) => r.id === id)?.name ?? `Role #${id}`;
+
   const columns: Column<UserManagementDto>[] = [
     {
       header: 'Username',
@@ -148,7 +166,7 @@ export const UsersPage: React.FC = () => {
       accessor: (row) => (
         <div className="flex items-center gap-2">
           <Badge variant="info">Tenant #{row.tenantId}</Badge>
-          <Badge variant="neutral">Role #{row.roleId}</Badge>
+          <Badge variant="neutral">{getRoleName(row.roleId)}</Badge>
         </div>
       ),
     },
@@ -156,20 +174,24 @@ export const UsersPage: React.FC = () => {
       header: 'Actions',
       accessor: (row) => (
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => openEditUser(row)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
-            title="Edit User"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => handleDeleteUser(row.id)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-            title="Delete User"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {canUpdateUsers && (
+            <button
+              onClick={() => openEditUser(row)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+              title="Edit User"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
+          {canDeleteUsers && (
+            <button
+              onClick={() => handleDeleteUser(row.id)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              title="Delete User"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       ),
     },
@@ -188,13 +210,15 @@ export const UsersPage: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={() => setIsModalOpen(true)}
-          icon={<Plus className="w-4 h-4" />}
-        >
-          Add Staff Account
-        </Button>
+        <PermissionGate module={APP_MODULES.Users} action="Write">
+          <Button
+            variant="primary"
+            onClick={() => setIsModalOpen(true)}
+            icon={<Plus className="w-4 h-4" />}
+          >
+            Add Staff Account
+          </Button>
+        </PermissionGate>
       </div>
 
       {/* Table */}
@@ -250,9 +274,9 @@ export const UsersPage: React.FC = () => {
               onChange={(e) => setRoleId(e.target.value)}
               className="w-full bg-slate-900/80 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none"
             >
-              <option value="1">Admin (Full Access)</option>
-              <option value="2">Store Manager</option>
-              <option value="3">Cashier / POS Staff</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>{role.name}</option>
+              ))}
             </select>
           </div>
 
@@ -301,9 +325,9 @@ export const UsersPage: React.FC = () => {
               onChange={(e) => setRoleId(e.target.value)}
               className="w-full bg-slate-900/80 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none"
             >
-              <option value="1">Admin (Full Access)</option>
-              <option value="2">Store Manager</option>
-              <option value="3">Cashier / POS Staff</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>{role.name}</option>
+              ))}
             </select>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">

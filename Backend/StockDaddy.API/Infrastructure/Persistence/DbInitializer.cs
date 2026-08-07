@@ -9,11 +9,16 @@ public static class DbInitializer
     {
         await context.Database.MigrateAsync();
 
-        if (await context.Tenants.AnyAsync())
+        if (!await context.Tenants.AnyAsync())
         {
-            return;
+            await SeedTenantDataAsync(context);
         }
 
+        await PermissionSeeder.SeedAsync(context);
+    }
+
+    private static async Task SeedTenantDataAsync(ApplicationDbContext context)
+    {
         var now = DateTime.UtcNow;
 
         var tenant = new Tenant

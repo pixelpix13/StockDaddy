@@ -15,6 +15,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 
 export const CustomersPage: React.FC = () => {
   const { user } = useAuth();
@@ -124,9 +126,11 @@ export const CustomersPage: React.FC = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Customer Directory ({customers.length})</CardTitle>
-          <Button onClick={openCreate}>
-            <Plus className="w-4 h-4" /> Add Customer
-          </Button>
+          <PermissionGate module={APP_MODULES.Customer} action="Write">
+            <Button onClick={openCreate}>
+              <Plus className="w-4 h-4" /> Add Customer
+            </Button>
+          </PermissionGate>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -147,7 +151,7 @@ export const CustomersPage: React.FC = () => {
                     </p>
                     {row.address && <p className="text-xs text-slate-500 mt-1">{row.address}</p>}
                   </div>
-                  <CrudRowActions onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+                  <CrudRowActions module={APP_MODULES.Customer} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
                 </div>
               ))}
             </div>

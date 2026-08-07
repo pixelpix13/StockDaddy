@@ -26,6 +26,8 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 
 interface SubcategoriesTabProps {
   tenantId: number;
@@ -120,9 +122,11 @@ export function SubcategoriesTab({
             <CardTitle>Subcategories ({subcategories.length})</CardTitle>
             <CardDescription>Nested under categories</CardDescription>
           </div>
-          <Button onClick={openCreate} disabled={categories.length === 0}>
-            <Plus className="w-4 h-4" /> Add Subcategory
-          </Button>
+          <PermissionGate module={APP_MODULES.Catalog} action="Write">
+            <Button onClick={openCreate} disabled={categories.length === 0}>
+              <Plus className="w-4 h-4" /> Add Subcategory
+            </Button>
+          </PermissionGate>
         </CardHeader>
         <CardContent>
           {subcategories.length === 0 ? (
@@ -142,7 +146,7 @@ export function SubcategoriesTab({
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">Subcategory</Badge>
-                    <CrudRowActions onEdit={() => openEdit(sub)} onDelete={() => handleDelete(sub)} />
+                    <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(sub)} onDelete={() => handleDelete(sub)} />
                   </div>
                 </div>
               ))}

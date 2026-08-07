@@ -31,6 +31,8 @@ import { Badge } from '@/components/ui/badge';
 import { VariantSelect } from '@/components/catalog/VariantSelect';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 
 interface PoLineDraft {
   productVariantId: number;
@@ -206,9 +208,11 @@ export const PurchasesPage: React.FC = () => {
             Create POs with line items and receive goods into variant stock
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="w-4 h-4" /> Create PO
-        </Button>
+        <PermissionGate module={APP_MODULES.Purchase} action="Write">
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="w-4 h-4" /> Create PO
+          </Button>
+        </PermissionGate>
       </div>
 
       <Card>
@@ -246,11 +250,14 @@ export const PurchasesPage: React.FC = () => {
                       {order.status}
                     </Badge>
                     {order.status !== 'Delivered' && (
-                      <Button size="sm" variant="outline" onClick={() => handleReceive(order.id)}>
-                        <PackageCheck className="w-4 h-4" /> Receive
-                      </Button>
+                      <PermissionGate module={APP_MODULES.Purchase} action="Update">
+                        <Button size="sm" variant="outline" onClick={() => handleReceive(order.id)}>
+                          <PackageCheck className="w-4 h-4" /> Receive
+                        </Button>
+                      </PermissionGate>
                     )}
                     <CrudRowActions
+                      module={APP_MODULES.Purchase}
                       onEdit={() => openEditOrder(order)}
                       onDelete={() => handleDeleteOrder(order)}
                     />

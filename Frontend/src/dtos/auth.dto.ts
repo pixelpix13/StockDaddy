@@ -16,6 +16,7 @@ export interface UserDto {
   id: number;
   tenantId: number;
   roleId: number;
+  roleName?: string;
   storeId?: number;
   username: string;
   email: string;
@@ -23,6 +24,7 @@ export interface UserDto {
   updatedAt: string;
   isDeleted: boolean;
   deletedAt?: string;
+  permissions?: string[];
 }
 
 export interface AuthResponse {

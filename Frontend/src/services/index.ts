@@ -11,3 +11,4 @@ export * from './orchestration.service';
 export * from './catalog.service';
 export * from './customer.service';
 export * from './product-image.service';
+export * from './rbac.service';

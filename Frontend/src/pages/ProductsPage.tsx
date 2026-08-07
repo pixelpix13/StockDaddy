@@ -3,6 +3,8 @@ import { Package, Plus } from 'lucide-react';
 import { orchestrationService, catalogService, productService, productImageService } from '@/services';
 import { VariantStockDto } from '@/dtos';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui/button';
@@ -188,9 +190,11 @@ export const ProductsPage: React.FC = () => {
             Products are created with a sellable variant, SKU, tax %, and opening stock
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="w-4 h-4" /> Add Product
-        </Button>
+        <PermissionGate module={APP_MODULES.Product} action="Write">
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="w-4 h-4" /> Add Product
+          </Button>
+        </PermissionGate>
       </div>
 
       <Card>
@@ -242,6 +246,7 @@ export const ProductsPage: React.FC = () => {
                       <td className="py-3 pr-4 text-slate-400">{row.subcategoryName || '—'}</td>
                       <td className="py-3">
                         <CrudRowActions
+                          module={APP_MODULES.Product}
                           onEdit={() => openEdit(row)}
                           onDelete={() => handleDelete(row)}
                         />

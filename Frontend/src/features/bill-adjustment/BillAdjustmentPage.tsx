@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
+import { APP_MODULES } from '@/config/permissions';
 
 /** Isolated bill correction UI — delete this folder + disable Features:BillAdjustment to remove. */
 export const BillAdjustmentPage: React.FC = () => {
@@ -131,6 +132,7 @@ export const BillAdjustmentPage: React.FC = () => {
                       <Badge variant="secondary">{sale.paymentMethod}</Badge>
                     </div>
                     <CrudRowActions
+                      module={APP_MODULES.BillAdjustment}
                       onEdit={() => openEdit(sale)}
                       onDelete={() => handleVoid(sale)}
                       deleteLabel="Void sale"

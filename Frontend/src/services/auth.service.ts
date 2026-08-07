@@ -21,6 +21,7 @@ export const authService = {
 
   async getCurrentUser(): Promise<UserDto> {
     const response = await apiClient.get<UserDto>('/auth/me');
+    localStorage.setItem('stockdaddy_user', JSON.stringify(response.data));
     return response.data;
   },
 

@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 
 interface HsnTabProps {
   hsnCodes: HsnMasterDto[];
@@ -104,9 +106,11 @@ export function HsnTab({ hsnCodes, onChanged }: HsnTabProps) {
             <CardTitle>HSN Master ({hsnCodes.length})</CardTitle>
             <CardDescription>GST tax codes for product classification</CardDescription>
           </div>
-          <Button onClick={openCreate}>
-            <Plus className="w-4 h-4" /> Add HSN
-          </Button>
+          <PermissionGate module={APP_MODULES.Catalog} action="Write">
+            <Button onClick={openCreate}>
+              <Plus className="w-4 h-4" /> Add HSN
+            </Button>
+          </PermissionGate>
         </CardHeader>
         <CardContent>
           {hsnCodes.length === 0 ? (
@@ -125,7 +129,7 @@ export function HsnTab({ hsnCodes, onChanged }: HsnTabProps) {
                       CGST {row.cgstPercent}% · SGST {row.sgstPercent}%
                     </p>
                   </div>
-                  <CrudRowActions onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+                  <CrudRowActions module={APP_MODULES.Catalog} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
                 </div>
               ))}
             </div>

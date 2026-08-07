@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/dialog';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { CrudRowActions } from '@/components/common/CrudRowActions';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { APP_MODULES } from '@/config/permissions';
 
 export const SuppliersPage: React.FC = () => {
   const [suppliers, setSuppliers] = useState<SupplierDto[]>([]);
@@ -114,7 +116,9 @@ export const SuppliersPage: React.FC = () => {
           </h1>
           <p className="text-sm text-slate-400 mt-1">Full CRUD for vendor contacts</p>
         </div>
-        <Button onClick={openCreate}><Plus className="w-4 h-4" /> Add Supplier</Button>
+        <PermissionGate module={APP_MODULES.Supplier} action="Write">
+          <Button onClick={openCreate}><Plus className="w-4 h-4" /> Add Supplier</Button>
+        </PermissionGate>
       </div>
 
       <Card>
@@ -146,7 +150,7 @@ export const SuppliersPage: React.FC = () => {
                       </td>
                       <td className="py-3 pr-4 text-xs text-slate-400">{row.address || '—'}</td>
                       <td className="py-3">
-                        <CrudRowActions onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
+                        <CrudRowActions module={APP_MODULES.Supplier} onEdit={() => openEdit(row)} onDelete={() => handleDelete(row)} />
                       </td>
                     </tr>
                   ))}

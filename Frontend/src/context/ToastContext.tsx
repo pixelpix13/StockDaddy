@@ -1,5 +1,5 @@
 /** App-wide toast notifications. Call `showToast(type, title, message?)` from any page. */
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, Info, XCircle, X } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -33,6 +33,15 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       removeToast(id);
     }, 4000);
   }, [removeToast]);
+
+  useEffect(() => {
+    const onForbidden = (event: Event) => {
+      const detail = (event as CustomEvent<string>).detail;
+      showToast('error', 'Access Denied', detail || 'You do not have permission for this action.');
+    };
+    window.addEventListener('stockdaddy:forbidden', onForbidden);
+    return () => window.removeEventListener('stockdaddy:forbidden', onForbidden);
+  }, [showToast]);
 
   return (
     <ToastContext.Provider value={{ showToast, removeToast }}>

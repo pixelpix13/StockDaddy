@@ -12,7 +12,7 @@ export const RegisterForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [tenantId, setTenantId] = useState('1');
-  const [roleId, setRoleId] = useState('1');
+  const [roleId, setRoleId] = useState('3');
   const [isLoading, setIsLoading] = useState(false);
 
   const { register } = useAuth();
@@ -30,7 +30,7 @@ export const RegisterForm: React.FC = () => {
     try {
       await register({
         tenantId: parseInt(tenantId, 10) || 1,
-        roleId: parseInt(roleId, 10) || 1,
+        roleId: parseInt(roleId, 10) || 3,
         storeId: 1,
         username,
         email,
