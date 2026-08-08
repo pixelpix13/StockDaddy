@@ -106,13 +106,13 @@ export function RolesTab({ roles, isLoading, onChanged, onSelectRole }: RolesTab
     {
       header: 'ID',
       accessor: (row) => `#${row.id}`,
-      className: 'font-mono text-xs text-slate-500',
+      className: 'font-mono text-xs text-muted-foreground',
     },
-    { header: 'Name', accessor: 'name', className: 'font-medium text-slate-100' },
+    { header: 'Name', accessor: 'name', className: 'font-medium text-foreground' },
     {
       header: 'Permissions',
       accessor: (row) => `${row.permissionIds.length} permission(s)`,
-      className: 'text-slate-400',
+      className: 'text-muted-foreground',
     },
     {
       header: 'Type',
@@ -120,7 +120,7 @@ export function RolesTab({ roles, isLoading, onChanged, onSelectRole }: RolesTab
         PROTECTED_ROLES.has(row.name.toLowerCase()) ? (
           <Badge variant="secondary">Built-in</Badge>
         ) : (
-          <span className="text-slate-500">Custom</span>
+          <span className="text-muted-foreground">Custom</span>
         ),
     },
     {

@@ -1,9 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Building2, Plus } from 'lucide-react';
 import { purchaseService } from '@/services';
 import { SupplierDto } from '@/dtos';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
+import { useActiveStoreId } from '@/context/StoreContext';
 import { usePagedList } from '@/hooks/usePagedList';
 import { ListToolbar } from '@/components/common/ListToolbar';
 import { Table, Column } from '@/components/common/Table';
@@ -24,11 +25,18 @@ import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
 
 export const SuppliersPage: React.FC = () => {
+  const storeId = useActiveStoreId();
   const list = usePagedList<SupplierDto>({
-    fetchFn: useCallback((query) => purchaseService.getSuppliersPaged(query), []),
+    fetchFn: useCallback((query) => purchaseService.getSuppliersPaged({ ...query, storeId }), [storeId]),
     defaultSortBy: 'name',
     defaultSortDir: 'asc',
   });
+
+  useEffect(() => {
+    const reload = () => list.reload();
+    window.addEventListener('stockdaddy:store-changed', reload);
+    return () => window.removeEventListener('stockdaddy:store-changed', reload);
+  }, [list]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<SupplierDto | null>(null);
@@ -101,19 +109,19 @@ export const SuppliersPage: React.FC = () => {
   };
 
   const columns: Column<SupplierDto>[] = [
-    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
-    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-slate-100' },
-    { header: 'Contact', accessor: (row) => row.contactName || '—', className: 'text-slate-400' },
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-muted-foreground' },
+    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-foreground' },
+    { header: 'Contact', accessor: (row) => row.contactName || '—', className: 'text-muted-foreground' },
     {
       header: 'Email / Phone',
       accessor: (row) => (
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-muted-foreground">
           {row.email || '—'}<br />{row.phone || ''}
         </span>
       ),
       sortKey: 'email',
     },
-    { header: 'Address', accessor: (row) => row.address || '—', className: 'text-xs text-slate-400' },
+    { header: 'Address', accessor: (row) => row.address || '—', className: 'text-xs text-muted-foreground' },
     {
       header: 'Actions',
       accessor: (row) => (
@@ -129,7 +137,7 @@ export const SuppliersPage: React.FC = () => {
           <h1 className="page-hero-title">
             Supplier Management <Building2 className="w-6 h-6 text-blue-400" />
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Full CRUD for vendor contacts</p>
+          <p className="text-sm text-muted-foreground mt-1">Full CRUD for vendor contacts</p>
         </div>
         <PermissionGate module={APP_MODULES.Supplier} action="Write">
           <Button onClick={openCreate}><Plus className="w-4 h-4" /> Add Supplier</Button>

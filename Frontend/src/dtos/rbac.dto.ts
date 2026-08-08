@@ -32,7 +32,7 @@ export interface UpdateRoleRequest {
   name: string;
 }
 
-export type PermissionAction = 'Read' | 'Write' | 'Update' | 'Delete';
+export type PermissionAction = 'Read' | 'Write' | 'Update' | 'Delete' | 'AccessAllStores';
 
 export function permissionKey(module: string, action: PermissionAction): string {
   return `${module}:${action}`;

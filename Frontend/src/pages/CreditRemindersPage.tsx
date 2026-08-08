@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Wallet, DollarSign } from 'lucide-react';
 import { creditService } from '@/services';
 import { CreditLedgerDto } from '@/dtos/credit.dto';
+import { useActiveStoreId } from '@/context/StoreContext';
 import { usePagedList } from '@/hooks/usePagedList';
 import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
 import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
@@ -37,11 +38,18 @@ function formatDate(value: string) {
 }
 
 export const CreditRemindersPage: React.FC = () => {
+  const storeId = useActiveStoreId();
   const list = usePagedList<CreditLedgerDto>({
-    fetchFn: useCallback((query) => creditService.getCreditPaged(query), []),
+    fetchFn: useCallback((query) => creditService.getCreditPaged({ ...query, storeId }), [storeId]),
     defaultSortBy: 'duedate',
     defaultSortDir: 'asc',
   });
+
+  useEffect(() => {
+    const reload = () => list.reload();
+    window.addEventListener('stockdaddy:store-changed', reload);
+    return () => window.removeEventListener('stockdaddy:store-changed', reload);
+  }, [list]);
 
   const [selected, setSelected] = useState<CreditLedgerDto | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -77,9 +85,13 @@ export const CreditRemindersPage: React.FC = () => {
       header: 'Party',
       accessor: (row) => (
         <div>
-          <p className="font-medium text-slate-100">{row.partyName}</p>
-          <p className="text-xs text-slate-500">
-            {row.partyType === 'Customer' ? 'Collect from customer' : 'Pay supplier'}
+          <p className="font-medium text-foreground">{row.partyName}</p>
+          <p className="text-xs text-muted-foreground">
+            {row.partyType === 'Customer'
+              ? 'Collect from customer'
+              : row.partyType === 'Company'
+              ? 'Collect from company'
+              : 'Pay supplier'}
             {row.partyPhone ? ` · ${row.partyPhone}` : ''}
           </p>
         </div>
@@ -89,16 +101,16 @@ export const CreditRemindersPage: React.FC = () => {
     {
       header: 'Contact',
       accessor: (row) => (
-        <div className="text-xs text-slate-400">
+        <div className="text-xs text-muted-foreground">
           <p>{row.partyEmail || '—'}</p>
-          <p className="text-slate-500 truncate max-w-[180px]">{row.partyAddress || '—'}</p>
+          <p className="text-muted-foreground truncate max-w-[180px]">{row.partyAddress || '—'}</p>
         </div>
       ),
     },
     {
       header: 'Linked',
       accessor: (row) => (
-        <span className="text-xs font-mono text-slate-400">
+        <span className="text-xs font-mono text-muted-foreground">
           {row.saleId ? `Sale #${row.saleId}` : row.purchaseOrderId ? `PO #${row.purchaseOrderId}` : '—'}
         </span>
       ),
@@ -107,8 +119,8 @@ export const CreditRemindersPage: React.FC = () => {
       header: 'Due',
       accessor: (row) => (
         <div>
-          <p className="text-sm text-slate-200">{formatDate(row.dueDate)}</p>
-          <p className={`text-xs ${row.isOverdue ? 'text-rose-400' : 'text-slate-500'}`}>
+          <p className="text-sm text-foreground">{formatDate(row.dueDate)}</p>
+          <p className={`text-xs ${row.isOverdue ? 'text-rose-400' : 'text-muted-foreground'}`}>
             {row.isOverdue
               ? `${Math.abs(row.daysUntilDue)} day(s) overdue`
               : row.daysUntilDue === 0
@@ -124,7 +136,7 @@ export const CreditRemindersPage: React.FC = () => {
       accessor: (row) => (
         <div>
           <p className="font-semibold text-emerald-400">${row.balanceDue.toFixed(2)}</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             of ${row.amount.toFixed(2)} · paid ${row.amountPaid.toFixed(2)}
           </p>
         </div>
@@ -209,11 +221,11 @@ export const CreditRemindersPage: React.FC = () => {
           </DialogHeader>
           {selected ? (
             <form onSubmit={handleRecordPayment} className="space-y-4">
-              <div className="rounded-lg border border-slate-800 p-3 text-sm space-y-1">
-                <p className="text-slate-300">
+              <div className="rounded-lg border border-border p-3 text-sm space-y-1">
+                <p className="text-foreground/90">
                   Balance due: <span className="font-semibold text-emerald-400">${selected.balanceDue.toFixed(2)}</span>
                 </p>
-                <p className="text-xs text-slate-500">Due {formatDate(selected.dueDate)}</p>
+                <p className="text-xs text-muted-foreground">Due {formatDate(selected.dueDate)}</p>
               </div>
               <div className="space-y-2">
                 <Label>Amount</Label>

@@ -8,7 +8,13 @@ import { Modal } from '../components/common/Modal';
 import { Badge } from '../components/common/Badge';
 import { userService, tenantService } from '../services';
 import { UserManagementDto, CreateUserManagementRequest, UpdateUserManagementRequest } from '../dtos';
-import { RoleDto } from '../dtos/tenant.dto';
+import { RoleDto, StoreDto } from '../dtos/tenant.dto';
+import {
+  StoreRoleAssignmentsEditor,
+  StoreRoleAssignment,
+  assignmentsFromLegacy,
+  summarizeAssignments,
+} from '@/components/access-control/StoreRoleAssignmentsEditor';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -20,15 +26,25 @@ import { ListToolbar } from '@/components/common/ListToolbar';
 import { Pagination } from '@/components/common/Pagination';
 import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
 import { buildRoleFilterOptions } from '@/config/list-filters';
+import { useActiveStoreId } from '@/context/StoreContext';
 
 export const UsersPage: React.FC = () => {
+  const storeId = useActiveStoreId();
   const list = usePagedList<UserManagementDto>({
-    fetchFn: useCallback((query) => userService.getUsersPaged(query), []),
+    fetchFn: useCallback((query) => userService.getUsersPaged({ ...query, storeId }), [storeId]),
     defaultSortBy: 'username',
     defaultSortDir: 'asc',
   });
 
+  useEffect(() => {
+    const reload = () => list.reload();
+    window.addEventListener('stockdaddy:store-changed', reload);
+    return () => window.removeEventListener('stockdaddy:store-changed', reload);
+  }, [list]);
+
   const [roles, setRoles] = useState<RoleDto[]>([]);
+  const [stores, setStores] = useState<StoreDto[]>([]);
+  const [storeAssignments, setStoreAssignments] = useState<StoreRoleAssignment[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserManagementDto | null>(null);
@@ -44,11 +60,13 @@ export const UsersPage: React.FC = () => {
   const { hasPermission } = usePermissions();
   const canUpdateUsers = hasPermission(APP_MODULES.Users, 'Update');
   const canDeleteUsers = hasPermission(APP_MODULES.Users, 'Delete');
+  const defaultStoreId = storeAssignments.find((a) => a.isDefault)?.storeId ?? storeAssignments[0]?.storeId ?? null;
 
   useEffect(() => {
     tenantService.getRoles().then(setRoles).catch(() => {
       showToast('error', 'Error', 'Failed to load roles.');
     });
+    tenantService.getStores().then(setStores).catch(() => setStores([]));
   }, [showToast]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -63,7 +81,10 @@ export const UsersPage: React.FC = () => {
       const payload: CreateUserManagementRequest = {
         tenantId: currentUser?.tenantId || 1,
         roleId: parseInt(roleId, 10) || 1,
-        storeId: currentUser?.storeId || 1,
+        storeAssignments,
+        storeIds: storeAssignments.map((a) => a.storeId),
+        defaultStoreId: defaultStoreId ?? storeAssignments[0]?.storeId,
+        storeId: defaultStoreId ?? storeAssignments[0]?.storeId,
         username,
         email,
         passwordHash: password,
@@ -99,6 +120,18 @@ export const UsersPage: React.FC = () => {
     setUsername(row.username);
     setEmail(row.email);
     setRoleId(String(row.roleId));
+    const assignments = row.storeAssignments?.length
+      ? row.storeAssignments.map((a) => ({
+          storeId: a.storeId,
+          roleId: a.roleId,
+          isDefault: a.isDefault,
+        }))
+      : assignmentsFromLegacy(
+          row.storeIds?.length ? row.storeIds : row.storeId ? [row.storeId] : [],
+          row.roleId,
+          row.defaultStoreId ?? row.storeId
+        );
+    setStoreAssignments(assignments);
     setPassword('');
     setIsEditModalOpen(true);
   };
@@ -110,7 +143,10 @@ export const UsersPage: React.FC = () => {
     try {
       const payload: UpdateUserManagementRequest = {
         roleId: parseInt(roleId, 10) || 1,
-        storeId: currentUser?.storeId || 1,
+        storeAssignments,
+        storeIds: storeAssignments.map((a) => a.storeId),
+        defaultStoreId: defaultStoreId ?? storeAssignments[0]?.storeId,
+        storeId: defaultStoreId ?? storeAssignments[0]?.storeId,
         username,
         email,
         ...(password ? { passwordHash: password } : {}),
@@ -136,14 +172,14 @@ export const UsersPage: React.FC = () => {
       header: 'ID',
       sortKey: 'id',
       accessor: (row) => (
-        <span className="font-mono text-xs text-slate-500">#{row.id}</span>
+        <span className="font-mono text-xs text-muted-foreground">#{row.id}</span>
       ),
     },
     {
       header: 'Username',
       sortKey: 'username',
       accessor: (row) => (
-        <div className="font-bold text-slate-100 flex items-center gap-2">
+        <div className="font-bold text-foreground flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center font-mono text-xs border border-blue-500/30">
             {row.username ? row.username.substring(0, 2).toUpperCase() : 'U'}
           </div>
@@ -155,14 +191,33 @@ export const UsersPage: React.FC = () => {
       header: 'Email',
       sortKey: 'email',
       accessor: (row) => (
-        <span className="text-xs text-slate-300 flex items-center gap-1.5">
-          <Mail className="w-3.5 h-3.5 text-slate-400" />
+        <span className="text-xs text-foreground/90 flex items-center gap-1.5">
+          <Mail className="w-3.5 h-3.5 text-muted-foreground" />
           {row.email}
         </span>
       ),
     },
     {
-      header: 'Tenant / Role',
+      header: 'Store Roles',
+      accessor: (row) => {
+        const summary = row.storeAssignments?.length
+          ? row.storeAssignments
+              .map((a) => `${a.storeName ?? stores.find((s) => s.id === a.storeId)?.name ?? `#${a.storeId}`} (${a.roleName ?? getRoleName(a.roleId)})`)
+              .join(', ')
+          : summarizeAssignments(
+              assignmentsFromLegacy(
+                row.storeIds?.length ? row.storeIds : row.storeId ? [row.storeId] : [],
+                row.roleId,
+                row.defaultStoreId ?? row.storeId
+              ),
+              stores,
+              roles
+            );
+        return <span className="text-xs text-muted-foreground">{summary}</span>;
+      },
+    },
+    {
+      header: 'Default Role',
       accessor: (row) => (
         <div className="flex items-center gap-2">
           <Badge variant="info">Tenant #{row.tenantId}</Badge>
@@ -177,7 +232,7 @@ export const UsersPage: React.FC = () => {
           {canUpdateUsers && (
             <button
               onClick={() => openEditUser(row)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
               title="Edit User"
             >
               <Pencil className="w-4 h-4" />
@@ -186,7 +241,7 @@ export const UsersPage: React.FC = () => {
           {canDeleteUsers && (
             <button
               onClick={() => handleDeleteUser(row.id)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
               title="Delete User"
             >
               <Trash2 className="w-4 h-4" />
@@ -204,7 +259,7 @@ export const UsersPage: React.FC = () => {
           <h1 className="page-hero-title">
             User Access Management <Users className="w-6 h-6 text-blue-400" />
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Manage tenant staff, cashiers, managers, and system roles
           </p>
         </div>
@@ -212,7 +267,20 @@ export const UsersPage: React.FC = () => {
         <PermissionGate module={APP_MODULES.Users} action="Write">
           <Button
             variant="primary"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setUsername('');
+              setEmail('');
+              setPassword('');
+              setRoleId('1');
+              setStoreAssignments(
+                assignmentsFromLegacy(
+                  currentUser?.storeIds?.length ? currentUser.storeIds : currentUser?.storeId ? [currentUser.storeId] : [],
+                  currentUser?.roleId ?? 1,
+                  currentUser?.defaultStoreId ?? currentUser?.storeId
+                )
+              );
+              setIsModalOpen(true);
+            }}
             icon={<Plus className="w-4 h-4" />}
           >
             Add Staff Account
@@ -294,13 +362,13 @@ export const UsersPage: React.FC = () => {
           />
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-              Role Level
+            <label className="text-xs font-semibold uppercase tracking-wider text-foreground/90">
+              Default Role
             </label>
             <select
               value={roleId}
               onChange={(e) => setRoleId(e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none"
+              className="w-full bg-card/80 border border-border focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none"
             >
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>{role.name}</option>
@@ -308,7 +376,25 @@ export const UsersPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          {stores.length > 0 ? (
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-foreground/90">
+                Store Access & Roles
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Pick stores and assign a role per store. Default role above applies when adding a store.
+              </p>
+              <StoreRoleAssignmentsEditor
+                stores={stores}
+                roles={roles}
+                assignments={storeAssignments}
+                onChange={setStoreAssignments}
+                fallbackRoleId={parseInt(roleId, 10) || 1}
+              />
+            </div>
+          ) : null}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
@@ -345,20 +431,36 @@ export const UsersPage: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-              Role Level
+            <label className="text-xs font-semibold uppercase tracking-wider text-foreground/90">
+              Default Role
             </label>
             <select
               value={roleId}
               onChange={(e) => setRoleId(e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none"
+              className="w-full bg-card/80 border border-border focus:border-blue-500 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none"
             >
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>{role.name}</option>
               ))}
             </select>
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+
+          {stores.length > 0 ? (
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-foreground/90">
+                Store Access & Roles
+              </label>
+              <StoreRoleAssignmentsEditor
+                stores={stores}
+                roles={roles}
+                assignments={storeAssignments}
+                onChange={setStoreAssignments}
+                fallbackRoleId={parseInt(roleId, 10) || 1}
+              />
+            </div>
+          ) : null}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <Button type="button" variant="secondary" onClick={() => setIsEditModalOpen(false)}>
               Cancel
             </Button>

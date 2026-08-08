@@ -43,4 +43,12 @@ export const rbacService = {
     const response = await apiClient.put<UserDto>(`/rbac/users/${userId}/role`, request);
     return response.data;
   },
+
+  async assignUserStoreAssignments(
+    userId: number,
+    request: import('../dtos/user.dto').AssignUserStoreAssignmentsRequest
+  ): Promise<UserDto> {
+    const response = await apiClient.put<UserDto>(`/rbac/users/${userId}/store-assignments`, request);
+    return response.data;
+  },
 };

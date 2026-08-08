@@ -9,6 +9,7 @@ import {
   PurchaseOrderStatus,
 } from '@/dtos';
 import { useAuth } from '@/context/AuthContext';
+import { useActiveStoreId } from '@/context/StoreContext';
 import { useToast } from '@/context/ToastContext';
 import { usePagedList } from '@/hooks/usePagedList';
 import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
@@ -70,10 +71,13 @@ export const PurchasesPage: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
   const tenantId = user?.tenantId || 1;
-  const storeId = user?.storeId || 1;
+  const storeId = useActiveStoreId();
 
   const list = usePagedList<PurchaseOrderDto>({
-    fetchFn: useCallback((query) => purchaseService.getPurchaseOrdersPaged(query), []),
+    fetchFn: useCallback(
+      (query) => purchaseService.getPurchaseOrdersPaged({ ...query, storeId }),
+      [storeId]
+    ),
     defaultSortBy: 'id',
     defaultSortDir: 'desc',
   });
@@ -349,21 +353,21 @@ export const PurchasesPage: React.FC = () => {
   ) => (
     <div className="space-y-2 max-h-40 overflow-y-auto">
       {draftLines.length === 0 ? (
-        <p className="text-xs text-slate-500 text-center py-2">No line items yet</p>
+        <p className="text-xs text-muted-foreground text-center py-2">No line items yet</p>
       ) : (
         draftLines.map((line, idx) => (
           <div
             key={line.id ?? `new-${idx}-${line.productVariantId}`}
-            className="flex items-center justify-between rounded-lg border border-slate-800 px-3 py-2"
+            className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
           >
-            <p className="text-xs text-slate-300 pr-2">
+            <p className="text-xs text-foreground/90 pr-2">
               {line.label} · {line.quantity} × ${line.unitCost.toFixed(2)}
             </p>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="shrink-0 text-slate-500 hover:text-rose-400"
+              className="shrink-0 text-muted-foreground hover:text-rose-400"
               onClick={() => onRemove(idx)}
               aria-label="Remove line"
             >
@@ -379,8 +383,8 @@ export const PurchasesPage: React.FC = () => {
     draftLines: PoLineDraft[],
     setDraftLines: React.Dispatch<React.SetStateAction<PoLineDraft[]>>
   ) => (
-    <div className="rounded-xl border border-slate-800 p-4 space-y-3">
-      <p className="text-xs font-semibold uppercase text-slate-400">Line Items</p>
+    <div className="rounded-xl border border-border p-4 space-y-3">
+      <p className="text-xs font-semibold uppercase text-muted-foreground">Line Items</p>
       <VariantSelect variants={variants} value={selectedVariantId} onValueChange={setSelectedVariantId} />
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
@@ -419,13 +423,13 @@ export const PurchasesPage: React.FC = () => {
     {
       header: 'Supplier',
       accessor: (row) => getSupplierName(row.supplierId),
-      className: 'text-slate-300',
+      className: 'text-foreground/90',
     },
     {
       header: 'Order Date',
       accessor: (row) => new Date(row.orderDate).toLocaleDateString(),
       sortKey: 'createdat',
-      className: 'text-slate-400',
+      className: 'text-muted-foreground',
     },
     {
       header: 'Status',
@@ -481,7 +485,7 @@ export const PurchasesPage: React.FC = () => {
           <h1 className="page-hero-title">
             Purchase Orders <Truck className="w-6 h-6 text-blue-400" />
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Create POs with line items, edit before delivery, and record partial or full receipts
           </p>
         </div>
@@ -664,9 +668,9 @@ export const PurchasesPage: React.FC = () => {
           <form onSubmit={handleReceive} className="space-y-4">
             <div className="space-y-3 max-h-72 overflow-y-auto">
               {receiveLines.map((line, idx) => (
-                <div key={line.purchaseItemId} className="rounded-lg border border-slate-800 p-3 space-y-2">
-                  <p className="text-sm text-slate-200">{line.label}</p>
-                  <p className="text-xs text-slate-500">Ordered: {line.quantityOrdered}</p>
+                <div key={line.purchaseItemId} className="rounded-lg border border-border p-3 space-y-2">
+                  <p className="text-sm text-foreground">{line.label}</p>
+                  <p className="text-xs text-muted-foreground">Ordered: {line.quantityOrdered}</p>
                   <div className="space-y-1">
                     <Label className="text-xs">Qty received</Label>
                     <Input

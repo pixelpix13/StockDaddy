@@ -3,9 +3,16 @@
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Shield, Save, Users } from 'lucide-react';
-import { rbacService, userService } from '@/services';
+import { rbacService, userService, tenantService } from '@/services';
 import { RbacMatrixDto, PermissionAction, RoleWithPermissionsDto } from '@/dtos';
 import { UserManagementDto } from '@/dtos';
+import { StoreDto } from '@/dtos/tenant.dto';
+import {
+  StoreRoleAssignmentsEditor,
+  StoreRoleAssignment,
+  assignmentsFromLegacy,
+  summarizeAssignments,
+} from '@/components/access-control/StoreRoleAssignmentsEditor';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -14,6 +21,7 @@ import { RolesTab } from '@/components/access-control/RolesTab';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_MODULES, MODULE_LABELS } from '@/config/permissions';
+import { useActiveStoreId } from '@/context/StoreContext';
 import { usePagedList } from '@/hooks/usePagedList';
 import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
 import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
@@ -29,9 +37,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
-const ACTIONS: PermissionAction[] = ['Read', 'Write', 'Update', 'Delete'];
+const STANDARD_ACTIONS: PermissionAction[] = ['Read', 'Write', 'Update', 'Delete'];
+const EXTRA_ACTIONS: PermissionAction[] = ['AccessAllStores'];
 
 function MatrixCheckbox({
   checked,
@@ -53,7 +67,7 @@ function MatrixCheckbox({
         if (el) el.indeterminate = !!indeterminate;
       }}
       onChange={(e) => onChange(e.target.checked)}
-      className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-blue-500 focus:ring-blue-500"
+      className="h-4 w-4 rounded border-border bg-card text-primary focus:ring-ring"
     />
   );
 }
@@ -63,9 +77,10 @@ export const AccessControlPage: React.FC = () => {
   const { user: currentUser, refreshSession } = useAuth();
   const { hasPermission } = usePermissions();
   const canUpdateAccess = hasPermission(APP_MODULES.AccessControl, 'Update');
+  const storeId = useActiveStoreId();
 
   const usersList = usePagedList<UserManagementDto>({
-    fetchFn: useCallback((query) => userService.getUsersPaged(query), []),
+    fetchFn: useCallback((query) => userService.getUsersPaged({ ...query, storeId }), [storeId]),
     defaultSortBy: 'username',
     defaultSortDir: 'asc',
   });
@@ -73,10 +88,13 @@ export const AccessControlPage: React.FC = () => {
   const [matrix, setMatrix] = useState<RbacMatrixDto | null>(null);
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [rolePermissionIds, setRolePermissionIds] = useState<Set<number>>(new Set());
-  const [userRoleDrafts, setUserRoleDrafts] = useState<Record<number, number>>({});
+  const [stores, setStores] = useState<StoreDto[]>([]);
+  const [assignmentUser, setAssignmentUser] = useState<UserManagementDto | null>(null);
+  const [assignmentDraft, setAssignmentDraft] = useState<StoreRoleAssignment[]>([]);
+  const [assignmentDefaultRoleId, setAssignmentDefaultRoleId] = useState('1');
+  const [isSavingAssignments, setIsSavingAssignments] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingRole, setIsSavingRole] = useState(false);
-  const [savingUserId, setSavingUserId] = useState<number | null>(null);
 
   const loadMatrix = useCallback(async () => {
     setIsLoading(true);
@@ -100,17 +118,54 @@ export const AccessControlPage: React.FC = () => {
 
   useEffect(() => {
     loadMatrix();
+    tenantService.getStores().then(setStores).catch(() => setStores([]));
   }, [loadMatrix]);
 
-  useEffect(() => {
-    setUserRoleDrafts((prev) => {
-      const next = { ...prev };
-      usersList.items.forEach((u) => {
-        if (next[u.id] === undefined) next[u.id] = u.roleId;
+  const openStoreAssignments = (user: UserManagementDto) => {
+    setAssignmentUser(user);
+    setAssignmentDefaultRoleId(String(user.roleId));
+    setAssignmentDraft(
+      user.storeAssignments?.length
+        ? user.storeAssignments.map((a) => ({
+            storeId: a.storeId,
+            roleId: a.roleId,
+            isDefault: a.isDefault,
+          }))
+        : assignmentsFromLegacy(
+            user.storeIds?.length ? user.storeIds : user.storeId ? [user.storeId] : [],
+            user.roleId,
+            user.defaultStoreId ?? user.storeId
+          )
+    );
+  };
+
+  const saveStoreAssignments = async () => {
+    if (!assignmentUser) return;
+    setIsSavingAssignments(true);
+    try {
+      const defaultStoreId =
+        assignmentDraft.find((a) => a.isDefault)?.storeId ?? assignmentDraft[0]?.storeId;
+      await rbacService.assignUserStoreAssignments(assignmentUser.id, {
+        defaultRoleId: parseInt(assignmentDefaultRoleId, 10) || assignmentUser.roleId,
+        defaultStoreId,
+        assignments: assignmentDraft.map((a) => ({
+          storeId: a.storeId,
+          roleId: a.roleId,
+          isDefault: a.isDefault,
+        })),
       });
-      return next;
-    });
-  }, [usersList.items]);
+      showToast('success', 'Saved', 'Store access and roles updated. User should re-login to refresh permissions.');
+      setAssignmentUser(null);
+      usersList.reload();
+      if (currentUser?.id === assignmentUser.id) {
+        await refreshSession();
+      }
+    } catch (err: unknown) {
+      showToast('error', 'Save Failed', getApiErrorMessage(err, 'Could not update store assignments.'));
+    } finally {
+      setIsSavingAssignments(false);
+    }
+  };
 
   const modules = useMemo(() => {
     if (!matrix) return [];
@@ -143,7 +198,8 @@ export const AccessControlPage: React.FC = () => {
   };
 
   const toggleModule = (module: string, checked: boolean) => {
-    const modulePermissions = permissionsByModule.get(module) ?? [];
+    const modulePermissions = (permissionsByModule.get(module) ?? [])
+      .filter((p) => STANDARD_ACTIONS.includes(p.action as PermissionAction));
     setRolePermissionIds((prev) => {
       const next = new Set(prev);
       modulePermissions.forEach((p) => {
@@ -174,25 +230,6 @@ export const AccessControlPage: React.FC = () => {
     }
   };
 
-  const saveUserRole = async (userId: number) => {
-    const roleId = userRoleDrafts[userId];
-    if (!roleId) return;
-    setSavingUserId(userId);
-    try {
-      await rbacService.assignUserRole(userId, { roleId });
-      showToast('success', 'Role Assigned', 'User role updated. They must re-login for new permissions.');
-      await loadMatrix();
-      usersList.reload();
-      if (currentUser?.id === userId) {
-        await refreshSession();
-      }
-    } catch (err: unknown) {
-      showToast('error', 'Failed', getApiErrorMessage(err, 'Could not assign role.'));
-    } finally {
-      setSavingUserId(null);
-    }
-  };
-
   const roles = matrix?.roles ?? [];
 
   const getRoleName = (roleId: number) =>
@@ -209,50 +246,43 @@ export const AccessControlPage: React.FC = () => {
     {
       header: 'ID',
       sortKey: 'id',
-      accessor: (row) => <span className="font-mono text-xs text-slate-500">#{row.id}</span>,
+      accessor: (row) => <span className="font-mono text-xs text-muted-foreground">#{row.id}</span>,
     },
-    { header: 'Username', accessor: 'username', sortKey: 'username', className: 'font-medium text-slate-100' },
-    { header: 'Email', accessor: 'email', sortKey: 'email', className: 'text-slate-400' },
+    { header: 'Username', accessor: 'username', sortKey: 'username', className: 'font-medium text-foreground' },
+    { header: 'Email', accessor: 'email', sortKey: 'email', className: 'text-muted-foreground' },
     {
-      header: 'Current Role',
+      header: 'Default Role',
       accessor: (row) => getRoleName(row.roleId),
-      className: 'text-xs text-slate-500',
+      className: 'text-xs text-muted-foreground',
     },
     {
-      header: 'Assign Role',
+      header: 'Store Roles',
       accessor: (row) => (
-        <div className="flex items-center gap-2">
-          <Label className="sr-only">Role for {row.username}</Label>
-          <Select
-            value={String(userRoleDrafts[row.id] ?? row.roleId)}
-            onValueChange={(value) =>
-              setUserRoleDrafts((prev) => ({
-                ...prev,
-                [row.id]: parseInt(value, 10),
-              }))
-            }
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {roles.map((role) => (
-                <SelectItem key={role.id} value={String(role.id)}>
-                  {role.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <PermissionGate module={APP_MODULES.AccessControl} action="Update">
-            <Button
-              size="sm"
-              onClick={() => saveUserRole(row.id)}
-              disabled={savingUserId === row.id || userRoleDrafts[row.id] === row.roleId}
-            >
-              Assign
-            </Button>
-          </PermissionGate>
-        </div>
+        <span className="text-xs text-muted-foreground">
+          {row.storeAssignments?.length
+            ? row.storeAssignments
+                .map((a) => `${a.storeName ?? stores.find((s) => s.id === a.storeId)?.name ?? `#${a.storeId}`} (${a.roleName ?? getRoleName(a.roleId)})`)
+                .join(', ')
+            : summarizeAssignments(
+                assignmentsFromLegacy(
+                  row.storeIds?.length ? row.storeIds : row.storeId ? [row.storeId] : [],
+                  row.roleId,
+                  row.defaultStoreId ?? row.storeId
+                ),
+                stores,
+                roles
+              )}
+        </span>
+      ),
+    },
+    {
+      header: 'Manage',
+      accessor: (row) => (
+        <PermissionGate module={APP_MODULES.AccessControl} action="Update">
+          <Button size="sm" variant="secondary" onClick={() => openStoreAssignments(row)}>
+            Store access
+          </Button>
+        </PermissionGate>
       ),
     },
   ];
@@ -269,7 +299,7 @@ export const AccessControlPage: React.FC = () => {
         <TabsList>
           <TabsTrigger value="roles">Roles</TabsTrigger>
           <TabsTrigger value="permissions">Role Permissions</TabsTrigger>
-          <TabsTrigger value="users">User Assignment</TabsTrigger>
+          <TabsTrigger value="users">Store & User Access</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles">
@@ -288,7 +318,8 @@ export const AccessControlPage: React.FC = () => {
                 <CardTitle>Permission Matrix</CardTitle>
                 <CardDescription>
                   Select a role and toggle module permissions. Each maps to API endpoint access.
-                  Activity Log Read grants access to the audit trail; admins see all users, others see only their own.
+                  Activity Log Read shows all users in the active store; without it, users see only their own entries.
+                  Settings → Access All Stores lets a role switch between and manage every store (Admin has this by default).
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -311,14 +342,14 @@ export const AccessControlPage: React.FC = () => {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <p className="text-sm text-slate-400">Loading permissions...</p>
+                <p className="text-sm text-muted-foreground">Loading permissions...</p>
               ) : !selectedRole ? (
-                <p className="text-sm text-slate-400">Select a role to edit permissions.</p>
+                <p className="text-sm text-muted-foreground">Select a role to edit permissions.</p>
               ) : (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">{selectedRole.name}</Badge>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-muted-foreground">
                       {rolePermissionIds.size} permission(s) selected
                     </span>
                   </div>
@@ -330,28 +361,33 @@ export const AccessControlPage: React.FC = () => {
                   <div className="overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0 rounded-lg">
                     <table className="w-full min-w-[520px] text-sm border-collapse">
                       <thead>
-                        <tr className="border-b border-slate-800">
-                          <th className="text-left py-3 px-3 sm:px-4 text-slate-400 font-medium">Module</th>
-                          {ACTIONS.map((action) => (
-                            <th key={action} className="text-center py-3 px-2 sm:px-3 text-slate-400 font-medium w-20">
+                        <tr className="border-b border-border">
+                          <th className="text-left py-3 px-3 sm:px-4 text-muted-foreground font-medium">Module</th>
+                          {STANDARD_ACTIONS.map((action) => (
+                            <th key={action} className="text-center py-3 px-2 sm:px-3 text-muted-foreground font-medium w-20">
                               {action}
                             </th>
                           ))}
-                          <th className="text-center py-3 px-2 sm:px-3 text-slate-400 font-medium w-24">All</th>
+                          <th className="text-center py-3 px-2 sm:px-3 text-muted-foreground font-medium w-24">All Stores</th>
+                          <th className="text-center py-3 px-2 sm:px-3 text-muted-foreground font-medium w-24">All</th>
                         </tr>
                       </thead>
                       <tbody>
                         {modules.map((module) => {
                           const modulePerms = permissionsByModule.get(module) ?? [];
-                          const allChecked = modulePerms.every((p) => rolePermissionIds.has(p.id));
-                          const someChecked = modulePerms.some((p) => rolePermissionIds.has(p.id));
+                          const standardPerms = modulePerms.filter((p) => STANDARD_ACTIONS.includes(p.action as PermissionAction));
+                          const allChecked = standardPerms.every((p) => rolePermissionIds.has(p.id));
+                          const someChecked = standardPerms.some((p) => rolePermissionIds.has(p.id));
+                          const accessAllPerm = module === APP_MODULES.Settings
+                            ? modulePerms.find((p) => p.action === 'AccessAllStores')
+                            : undefined;
 
                           return (
-                            <tr key={module} className="border-b border-slate-800/60">
-                              <td className="py-3 pr-4 font-medium text-slate-200">
+                            <tr key={module} className="border-b border-border/60">
+                              <td className="py-3 pr-4 font-medium text-foreground">
                                 {MODULE_LABELS[module as keyof typeof MODULE_LABELS] ?? module}
                               </td>
-                              {ACTIONS.map((action) => {
+                              {STANDARD_ACTIONS.map((action) => {
                                 const perm = modulePerms.find((p) => p.action === action);
                                 return (
                                   <td key={action} className="text-center py-3 px-2">
@@ -362,11 +398,22 @@ export const AccessControlPage: React.FC = () => {
                                         disabled={!canUpdateAccess}
                                       />
                                     ) : (
-                                      <span className="text-slate-600">—</span>
+                                      <span className="text-muted-foreground">—</span>
                                     )}
                                   </td>
                                 );
                               })}
+                              <td className="text-center py-3 px-2">
+                                {accessAllPerm ? (
+                                  <MatrixCheckbox
+                                    checked={rolePermissionIds.has(accessAllPerm.id)}
+                                    onChange={(checked) => togglePermission(accessAllPerm.id, checked)}
+                                    disabled={!canUpdateAccess}
+                                  />
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </td>
                               <td className="text-center py-3 px-2">
                                 <MatrixCheckbox
                                   checked={allChecked}
@@ -391,10 +438,11 @@ export const AccessControlPage: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" /> Assign Roles to Users
+                <Users className="w-5 h-5" /> Store Access & Roles
               </CardTitle>
               <CardDescription>
-                Change a user&apos;s role. Permissions come from the role&apos;s permission matrix.
+                Assign which stores each user can access and which role they hold at each store.
+                Permissions update when they switch stores or re-login.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -421,6 +469,49 @@ export const AccessControlPage: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!assignmentUser} onOpenChange={(open) => !open && setAssignmentUser(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Store access for {assignmentUser?.username}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-foreground/90">
+                Default role (fallback)
+              </label>
+              <Select value={assignmentDefaultRoleId} onValueChange={setAssignmentDefaultRoleId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={String(role.id)}>{role.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <StoreRoleAssignmentsEditor
+              stores={stores}
+              roles={roles}
+              assignments={assignmentDraft}
+              onChange={setAssignmentDraft}
+              fallbackRoleId={parseInt(assignmentDefaultRoleId, 10) || 1}
+              disabled={!canUpdateAccess}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setAssignmentUser(null)}>Cancel</Button>
+              <PermissionGate module={APP_MODULES.AccessControl} action="Update">
+                <Button onClick={saveStoreAssignments} disabled={isSavingAssignments || assignmentDraft.length === 0}>
+                  Save assignments
+                </Button>
+              </PermissionGate>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

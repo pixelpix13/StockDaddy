@@ -59,6 +59,7 @@ export const ROLE_TYPE_OPTIONS: FilterOption<string>[] = [
 export const CREDIT_PARTY_TYPE_OPTIONS: FilterOption<string>[] = [
   { label: 'All parties', value: 'all' },
   { label: 'Customers (collect)', value: 'Customer' },
+  { label: 'Companies (collect)', value: 'Company' },
   { label: 'Suppliers (pay)', value: 'Supplier' },
 ];
 

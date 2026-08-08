@@ -17,6 +17,7 @@ import { Button } from '../components/common/Button';
 import { orchestrationService, saleService, inventoryService } from '../services';
 import { VariantStockDto, SaleDto, ProductRestockAlertDto } from '../dtos';
 import { useToast } from '../context/ToastContext';
+import { useActiveStoreId } from '@/context/StoreContext';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
 import { usePagedList } from '@/hooks/usePagedList';
@@ -26,8 +27,13 @@ import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
 import { ALERT_STATUS_OPTIONS, PAYMENT_METHOD_FILTER_OPTIONS } from '@/config/list-filters';
 
 export const DashboardPage: React.FC = () => {
+  const activeStoreId = useActiveStoreId();
+
   const salesList = usePagedList<SaleDto>({
-    fetchFn: useCallback((query) => saleService.getSalesPaged(query), []),
+    fetchFn: useCallback(
+      (query) => saleService.getSalesPaged({ ...query, storeId: activeStoreId }),
+      [activeStoreId]
+    ),
     defaultSortBy: 'id',
     defaultSortDir: 'desc',
     defaultPageSize: 5,
@@ -50,8 +56,14 @@ export const DashboardPage: React.FC = () => {
     setStatsLoading(true);
     try {
       const [variantsData, salesResult] = await Promise.allSettled([
-        orchestrationService.getVariantStock(),
-        saleService.getSalesPaged({ page: 1, pageSize: 100, sortBy: 'id', sortDir: 'desc' }),
+        orchestrationService.getVariantStock(activeStoreId),
+        saleService.getSalesPaged({
+          page: 1,
+          pageSize: 100,
+          sortBy: 'id',
+          sortDir: 'desc',
+          storeId: activeStoreId,
+        }),
       ]);
 
       if (variantsData.status === 'fulfilled') setVariants(variantsData.value);
@@ -69,6 +81,16 @@ export const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     loadStats();
+  }, [activeStoreId]);
+
+  useEffect(() => {
+    const onStoreChanged = () => {
+      loadStats();
+      salesList.reload();
+      alertsList.reload();
+    };
+    window.addEventListener('stockdaddy:store-changed', onStoreChanged);
+    return () => window.removeEventListener('stockdaddy:store-changed', onStoreChanged);
   }, []);
 
   const refreshAll = () => {
@@ -92,12 +114,12 @@ export const DashboardPage: React.FC = () => {
     },
     {
       header: 'Store',
-      accessor: (row) => <span className="text-slate-300">Store #{row.storeId ?? '—'}</span>,
+      accessor: (row) => <span className="text-foreground/90">Store #{row.storeId ?? '—'}</span>,
     },
     {
       header: 'Amount',
       accessor: (row) => (
-        <span className="font-semibold text-slate-100">${(row.totalAmount || 0).toFixed(2)}</span>
+        <span className="font-semibold text-foreground">${(row.totalAmount || 0).toFixed(2)}</span>
       ),
     },
     {
@@ -107,7 +129,7 @@ export const DashboardPage: React.FC = () => {
     {
       header: 'Date',
       accessor: (row) => (
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-muted-foreground">
           {new Date(row.createdAt || Date.now()).toLocaleDateString()}
         </span>
       ),
@@ -120,22 +142,22 @@ export const DashboardPage: React.FC = () => {
       header: 'ID',
       accessor: (row) => `#${row.id}`,
       sortKey: 'id',
-      className: 'font-mono text-xs text-slate-500',
+      className: 'font-mono text-xs text-muted-foreground',
     },
     {
       header: 'Variant ID',
       accessor: (row) => `#${row.variantId}`,
-      className: 'text-xs font-semibold text-slate-200',
+      className: 'text-xs font-semibold text-foreground',
     },
     {
       header: 'Product ID',
       accessor: (row) => `#${row.productId}`,
-      className: 'text-[10px] text-slate-400',
+      className: 'text-[10px] text-muted-foreground',
     },
     {
       header: 'Status',
       accessor: (row) => row.status,
-      className: 'text-[10px] text-slate-400',
+      className: 'text-[10px] text-muted-foreground',
     },
     {
       header: 'Severity',
@@ -150,7 +172,7 @@ export const DashboardPage: React.FC = () => {
           <h1 className="page-hero-title">
             Executive Dashboard <LayoutDashboard className="w-6 h-6 text-blue-400" />
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Real-time multi-tenant inventory analytics & store sales metrics
           </p>
         </div>
@@ -316,7 +338,7 @@ export const DashboardPage: React.FC = () => {
               <p>
                 <strong>JWT Session Active:</strong> Authentication tokens are stored securely and refreshed via the <code>AuthContext</code> provider.
               </p>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-muted-foreground">
                 Frontend is connected to the .NET API via the Vite dev proxy at <code>/api</code>.
               </p>
             </div>

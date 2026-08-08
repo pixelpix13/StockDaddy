@@ -3,6 +3,7 @@ import { Boxes, Plus, RefreshCw } from 'lucide-react';
 import { orchestrationService, catalogService } from '@/services';
 import { VariantStockDto } from '@/dtos';
 import { useAuth } from '@/context/AuthContext';
+import { useActiveStoreId } from '@/context/StoreContext';
 import { useToast } from '@/context/ToastContext';
 import { usePagedList } from '@/hooks/usePagedList';
 import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
@@ -28,7 +29,7 @@ import { getApiErrorMessage } from '@/lib/api-error';
 export const InventoryPage: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
-  const storeId = user?.storeId || 1;
+  const storeId = useActiveStoreId();
 
   const list = usePagedList<VariantStockDto>({
     fetchFn: useCallback(
@@ -96,10 +97,10 @@ export const InventoryPage: React.FC = () => {
   const selected = dropdownVariants.find((v) => String(v.id) === selectedVariantId);
 
   const columns: Column<VariantStockDto>[] = [
-    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
-    { header: 'Product', accessor: 'productName', sortKey: 'productname', className: 'font-medium text-slate-100' },
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-muted-foreground' },
+    { header: 'Product', accessor: 'productName', sortKey: 'productname', className: 'font-medium text-foreground' },
     { header: 'SKU', accessor: 'skuCode', sortKey: 'skucode', className: 'font-mono text-xs' },
-    { header: 'Category', accessor: (row) => row.subcategoryName || '—', className: 'text-slate-400' },
+    { header: 'Category', accessor: (row) => row.subcategoryName || '—', className: 'text-muted-foreground' },
     {
       header: 'Available',
       accessor: (row) => row.quantity,
@@ -128,7 +129,7 @@ export const InventoryPage: React.FC = () => {
           <h1 className="page-hero-title">
             Stock & Inventory <Boxes className="w-6 h-6 text-blue-400" />
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Variant-level stock synced with warehouse records
           </p>
         </div>
@@ -192,8 +193,8 @@ export const InventoryPage: React.FC = () => {
               onValueChange={setSelectedVariantId}
             />
             {selected && (
-              <p className="text-xs text-slate-400">
-                Current stock: <strong className="text-slate-200">{selected.quantity} units</strong>
+              <p className="text-xs text-muted-foreground">
+                Current stock: <strong className="text-foreground">{selected.quantity} units</strong>
               </p>
             )}
             <div className="space-y-2">

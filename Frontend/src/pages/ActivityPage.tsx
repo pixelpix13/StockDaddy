@@ -3,6 +3,9 @@ import { History, Eye } from 'lucide-react';
 import { activityService, userService } from '@/services';
 import { AuditLogDto } from '@/dtos/activity.dto';
 import { useAuth } from '@/context/AuthContext';
+import { useActiveStoreId } from '@/context/StoreContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { APP_MODULES } from '@/config/permissions';
 import { usePagedList } from '@/hooks/usePagedList';
 import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
 import { FilterSelect, ListFilterBar } from '@/components/common/ListFilters';
@@ -40,24 +43,34 @@ function formatTimestamp(value: string) {
 
 export const ActivityPage: React.FC = () => {
   const { user } = useAuth();
-  const isAdmin = user?.roleName?.toLowerCase() === 'admin';
+  const { hasPermission } = usePermissions();
+  const storeId = useActiveStoreId();
+  const canViewAllActivity =
+    user?.roleName?.toLowerCase() === 'admin' ||
+    hasPermission(APP_MODULES.Activity, 'Read');
 
   const list = usePagedList<AuditLogDto>({
-    fetchFn: useCallback((query) => activityService.getActivityPaged(query), []),
+    fetchFn: useCallback((query) => activityService.getActivityPaged({ ...query, storeId }), [storeId]),
     defaultSortBy: 'timestamp',
     defaultSortDir: 'desc',
   });
+
+  useEffect(() => {
+    const reload = () => list.reload();
+    window.addEventListener('stockdaddy:store-changed', reload);
+    return () => window.removeEventListener('stockdaddy:store-changed', reload);
+  }, [list]);
 
   const [selectedLog, setSelectedLog] = useState<AuditLogDto | null>(null);
   const [users, setUsers] = useState<{ id: number; username: string }[]>([]);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!canViewAllActivity) return;
     userService
       .getUsers()
       .then((rows) => setUsers(rows.map((row) => ({ id: row.id, username: row.username }))))
       .catch(() => setUsers([]));
-  }, [isAdmin]);
+  }, [canViewAllActivity]);
 
   const selectedSummary = selectedLog ? formatActivitySummary(selectedLog) : null;
 
@@ -66,13 +79,13 @@ export const ActivityPage: React.FC = () => {
       header: 'ID',
       accessor: (row) => `#${row.id}`,
       sortKey: 'id',
-      cellClassName: 'font-mono text-xs text-slate-500',
+      cellClassName: 'font-mono text-xs text-muted-foreground',
       width: 'w-20',
     },
     {
       header: 'When',
       accessor: (row) => (
-        <span className="text-xs text-slate-300 whitespace-nowrap">
+        <span className="text-xs text-foreground/90 whitespace-nowrap">
           {formatTimestamp(row.timestamp || row.createdAt)}
         </span>
       ),
@@ -83,12 +96,12 @@ export const ActivityPage: React.FC = () => {
       header: 'Activity',
       accessor: (row) => (
         <div className="space-y-1 min-w-0">
-          <p className="text-sm text-slate-100 leading-snug">{formatActivityPreview(row, 160)}</p>
+          <p className="text-sm text-foreground leading-snug">{formatActivityPreview(row, 160)}</p>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant={actionBadgeVariant(row.action)} className="text-[10px] px-1.5 py-0">
               {row.action}
             </Badge>
-            <span className="text-[11px] text-slate-500">{row.tableName}</span>
+            <span className="text-[11px] text-muted-foreground">{row.tableName}</span>
           </div>
         </div>
       ),
@@ -111,7 +124,7 @@ export const ActivityPage: React.FC = () => {
       <PageHeader
         title="Activity Log"
         description={
-          isAdmin
+          canViewAllActivity
             ? 'Audit trail for all users. Admins see every CRUD operation; use the User filter to narrow results.'
             : 'Your personal audit trail of create, update, and delete operations.'
         }
@@ -121,7 +134,7 @@ export const ActivityPage: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>Recent Activity ({list.totalCount})</CardTitle>
-          {isAdmin ? (
+          {canViewAllActivity ? (
             <CardDescription>Showing activity for all users in the system.</CardDescription>
           ) : null}
         </CardHeader>
@@ -134,7 +147,7 @@ export const ActivityPage: React.FC = () => {
             emptyMessage="No activity recorded yet. CRUD operations will appear here automatically."
             filters={
               <ListFilterBar showClear={list.hasActiveFilters} onClear={list.clearFilters}>
-                {isAdmin && users.length > 0 ? (
+                {canViewAllActivity && users.length > 0 ? (
                   <FilterSelect
                     label="User"
                     options={buildUserFilterOptions(users)}
@@ -167,25 +180,25 @@ export const ActivityPage: React.FC = () => {
           </DialogHeader>
           {selectedLog && selectedSummary ? (
             <div className="space-y-5 text-sm">
-              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
-                <p className="text-base text-slate-100 leading-relaxed">{selectedSummary.sentence}</p>
+              <div className="rounded-xl border border-border bg-card/60 p-4 space-y-3">
+                <p className="text-base text-foreground leading-relaxed">{selectedSummary.sentence}</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant={actionBadgeVariant(selectedLog.action)}>{selectedLog.action}</Badge>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-muted-foreground">
                     {formatTimestamp(selectedLog.timestamp || selectedLog.createdAt)}
                   </span>
-                  <span className="text-xs text-slate-500">·</span>
-                  <span className="text-xs text-slate-400">{selectedLog.tableName} #{selectedLog.recordId}</span>
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <span className="text-xs text-muted-foreground">{selectedLog.tableName} #{selectedLog.recordId}</span>
                 </div>
               </div>
 
               {selectedSummary.details.length > 0 ? (
                 <div>
-                  <p className="text-xs uppercase text-slate-500 mb-2">What happened</p>
-                  <ul className="space-y-1.5 text-slate-300">
+                  <p className="text-xs uppercase text-muted-foreground mb-2">What happened</p>
+                  <ul className="space-y-1.5 text-foreground/90">
                     {selectedSummary.details.map((detail) => (
                       <li key={detail} className="flex gap-2">
-                        <span className="text-slate-600">•</span>
+                        <span className="text-muted-foreground">•</span>
                         <span>{detail}</span>
                       </li>
                     ))}
@@ -194,8 +207,8 @@ export const ActivityPage: React.FC = () => {
               ) : null}
 
               <div>
-                <p className="text-xs uppercase text-slate-500 mb-2">Technical payload</p>
-                <pre className="max-h-48 overflow-auto rounded-xl border border-slate-800 bg-slate-950/80 p-4 text-xs text-slate-400 whitespace-pre-wrap break-all">
+                <p className="text-xs uppercase text-muted-foreground mb-2">Technical payload</p>
+                <pre className="max-h-48 overflow-auto rounded-xl border border-border bg-background/80 p-4 text-xs text-muted-foreground whitespace-pre-wrap break-all">
                   {selectedLog.newData || '—'}
                 </pre>
               </div>

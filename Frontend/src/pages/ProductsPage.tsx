@@ -6,6 +6,7 @@ import { CrudRowActions } from '@/components/common/CrudRowActions';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
 import { useAuth } from '@/context/AuthContext';
+import { useActiveStoreId } from '@/context/StoreContext';
 import { useToast } from '@/context/ToastContext';
 import { usePagedList } from '@/hooks/usePagedList';
 import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
@@ -31,7 +32,7 @@ export const ProductsPage: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
   const tenantId = user?.tenantId || 1;
-  const storeId = user?.storeId || 1;
+  const storeId = useActiveStoreId();
 
   const list = usePagedList<VariantStockDto>({
     fetchFn: useCallback(
@@ -166,9 +167,9 @@ export const ProductsPage: React.FC = () => {
   };
 
   const columns: Column<VariantStockDto>[] = [
-    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
-    { header: 'Product', accessor: 'productName', sortKey: 'productname', className: 'font-medium text-slate-100' },
-    { header: 'SKU', accessor: 'skuCode', sortKey: 'skucode', className: 'font-mono text-xs text-slate-400' },
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-muted-foreground' },
+    { header: 'Product', accessor: 'productName', sortKey: 'productname', className: 'font-medium text-foreground' },
+    { header: 'SKU', accessor: 'skuCode', sortKey: 'skucode', className: 'font-mono text-xs text-muted-foreground' },
     {
       header: 'Price',
       accessor: (row) => `$${row.price.toFixed(2)}`,
@@ -185,7 +186,7 @@ export const ProductsPage: React.FC = () => {
       ),
       sortKey: 'quantity',
     },
-    { header: 'Category', accessor: (row) => row.subcategoryName || '—', className: 'text-slate-400' },
+    { header: 'Category', accessor: (row) => row.subcategoryName || '—', className: 'text-muted-foreground' },
     {
       header: 'Actions',
       accessor: (row) => (
@@ -205,7 +206,7 @@ export const ProductsPage: React.FC = () => {
           <h1 className="page-hero-title">
             Products & Variants <Package className="w-6 h-6 text-blue-400" />
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Products are created with a sellable variant, SKU, tax %, and opening stock
           </p>
         </div>

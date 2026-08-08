@@ -1,9 +1,10 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { UserCircle, Plus, History } from 'lucide-react';
 import { customerService } from '@/services';
 import { CustomerDto } from '@/dtos';
 import { CustomerSaleHistoryDto } from '@/dtos/credit.dto';
 import { useAuth } from '@/context/AuthContext';
+import { useActiveStoreId } from '@/context/StoreContext';
 import { useToast } from '@/context/ToastContext';
 import { usePagedList } from '@/hooks/usePagedList';
 import { PagedDataTable, Column } from '@/components/common/PagedDataTable';
@@ -26,12 +27,19 @@ export const CustomersPage: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
   const tenantId = user?.tenantId || 1;
+  const storeId = useActiveStoreId();
 
   const list = usePagedList<CustomerDto>({
-    fetchFn: useCallback((query) => customerService.getCustomersPaged(query), []),
+    fetchFn: useCallback((query) => customerService.getCustomersPaged({ ...query, storeId }), [storeId]),
     defaultSortBy: 'name',
     defaultSortDir: 'asc',
   });
+
+  useEffect(() => {
+    const reload = () => list.reload();
+    window.addEventListener('stockdaddy:store-changed', reload);
+    return () => window.removeEventListener('stockdaddy:store-changed', reload);
+  }, [list]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CustomerDto | null>(null);
@@ -124,11 +132,11 @@ export const CustomersPage: React.FC = () => {
   };
 
   const columns: Column<CustomerDto>[] = [
-    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
-    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-slate-100' },
-    { header: 'Email', accessor: (row) => row.email || '—', sortKey: 'email', className: 'text-slate-400' },
-    { header: 'Phone', accessor: (row) => row.phone || '—', className: 'text-slate-400' },
-    { header: 'Address', accessor: (row) => row.address || '—', className: 'text-xs text-slate-500' },
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-muted-foreground' },
+    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-foreground' },
+    { header: 'Email', accessor: (row) => row.email || '—', sortKey: 'email', className: 'text-muted-foreground' },
+    { header: 'Phone', accessor: (row) => row.phone || '—', className: 'text-muted-foreground' },
+    { header: 'Address', accessor: (row) => row.address || '—', className: 'text-xs text-muted-foreground' },
     {
       header: 'Actions',
       accessor: (row) => (
@@ -148,7 +156,7 @@ export const CustomersPage: React.FC = () => {
         <h1 className="page-hero-title">
           Customers <UserCircle className="w-6 h-6 text-blue-400" />
         </h1>
-        <p className="text-sm text-slate-400 mt-1">Customer directory with full purchase history from POS checkouts</p>
+        <p className="text-sm text-muted-foreground mt-1">Customer directory with full purchase history from POS checkouts</p>
       </div>
 
       <Card>
@@ -211,23 +219,23 @@ export const CustomersPage: React.FC = () => {
             <DialogTitle>Purchase history — {historyCustomer?.name}</DialogTitle>
           </DialogHeader>
           {historyLoading ? (
-            <p className="text-sm text-slate-400">Loading…</p>
+            <p className="text-sm text-muted-foreground">Loading…</p>
           ) : historyItems.length === 0 ? (
-            <p className="text-sm text-slate-500">No purchases yet for this customer.</p>
+            <p className="text-sm text-muted-foreground">No purchases yet for this customer.</p>
           ) : (
             <div className="space-y-4">
               {historyItems.map((sale) => (
-                <div key={sale.id} className="rounded-xl border border-slate-800 p-4 space-y-2">
+                <div key={sale.id} className="rounded-xl border border-border p-4 space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-mono text-sm text-blue-400">Sale #{sale.id}</span>
-                    <span className="text-xs text-slate-500">{new Date(sale.createdAt).toLocaleString()}</span>
+                    <span className="text-xs text-muted-foreground">{new Date(sale.createdAt).toLocaleString()}</span>
                     <Badge variant="secondary">{sale.paymentMethod}</Badge>
                     <span className="font-semibold text-emerald-400">${sale.totalAmount.toFixed(2)}</span>
                   </div>
                   {sale.discountAmount > 0 ? (
                     <p className="text-xs text-amber-400">Discount: −${sale.discountAmount.toFixed(2)}</p>
                   ) : null}
-                  <ul className="text-xs text-slate-400 space-y-1">
+                  <ul className="text-xs text-muted-foreground space-y-1">
                     {sale.items.map((item) => (
                       <li key={item.id}>
                         {item.productName} ({item.skuCode}) · {item.quantity} × ${item.unitPrice.toFixed(2)} = $

@@ -14,6 +14,7 @@ export interface ListFilters {
   userId?: number;
   customerId?: number;
   partyType?: string;
+  storeId?: number;
 }
 
 export interface PagedQuery extends ListFilters {
@@ -56,5 +57,6 @@ export function buildPagedParams(query: PagedQuery): Record<string, string | num
   if (query.userId != null) params.userId = query.userId;
   if (query.customerId != null) params.customerId = query.customerId;
   if (query.partyType) params.partyType = query.partyType;
+  if (query.storeId != null) params.storeId = query.storeId;
   return params;
 }
