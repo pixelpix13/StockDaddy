@@ -12,6 +12,7 @@ import {
   StoreRoleAssignment,
   assignmentsFromLegacy,
   summarizeAssignments,
+  resolveProfileRoleId,
 } from '@/components/access-control/StoreRoleAssignmentsEditor';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
@@ -40,6 +41,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -91,7 +93,6 @@ export const AccessControlPage: React.FC = () => {
   const [stores, setStores] = useState<StoreDto[]>([]);
   const [assignmentUser, setAssignmentUser] = useState<UserManagementDto | null>(null);
   const [assignmentDraft, setAssignmentDraft] = useState<StoreRoleAssignment[]>([]);
-  const [assignmentDefaultRoleId, setAssignmentDefaultRoleId] = useState('1');
   const [isSavingAssignments, setIsSavingAssignments] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingRole, setIsSavingRole] = useState(false);
@@ -123,7 +124,6 @@ export const AccessControlPage: React.FC = () => {
 
   const openStoreAssignments = (user: UserManagementDto) => {
     setAssignmentUser(user);
-    setAssignmentDefaultRoleId(String(user.roleId));
     setAssignmentDraft(
       user.storeAssignments?.length
         ? user.storeAssignments.map((a) => ({
@@ -146,7 +146,7 @@ export const AccessControlPage: React.FC = () => {
       const defaultStoreId =
         assignmentDraft.find((a) => a.isDefault)?.storeId ?? assignmentDraft[0]?.storeId;
       await rbacService.assignUserStoreAssignments(assignmentUser.id, {
-        defaultRoleId: parseInt(assignmentDefaultRoleId, 10) || assignmentUser.roleId,
+        defaultRoleId: resolveProfileRoleId(assignmentDraft, assignmentUser.roleId),
         defaultStoreId,
         assignments: assignmentDraft.map((a) => ({
           storeId: a.storeId,
@@ -251,12 +251,12 @@ export const AccessControlPage: React.FC = () => {
     { header: 'Username', accessor: 'username', sortKey: 'username', className: 'font-medium text-foreground' },
     { header: 'Email', accessor: 'email', sortKey: 'email', className: 'text-muted-foreground' },
     {
-      header: 'Default Role',
+      header: 'Profile Role',
       accessor: (row) => getRoleName(row.roleId),
       className: 'text-xs text-muted-foreground',
     },
     {
-      header: 'Store Roles',
+      header: 'Store Access',
       accessor: (row) => (
         <span className="text-xs text-muted-foreground">
           {row.storeAssignments?.length
@@ -280,7 +280,7 @@ export const AccessControlPage: React.FC = () => {
       accessor: (row) => (
         <PermissionGate module={APP_MODULES.AccessControl} action="Update">
           <Button size="sm" variant="secondary" onClick={() => openStoreAssignments(row)}>
-            Store access
+            Manage access
           </Button>
         </PermissionGate>
       ),
@@ -441,8 +441,8 @@ export const AccessControlPage: React.FC = () => {
                 <Users className="w-5 h-5" /> Store Access & Roles
               </CardTitle>
               <CardDescription>
-                Assign which stores each user can access and which role they hold at each store.
-                Permissions update when they switch stores or re-login.
+                Choose which stores each user can open and set their role per store. Permissions follow the
+                active store in the header — use Manage access to edit assignments.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -473,39 +473,26 @@ export const AccessControlPage: React.FC = () => {
       <Dialog open={!!assignmentUser} onOpenChange={(open) => !open && setAssignmentUser(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              Store access for {assignmentUser?.username}
-            </DialogTitle>
+            <DialogTitle>Store access for {assignmentUser?.username}</DialogTitle>
+            <DialogDescription>
+              Turn stores on for this user, pick a role for each one, and choose which store they land in after
+              login. They can switch stores later from the header.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-foreground/90">
-                Default role (fallback)
-              </label>
-              <Select value={assignmentDefaultRoleId} onValueChange={setAssignmentDefaultRoleId}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.id} value={String(role.id)}>{role.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <StoreRoleAssignmentsEditor
               stores={stores}
               roles={roles}
               assignments={assignmentDraft}
               onChange={setAssignmentDraft}
-              fallbackRoleId={parseInt(assignmentDefaultRoleId, 10) || 1}
+              fallbackRoleId={assignmentUser?.roleId ?? roles[0]?.id ?? 1}
               disabled={!canUpdateAccess}
             />
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setAssignmentUser(null)}>Cancel</Button>
               <PermissionGate module={APP_MODULES.AccessControl} action="Update">
                 <Button onClick={saveStoreAssignments} disabled={isSavingAssignments || assignmentDraft.length === 0}>
-                  Save assignments
+                  Save access
                 </Button>
               </PermissionGate>
             </div>

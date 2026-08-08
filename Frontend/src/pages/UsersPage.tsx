@@ -217,7 +217,7 @@ export const UsersPage: React.FC = () => {
       },
     },
     {
-      header: 'Default Role',
+      header: 'Profile Role',
       accessor: (row) => (
         <div className="flex items-center gap-2">
           <Badge variant="info">Tenant #{row.tenantId}</Badge>
@@ -363,7 +363,7 @@ export const UsersPage: React.FC = () => {
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-foreground/90">
-              Default Role
+              Profile Role
             </label>
             <select
               value={roleId}
@@ -379,10 +379,10 @@ export const UsersPage: React.FC = () => {
           {stores.length > 0 ? (
             <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-wider text-foreground/90">
-                Store Access & Roles
+                Store Access
               </label>
               <p className="text-xs text-muted-foreground">
-                Pick stores and assign a role per store. Default role above applies when adding a store.
+                Enable stores below and set a role for each. New stores start with the profile role above.
               </p>
               <StoreRoleAssignmentsEditor
                 stores={stores}
@@ -432,7 +432,7 @@ export const UsersPage: React.FC = () => {
           />
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-foreground/90">
-              Default Role
+              Profile Role
             </label>
             <select
               value={roleId}
@@ -448,8 +448,11 @@ export const UsersPage: React.FC = () => {
           {stores.length > 0 ? (
             <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-wider text-foreground/90">
-                Store Access & Roles
+                Store Access
               </label>
+              <p className="text-xs text-muted-foreground">
+                Enable stores below and set a role for each. New stores start with the profile role above.
+              </p>
               <StoreRoleAssignmentsEditor
                 stores={stores}
                 roles={roles}
