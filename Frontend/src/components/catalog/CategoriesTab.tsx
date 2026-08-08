@@ -86,8 +86,8 @@ export function CategoriesTab({ tenantId, storeId }: CategoriesTabProps) {
   };
 
   const columns: Column<CategoryDto>[] = [
-    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
-    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-slate-100' },
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-muted-foreground' },
+    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-foreground' },
     {
       header: 'Actions',
       accessor: (row) => (

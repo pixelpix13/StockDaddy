@@ -36,8 +36,8 @@ export function DatePicker({
           variant="outline"
           disabled={disabled}
           className={cn(
-            'w-full justify-start text-left font-normal h-10 border-slate-800 bg-slate-900/80 text-slate-100 hover:bg-slate-800',
-            !value && 'text-slate-400',
+            'w-full justify-start text-left font-normal h-10 border-border bg-card/80 text-foreground hover:bg-muted',
+            !value && 'text-muted-foreground',
             className
           )}
         >

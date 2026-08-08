@@ -116,12 +116,12 @@ export function SubcategoriesTab({ tenantId, storeId }: SubcategoriesTabProps) {
   };
 
   const columns: Column<SubcategoryDto>[] = [
-    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
-    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-slate-100' },
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-muted-foreground' },
+    { header: 'Name', accessor: 'name', sortKey: 'name', className: 'font-medium text-foreground' },
     {
       header: 'Category',
       accessor: (row) => getCategoryName(row.categoryId),
-      className: 'text-slate-400',
+      className: 'text-muted-foreground',
     },
     {
       header: 'Actions',

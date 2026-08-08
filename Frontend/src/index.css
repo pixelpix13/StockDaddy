@@ -6,9 +6,80 @@
   :root {
     --font-heading: 'Outfit', sans-serif;
     --font-body: 'Inter', sans-serif;
+
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 42%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --border: 214 32% 88%;
+    --input: 214 32% 88%;
+    --ring: 217 91% 60%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 71% 35%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 40%;
+    --warning-foreground: 0 0% 100%;
+
+    --glass-panel: rgba(255, 255, 255, 0.88);
+    --glass-card: rgba(255, 255, 255, 0.72);
+    --glass-input: rgba(248, 250, 252, 0.95);
+    --glass-border: rgba(15, 23, 42, 0.1);
+    --scrollbar-track: #e2e8f0;
+    --scrollbar-thumb: #94a3b8;
+    --scrollbar-thumb-hover: #64748b;
   }
-  
+
+  .dark {
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 14%;
+    --accent-foreground: 210 40% 98%;
+    --border: 217 33% 18%;
+    --input: 217 33% 18%;
+    --ring: 217 91% 60%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 14%;
+    --secondary-foreground: 210 40% 98%;
+    --destructive: 0 63% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 71% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --glass-panel: rgba(15, 23, 42, 0.75);
+    --glass-card: rgba(30, 41, 59, 0.6);
+    --glass-input: rgba(15, 23, 42, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --scrollbar-track: #0f172a;
+    --scrollbar-thumb: #334155;
+    --scrollbar-thumb-hover: #475569;
+  }
+
+  * {
+    @apply border-border;
+  }
+
   body {
+    @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
     padding-top: env(safe-area-inset-top);
     padding-right: env(safe-area-inset-right);
@@ -21,29 +92,28 @@
   }
 }
 
-/* Custom Glassmorphism & Custom Scrollbar */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
+  background: var(--glass-panel);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
 }
 
 .glass-card {
-  background: rgba(30, 41, 59, 0.6);
+  background: var(--glass-card);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--glass-border);
 }
 
 .glass-input {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--glass-input);
+  border: 1px solid var(--glass-border);
 }
 
 .glass-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.25);
 }
 
 @layer components {
@@ -52,36 +122,36 @@
   }
 
   .page-hero {
-    @apply glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-800;
+    @apply glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-border;
   }
 
   .page-hero-title {
-    @apply text-xl sm:text-2xl font-extrabold text-white flex flex-wrap items-center gap-2;
+    @apply text-xl sm:text-2xl font-extrabold text-foreground flex flex-wrap items-center gap-2;
   }
 
   .page-hero-description {
-    @apply text-sm text-slate-400 mt-1;
+    @apply text-sm text-muted-foreground mt-1;
   }
 }
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--scrollbar-thumb);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: var(--scrollbar-thumb-hover);
 }
 
-/* Better tap targets on touch devices */
 @media (pointer: coarse) {
   button,
   a,

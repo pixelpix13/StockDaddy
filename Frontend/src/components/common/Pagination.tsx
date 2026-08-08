@@ -38,14 +38,14 @@ export function Pagination({
     <div
       className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${className}`}
     >
-      <p className="text-xs sm:text-sm text-slate-500 text-center sm:text-left">
+      <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
         {totalCount === 0 ? 'No results' : `Showing ${start}–${end} of ${totalCount}`}
       </p>
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center sm:justify-end gap-3 sm:gap-4">
         {onPageSizeChange && (
           <div className="flex items-center justify-center sm:justify-end gap-2">
-            <span className="text-xs text-slate-500 shrink-0">Rows</span>
+            <span className="text-xs text-muted-foreground shrink-0">Rows</span>
             <Select
               value={String(pageSize)}
               onValueChange={(v) => {
@@ -80,7 +80,7 @@ export function Pagination({
             <ChevronLeft className="w-4 h-4" />
           </Button>
 
-          <span className="text-xs sm:text-sm text-slate-400 min-w-[88px] text-center px-2">
+          <span className="text-xs sm:text-sm text-muted-foreground min-w-[88px] text-center px-2">
             Page {safePage} / {totalPages}
           </span>
 

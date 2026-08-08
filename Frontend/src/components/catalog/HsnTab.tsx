@@ -104,9 +104,9 @@ export function HsnTab() {
   };
 
   const columns: Column<HsnMasterDto>[] = [
-    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
-    { header: 'HSN Code', accessor: 'hsnCode', sortKey: 'name', className: 'font-medium text-slate-100' },
-    { header: 'Description', accessor: 'description', className: 'text-slate-400' },
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-muted-foreground' },
+    { header: 'HSN Code', accessor: 'hsnCode', sortKey: 'name', className: 'font-medium text-foreground' },
+    { header: 'Description', accessor: 'description', className: 'text-muted-foreground' },
     {
       header: 'CGST %',
       accessor: (row) => `${row.cgstPercent}%`,

@@ -68,7 +68,7 @@ export const LoginForm: React.FC = () => {
         Sign In to StockDaddy
       </Button>
 
-      <p className="text-center text-xs text-slate-400 mt-4">
+      <p className="text-center text-xs text-muted-foreground mt-4">
         Don't have an account?{' '}
         <Link to="/register" className="text-blue-400 hover:underline font-semibold">
           Register new tenant account

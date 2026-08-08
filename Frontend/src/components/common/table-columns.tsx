@@ -7,7 +7,7 @@ export function idColumn<T extends { id: number }>(): Column<T> {
     header: 'ID',
     sortKey: 'id',
     width: 'w-24',
-    cellClassName: 'font-mono text-xs text-slate-500 tabular-nums',
+    cellClassName: 'font-mono text-xs text-muted-foreground tabular-nums',
     accessor: (row) => `#${row.id}`,
   };
 }
@@ -32,7 +32,7 @@ export function primaryTextColumn<T>(
   return {
     header,
     sortKey,
-    cellClassName: 'font-medium text-slate-100',
+    cellClassName: 'font-medium text-foreground',
     accessor,
   };
 }

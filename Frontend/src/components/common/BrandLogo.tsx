@@ -27,7 +27,7 @@ export function BrandLogo({ size = 'md', showText = false }: BrandLogoProps) {
       </div>
       {showText && (
         <div>
-          <h1 className="text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent">
+          <h1 className="text-lg font-bold bg-gradient-to-r from-foreground via-foreground/80 to-blue-500 bg-clip-text text-transparent">
             StockDaddy
           </h1>
           <span className="text-[10px] uppercase tracking-wider text-blue-400 font-semibold block">

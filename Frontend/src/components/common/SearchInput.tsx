@@ -33,7 +33,7 @@ export function SearchInput({
 
   return (
     <div className={`relative ${className}`}>
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -46,14 +46,14 @@ export function SearchInput({
         <button
           type="button"
           onClick={() => onChange('')}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground/90"
           aria-label="Clear search"
         >
           <X className="w-4 h-4" />
         </button>
       )}
       {value.length > 0 && value.trim().length < minLength && (
-        <p className="text-[10px] text-slate-500 mt-1">
+        <p className="text-[10px] text-muted-foreground mt-1">
           Type {minLength - value.trim().length} more character(s), or press Enter
         </p>
       )}

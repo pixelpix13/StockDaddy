@@ -27,7 +27,7 @@ export function SortableTableHeader({
         type="button"
         onClick={() => onSortChange(sortKey)}
         className={`inline-flex items-center gap-1 text-left transition-colors ${
-          isActive ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
+          isActive ? 'text-blue-400' : 'text-muted-foreground hover:text-foreground'
         }`}
       >
         {label}

@@ -61,8 +61,8 @@ export function Combobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            'h-10 w-full justify-between border-slate-800 bg-slate-900/80 font-normal text-slate-100 hover:bg-slate-800',
-            !selected && 'text-slate-400',
+            'h-10 w-full justify-between border-border bg-card/80 font-normal text-foreground hover:bg-muted',
+            !selected && 'text-muted-foreground',
             triggerClassName
           )}
         >

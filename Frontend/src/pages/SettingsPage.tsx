@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { Settings, Shield, Cpu, Key, Database, Globe, Store, Plus } from 'lucide-react';
+import { Settings, Shield, Cpu, Key, Database, Globe, Store, Plus, Sun, Moon, Monitor } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
 import { tenantService } from '@/services';
 import { StoreDto } from '@/dtos';
@@ -20,9 +21,38 @@ import {
 import { CrudRowActions } from '@/components/common/CrudRowActions';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { APP_MODULES } from '@/config/permissions';
+import { cn } from '@/lib/utils';
+import type { ThemePreference } from '@/lib/theme';
+
+const THEME_OPTIONS: {
+  value: ThemePreference;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  {
+    value: 'light',
+    label: 'Light',
+    description: 'Bright theme for daytime use',
+    icon: Sun,
+  },
+  {
+    value: 'dark',
+    label: 'Dark',
+    description: 'Low-light theme for night use',
+    icon: Moon,
+  },
+  {
+    value: 'system',
+    label: 'System',
+    description: 'Follows your device light or dark setting',
+    icon: Monitor,
+  },
+];
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const { showToast } = useToast();
   const tenantId = user?.tenantId || 1;
 
@@ -92,19 +122,19 @@ export const SettingsPage: React.FC = () => {
   };
 
   const columns: Column<StoreDto>[] = [
-    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-muted-foreground' },
     {
       header: 'Name',
       accessor: (row) => (
-        <span className="flex items-center gap-2 font-medium text-slate-100">
+        <span className="flex items-center gap-2 font-medium text-foreground">
           <Store className="w-4 h-4 text-blue-400 shrink-0" />
           {row.name}
         </span>
       ),
       sortKey: 'name',
     },
-    { header: 'Location', accessor: (row) => row.location || '—', className: 'text-slate-400' },
-    { header: 'Tenant', accessor: (row) => `#${row.tenantId}`, className: 'text-xs text-slate-500' },
+    { header: 'Location', accessor: (row) => row.location || '—', className: 'text-muted-foreground' },
+    { header: 'Tenant', accessor: (row) => `#${row.tenantId}`, className: 'text-xs text-muted-foreground' },
     {
       header: 'Actions',
       accessor: (row) => (
@@ -120,7 +150,7 @@ export const SettingsPage: React.FC = () => {
           <h1 className="page-hero-title">
             System & Security Settings <Settings className="w-6 h-6 text-blue-400" />
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Configure stores, authentication, and multi-tenant parameters
           </p>
         </div>
@@ -128,6 +158,33 @@ export const SettingsPage: React.FC = () => {
           System Active
         </Badge>
       </div>
+
+      <Card title="General" subtitle="Appearance and display preferences">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {THEME_OPTIONS.map(({ value, label, description, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setTheme(value)}
+              className={cn(
+                'flex flex-col items-start gap-2 p-4 rounded-xl border text-left transition-all',
+                theme === value
+                  ? 'border-primary bg-primary/10 ring-2 ring-primary/30'
+                  : 'border-border bg-card hover:bg-muted/50'
+              )}
+            >
+              <Icon className="w-5 h-5 text-primary" />
+              <span className="font-semibold text-foreground">{label}</span>
+              <span className="text-xs text-muted-foreground">{description}</span>
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-4">
+          Active appearance:{' '}
+          <span className="font-semibold text-foreground capitalize">{resolvedTheme}</span>
+          {theme === 'system' ? ' (from system)' : ''}
+        </p>
+      </Card>
 
       <Card title="Store Locations" subtitle="Full CRUD for tenant store branches">
         <div className="flex justify-end mb-4">
@@ -151,23 +208,23 @@ export const SettingsPage: React.FC = () => {
         title="Authentication & Authorization Architecture"
         subtitle="Current standalone JWT setup and AWS Cognito transition readiness"
       >
-        <div className="space-y-4 text-sm text-slate-300">
-          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+        <div className="space-y-4 text-sm text-foreground/90">
+          <div className="p-4 rounded-xl bg-card/80 border border-border flex items-start gap-3">
             <Shield className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
             <div>
-              <h4 className="font-bold text-slate-100">JWT Token Security (Current)</h4>
-              <p className="text-xs text-slate-400 mt-1">
+              <h4 className="font-bold text-foreground">JWT Token Security (Current)</h4>
+              <p className="text-xs text-muted-foreground mt-1">
                 Requests to <code>/api/*</code> include the Bearer token in HTTP{' '}
                 <code>Authorization</code> header via Axios Interceptors in <code>api.client.ts</code>.
               </p>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-start gap-3">
+          <div className="p-4 rounded-xl bg-card/80 border border-border flex items-start gap-3">
             <Cpu className="w-5 h-5 text-purple-400 mt-0.5 shrink-0" />
             <div>
-              <h4 className="font-bold text-slate-100">AWS Cognito Migration Readiness</h4>
-              <p className="text-xs text-slate-400 mt-1">
+              <h4 className="font-bold text-foreground">AWS Cognito Migration Readiness</h4>
+              <p className="text-xs text-muted-foreground mt-1">
                 The frontend service layer is decoupled via <code>AuthContext</code> and{' '}
                 <code>auth.service.ts</code>. Switching to AWS Cognito user pools only requires updating
                 the <code>api.client.ts</code> token provider without refactoring component logic.
@@ -176,12 +233,12 @@ export const SettingsPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-              <span className="text-xs text-slate-400 font-medium">Logged-in Username:</span>
+            <div className="p-3 rounded-xl bg-background border border-border">
+              <span className="text-xs text-muted-foreground font-medium">Logged-in Username:</span>
               <p className="font-bold text-blue-400">{user?.username || 'N/A'}</p>
             </div>
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-              <span className="text-xs text-slate-400 font-medium">Current Tenant ID:</span>
+            <div className="p-3 rounded-xl bg-background border border-border">
+              <span className="text-xs text-muted-foreground font-medium">Current Tenant ID:</span>
               <p className="font-bold text-emerald-400">Tenant #{user?.tenantId || 1}</p>
             </div>
           </div>
@@ -190,25 +247,25 @@ export const SettingsPage: React.FC = () => {
 
       <Card title="API Connection Parameters">
         <div className="space-y-3 text-xs">
-          <div className="flex justify-between items-center py-2 border-b border-slate-800">
-            <span className="text-slate-400 flex items-center gap-1.5">
-              <Globe className="w-4 h-4 text-slate-500" /> Backend API Proxy:
+          <div className="flex justify-between items-center py-2 border-b border-border">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Globe className="w-4 h-4 text-muted-foreground" /> Backend API Proxy:
             </span>
-            <code className="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-blue-400">
+            <code className="px-2 py-1 rounded bg-card border border-border text-blue-400">
               http://localhost:5215/api
             </code>
           </div>
 
-          <div className="flex justify-between items-center py-2 border-b border-slate-800">
-            <span className="text-slate-400 flex items-center gap-1.5">
-              <Database className="w-4 h-4 text-slate-500" /> PostgreSQL Persistence:
+          <div className="flex justify-between items-center py-2 border-b border-border">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Database className="w-4 h-4 text-muted-foreground" /> PostgreSQL Persistence:
             </span>
-            <span className="font-semibold text-slate-200">Localhost SD DB</span>
+            <span className="font-semibold text-foreground">Localhost SD DB</span>
           </div>
 
           <div className="flex justify-between items-center py-2">
-            <span className="text-slate-400 flex items-center gap-1.5">
-              <Key className="w-4 h-4 text-slate-500" /> Security Scheme:
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Key className="w-4 h-4 text-muted-foreground" /> Security Scheme:
             </span>
             <span className="font-semibold text-emerald-400">HMAC-SHA256 Signed JWT</span>
           </div>

@@ -100,8 +100,8 @@ export function TaxRegionsTab({ tenantId, storeId }: TaxRegionsTabProps) {
   };
 
   const columns: Column<TaxRegionDto>[] = [
-    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-slate-500' },
-    { header: 'Region', accessor: 'regionName', sortKey: 'name', className: 'font-medium text-slate-100' },
+    { header: 'ID', accessor: (row) => `#${row.id}`, sortKey: 'id', className: 'font-mono text-xs text-muted-foreground' },
+    { header: 'Region', accessor: 'regionName', sortKey: 'name', className: 'font-medium text-foreground' },
     {
       header: 'Tax %',
       accessor: (row) => `${row.taxPercent}%`,
@@ -110,7 +110,7 @@ export function TaxRegionsTab({ tenantId, storeId }: TaxRegionsTabProps) {
     {
       header: 'Store',
       accessor: (row) => (row.storeId ? `#${row.storeId}` : 'All'),
-      className: 'text-xs text-slate-500',
+      className: 'text-xs text-muted-foreground',
     },
     {
       header: 'Actions',

@@ -96,12 +96,12 @@ export const BillAdjustmentPage: React.FC = () => {
       header: 'Date',
       accessor: (row) => new Date(row.createdAt).toLocaleString(),
       sortKey: 'createdat',
-      className: 'text-xs text-slate-500',
+      className: 'text-xs text-muted-foreground',
     },
     {
       header: 'Cashier',
       accessor: (row) => `#${row.soldBy}`,
-      className: 'text-slate-400',
+      className: 'text-muted-foreground',
     },
     {
       header: 'Amount',
@@ -130,7 +130,7 @@ export const BillAdjustmentPage: React.FC = () => {
         <h1 className="page-hero-title">
           Sales Corrections <FilePenLine className="w-6 h-6 text-blue-400" />
         </h1>
-        <p className="text-sm text-slate-400 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Adjust posted sale totals, payment method, or notes.
         </p>
       </div>

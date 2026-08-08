@@ -53,12 +53,12 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             key={toast.id}
             className={`pointer-events-auto flex items-start p-4 rounded-xl shadow-2xl backdrop-blur-md border transition-all duration-300 transform translate-y-0 ${
               toast.type === 'success'
-                ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-100'
+                ? 'bg-emerald-50 dark:bg-emerald-950/80 border-emerald-500/40 text-emerald-900 dark:text-emerald-100'
                 : toast.type === 'error'
-                ? 'bg-rose-950/80 border-rose-500/40 text-rose-100'
+                ? 'bg-rose-50 dark:bg-rose-950/80 border-rose-500/40 text-rose-900 dark:text-rose-100'
                 : toast.type === 'warning'
-                ? 'bg-amber-950/80 border-amber-500/40 text-amber-100'
-                : 'bg-blue-950/80 border-blue-500/40 text-blue-100'
+                ? 'bg-amber-50 dark:bg-amber-950/80 border-amber-500/40 text-amber-900 dark:text-amber-100'
+                : 'bg-blue-50 dark:bg-blue-950/80 border-blue-500/40 text-blue-900 dark:text-blue-100'
             }`}
           >
             <div className="mr-3 mt-0.5 shrink-0">
@@ -73,7 +73,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="ml-2 text-slate-400 hover:text-white transition-colors"
+              className="ml-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="w-4 h-4" />
             </button>

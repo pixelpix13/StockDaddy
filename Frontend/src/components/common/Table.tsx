@@ -50,7 +50,7 @@ export function Table<T>({
   onSortChange,
   footer,
 }: TableProps<T>) {
-  const headerBase = `${cellPadding} text-xs font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap`;
+  const headerBase = `${cellPadding} text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap`;
 
   const renderHeader = (col: Column<T>, index: number) => {
     const thClass = `${headerBase} ${alignClass(col.align)} ${col.width ?? ''}`.trim();
@@ -64,7 +64,7 @@ export function Table<T>({
             type="button"
             onClick={() => onSortChange(col.sortKey!)}
             className={`inline-flex items-center gap-1.5 transition-colors ${
-              isActive ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
+              isActive ? 'text-blue-400' : 'text-muted-foreground hover:text-foreground'
             } ${col.align === 'right' ? 'ml-auto' : ''}`}
           >
             {col.header}
@@ -82,15 +82,15 @@ export function Table<T>({
   };
 
   return (
-    <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-900/40">
-      <table className="w-full min-w-[640px] table-auto text-sm text-slate-300 border-collapse">
-        <thead className="bg-slate-900/80 border-b border-slate-800">
+    <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-border bg-card/40">
+      <table className="w-full min-w-[640px] table-auto text-sm text-foreground/90 border-collapse">
+        <thead className="bg-card/80 border-b border-border">
           <tr>{columns.map(renderHeader)}</tr>
         </thead>
-        <tbody className="divide-y divide-slate-800/60">
+        <tbody className="divide-y divide-border/60">
           {isLoading ? (
             <tr>
-              <td colSpan={columns.length} className={`${cellPadding} text-center text-slate-400`}>
+              <td colSpan={columns.length} className={`${cellPadding} text-center text-muted-foreground`}>
                 <div className="flex items-center justify-center gap-2 py-4">
                   <div className="w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
                   <span>Loading data...</span>
@@ -99,7 +99,7 @@ export function Table<T>({
             </tr>
           ) : data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className={`${cellPadding} text-center text-slate-500 font-medium`}>
+              <td colSpan={columns.length} className={`${cellPadding} text-center text-muted-foreground font-medium`}>
                 <div className="py-4">{emptyMessage}</div>
               </td>
             </tr>
@@ -107,7 +107,7 @@ export function Table<T>({
             data.map((row) => (
               <tr
                 key={keyExtractor(row)}
-                className="hover:bg-slate-800/40 transition-colors duration-150"
+                className="hover:bg-muted/40 transition-colors duration-150"
               >
                 {columns.map((col, index) => (
                   <td
@@ -125,7 +125,7 @@ export function Table<T>({
         </tbody>
       </table>
       {footer ? (
-        <div className="px-4 sm:px-6 py-4 border-t border-slate-800/80 bg-slate-900/30">
+        <div className="px-4 sm:px-6 py-4 border-t border-border bg-card/30">
           {footer}
         </div>
       ) : null}

@@ -28,9 +28,9 @@ export const StatCard: React.FC<StatCardProps> = ({
   };
 
   return (
-    <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all duration-300">
+    <div className="glass-panel p-5 rounded-2xl border border-border flex flex-col justify-between hover:border-border transition-all duration-300">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {title}
         </span>
         <div
@@ -40,7 +40,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         </div>
       </div>
       <div className="mt-4 flex items-baseline justify-between">
-        <h4 className="text-2xl font-extrabold text-slate-100">{value}</h4>
+        <h4 className="text-2xl font-extrabold text-foreground">{value}</h4>
         {trend && (
           <span
             className={`text-xs font-semibold px-2 py-0.5 rounded-full ${

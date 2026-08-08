@@ -19,19 +19,19 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed';
+    'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variantStyles = {
     primary:
       'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25 border border-blue-500/30 focus:ring-blue-500',
     secondary:
-      'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 focus:ring-slate-500',
+      'bg-muted hover:bg-muted/80 text-foreground border border-border focus:ring-ring',
     danger:
       'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-lg shadow-rose-500/25 border border-rose-500/30 focus:ring-rose-500',
     ghost:
-      'bg-transparent hover:bg-slate-800 text-slate-300 hover:text-white focus:ring-slate-500',
+      'bg-transparent hover:bg-muted text-foreground/90 hover:text-foreground focus:ring-ring',
     outline:
-      'bg-transparent border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white focus:ring-slate-500',
+      'bg-transparent border border-border hover:border-primary/50 text-foreground/90 hover:text-foreground focus:ring-ring',
   };
 
   const sizeStyles = {

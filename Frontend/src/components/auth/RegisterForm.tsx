@@ -28,10 +28,13 @@ export const RegisterForm: React.FC = () => {
 
     setIsLoading(true);
     try {
+      const defaultStoreId = 1;
       await register({
         tenantId: parseInt(tenantId, 10) || 1,
         roleId: parseInt(roleId, 10) || 3,
-        storeId: 1,
+        storeId: defaultStoreId,
+        storeIds: [defaultStoreId],
+        defaultStoreId,
         username,
         email,
         password,
@@ -91,13 +94,13 @@ export const RegisterForm: React.FC = () => {
         />
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+          <label className="text-xs font-semibold uppercase tracking-wider text-foreground/90">
             Role
           </label>
           <select
             value={roleId}
             onChange={(e) => setRoleId(e.target.value)}
-            className="w-full bg-slate-900/80 border border-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none"
+            className="w-full bg-card/80 border border-border focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none"
           >
             <option value="1">Admin (Role #1)</option>
             <option value="2">Manager (Role #2)</option>
@@ -117,7 +120,7 @@ export const RegisterForm: React.FC = () => {
         Create Account & Sign In
       </Button>
 
-      <p className="text-center text-xs text-slate-400 mt-4">
+      <p className="text-center text-xs text-muted-foreground mt-4">
         Already have an account?{' '}
         <Link to="/login" className="text-blue-400 hover:underline font-semibold">
           Back to Login

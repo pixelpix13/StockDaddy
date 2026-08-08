@@ -62,7 +62,7 @@ export function FilterSelect<T extends string | number>({
   return (
     <div className={cn('flex flex-col gap-1.5 w-full sm:w-auto sm:min-w-[160px]', className)}>
       {label ? (
-        <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</Label>
+        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</Label>
       ) : null}
       {useCombobox ? (
         <Combobox
