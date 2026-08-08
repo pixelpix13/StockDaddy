@@ -5,6 +5,7 @@
  * - On 403, dispatches a global event for toast display (permission denied).
  */
 import axios from 'axios';
+import { getStoredActiveStoreId, clearStoredActiveStoreId } from '@/lib/store';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -21,6 +22,10 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('stockdaddy_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    const activeStoreId = getStoredActiveStoreId();
+    if (activeStoreId) {
+      config.headers['X-Store-Id'] = String(activeStoreId);
     }
     return config;
   },
@@ -41,6 +46,7 @@ apiClient.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('stockdaddy_token');
       localStorage.removeItem('stockdaddy_user');
+      clearStoredActiveStoreId();
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

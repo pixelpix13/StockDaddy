@@ -2,6 +2,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { StoreProvider } from './context/StoreContext';
 import { ToastProvider } from './context/ToastContext';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { PermissionRoute } from './components/layout/PermissionRoute';
@@ -21,6 +22,7 @@ import { SuppliersPage } from './pages/SuppliersPage';
 import { UsersPage } from './pages/UsersPage';
 import { AccessControlPage } from './pages/AccessControlPage';
 import { CustomersPage } from './pages/CustomersPage';
+import { CompaniesPage } from './pages/CompaniesPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { FEATURES } from './config/features';
 import { BillAdjustmentPage } from './features/bill-adjustment/BillAdjustmentPage';
@@ -31,7 +33,8 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ToastProvider>
+        <StoreProvider>
+          <ToastProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -58,6 +61,9 @@ export const App: React.FC = () => {
                 </Route>
                 <Route element={<PermissionRoute module={APP_MODULES.Supplier} />}>
                   <Route path="/suppliers" element={<SuppliersPage />} />
+                </Route>
+                <Route element={<PermissionRoute module={APP_MODULES.Company} />}>
+                  <Route path="/companies" element={<CompaniesPage />} />
                 </Route>
                 <Route element={<PermissionRoute module={APP_MODULES.Customer} />}>
                   <Route path="/customers" element={<CustomersPage />} />
@@ -90,7 +96,8 @@ export const App: React.FC = () => {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </ToastProvider>
+          </ToastProvider>
+        </StoreProvider>
       </AuthProvider>
     </BrowserRouter>
   );

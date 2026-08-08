@@ -1,6 +1,7 @@
 /** Login, register, session storage, and current-user lookup. */
 import { apiClient } from './api.client';
-import { LoginRequest, RegisterRequest, AuthResponse, UserDto } from '../dtos';
+import { LoginRequest, RegisterRequest, AuthResponse, UserDto, UserStoreOptionDto } from '../dtos';
+import { clearStoredActiveStoreId } from '@/lib/store';
 
 export const authService = {
   async login(request: LoginRequest): Promise<AuthResponse> {
@@ -21,6 +22,19 @@ export const authService = {
 
   async refreshSession(): Promise<AuthResponse> {
     const response = await apiClient.get<AuthResponse>('/auth/me');
+    if (response.data.token) {
+      this.saveAuth(response.data);
+    }
+    return response.data;
+  },
+
+  async getMyStores(): Promise<UserStoreOptionDto[]> {
+    const response = await apiClient.get<UserStoreOptionDto[]>('/auth/me/stores');
+    return response.data;
+  },
+
+  async switchStore(storeId: number): Promise<AuthResponse> {
+    const response = await apiClient.post<AuthResponse>('/auth/switch-store', { storeId });
     if (response.data.token) {
       this.saveAuth(response.data);
     }
@@ -50,5 +64,6 @@ export const authService = {
   logout(): void {
     localStorage.removeItem('stockdaddy_token');
     localStorage.removeItem('stockdaddy_user');
+    clearStoredActiveStoreId();
   },
 };
