@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StockDaddy.Application.Authorization;
 using StockDaddy.Application.DTOs;
+using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
 
@@ -12,10 +13,12 @@ namespace StockDaddy.Application.Services;
 public class RbacService
 {
     private readonly ApplicationDbContext _context;
+    private readonly IUserRepository _userRepository;
 
-    public RbacService(ApplicationDbContext context)
+    public RbacService(ApplicationDbContext context, IUserRepository userRepository)
     {
         _context = context;
+        _userRepository = userRepository;
     }
 
     public async Task<RbacMatrixDto> GetMatrixAsync()
@@ -161,6 +164,38 @@ public class RbacService
         };
     }
 
+    public async Task<UserDto?> AssignUserStoreAssignmentsAsync(int userId, AssignUserStoreAssignmentsRequest request)
+    {
+        var user = await _context.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+
+        if (user == null)
+        {
+            return null;
+        }
+
+        if (request.DefaultRoleId.HasValue)
+        {
+            var roleExists = await _context.Roles.AnyAsync(r => r.Id == request.DefaultRoleId.Value && !r.IsDeleted);
+            if (!roleExists)
+            {
+                return null;
+            }
+        }
+
+        var fallbackRoleId = request.DefaultRoleId ?? user.RoleId;
+        await _userRepository.SyncStoreAssignmentsAsync(
+            userId,
+            user.TenantId,
+            fallbackRoleId,
+            request.Assignments,
+            request.DefaultStoreId,
+            request.DefaultRoleId);
+
+        return await _userRepository.GetByIdAsync(userId);
+    }
+
     public async Task<List<string>> GetPermissionKeysForRoleAsync(int roleId)
     {
         var mappings = await _context.RolePermissions
@@ -267,7 +302,8 @@ public class RbacService
             return (false, $"Built-in role '{role.Name}' cannot be deleted.");
         }
 
-        var usersAssigned = await _context.Users.AnyAsync(u => !u.IsDeleted && u.RoleId == roleId);
+        var usersAssigned = await _context.Users.AnyAsync(u => !u.IsDeleted && u.RoleId == roleId)
+            || await _context.UserStores.AnyAsync(us => us.RoleId == roleId);
         if (usersAssigned)
         {
             return (false, "Cannot delete a role that is assigned to users. Reassign users first.");

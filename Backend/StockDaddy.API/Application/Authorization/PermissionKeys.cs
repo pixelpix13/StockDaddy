@@ -19,6 +19,7 @@ public static class PermissionKeys
         "Purchase",
         "Supplier",
         "Customer",
+        "Company",
         "Users",
         "AccessControl",
         "Settings",
@@ -32,6 +33,12 @@ public static class PermissionKeys
 
     public static string Format(string module, string action) =>
         $"{module}:{action}";
+
+    /// <summary>Admin (owner) or explicit Settings:AccessAllStores may use any store in the tenant.</summary>
+    public static bool GrantsAccessToAllStores(string? roleName, IEnumerable<string> permissions) =>
+        (!string.IsNullOrEmpty(roleName) &&
+         roleName.Equals("Admin", StringComparison.OrdinalIgnoreCase)) ||
+        permissions.Contains(Format("Settings", PermissionAction.AccessAllStores), StringComparer.OrdinalIgnoreCase);
 
     public static bool TryParse(string key, out string module, out PermissionAction action)
     {

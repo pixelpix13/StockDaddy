@@ -1,26 +1,39 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.DTOs;
+using StockDaddy.Application.Helpers;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
-using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
 public class SupplierRepository : ISupplierRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly IRequestContext _requestContext;
 
-    public SupplierRepository(ApplicationDbContext context)
+    public SupplierRepository(ApplicationDbContext context, IRequestContext requestContext)
     {
         _context = context;
+        _requestContext = requestContext;
     }
-
 
     public async Task<PagedResult<SupplierDto>> GetPagedAsync(PagedQuery query)
     {
         var q = RepositoryPaging.Normalize(query);
         var baseQuery = _context.Suppliers.Where(s => !s.IsDeleted);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            baseQuery = baseQuery.Where(s => s.TenantId == _requestContext.TenantId.Value);
+        }
+
+        var storeFilter = QueryScope.ResolveStoreFilter(q, _requestContext);
+        if (storeFilter.HasValue)
+        {
+            baseQuery = baseQuery.Where(s => s.StoreId == storeFilter.Value);
+        }
 
         if (!string.IsNullOrEmpty(q.Search))
         {
@@ -32,18 +45,18 @@ public class SupplierRepository : ISupplierRepository
 
         var projected = baseQuery.Select(s => new SupplierDto
         {
-                Id = s.Id,
-                TenantId = s.TenantId,
-                Name = s.Name,
-                ContactName = s.ContactName,
-                Phone = s.Phone,
-                Email = s.Email,
-                Address = s.Address,
-                CreatedAt = s.CreatedAt,
-                UpdatedAt = s.UpdatedAt,
-                IsDeleted = s.IsDeleted,
-                DeletedAt = s.DeletedAt
-            
+            Id = s.Id,
+            TenantId = s.TenantId,
+            StoreId = s.StoreId,
+            Name = s.Name,
+            ContactName = s.ContactName,
+            Phone = s.Phone,
+            Email = s.Email,
+            Address = s.Address,
+            CreatedAt = s.CreatedAt,
+            UpdatedAt = s.UpdatedAt,
+            IsDeleted = s.IsDeleted,
+            DeletedAt = s.DeletedAt
         });
 
         return await RepositoryPaging.ExecuteAsync(projected, q);
@@ -64,12 +77,24 @@ public class SupplierRepository : ISupplierRepository
 
     public async Task<List<SupplierDto>> GetAllAsync()
     {
-        return await _context.Suppliers
-            .Where(s => !s.IsDeleted)
+        var query = _context.Suppliers.Where(s => !s.IsDeleted);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            query = query.Where(s => s.TenantId == _requestContext.TenantId.Value);
+        }
+
+        if (_requestContext.ActiveStoreId.HasValue)
+        {
+            query = query.Where(s => s.StoreId == _requestContext.ActiveStoreId.Value);
+        }
+
+        return await query
             .Select(s => new SupplierDto
             {
                 Id = s.Id,
                 TenantId = s.TenantId,
+                StoreId = s.StoreId,
                 Name = s.Name,
                 ContactName = s.ContactName,
                 Phone = s.Phone,
@@ -83,15 +108,26 @@ public class SupplierRepository : ISupplierRepository
             .ToListAsync();
     }
 
-
     public async Task<SupplierDto?> GetByIdAsync(int id)
     {
-        return await _context.Suppliers
-            .Where(s => s.Id == id && !s.IsDeleted)
+        var query = _context.Suppliers.Where(s => s.Id == id && !s.IsDeleted);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            query = query.Where(s => s.TenantId == _requestContext.TenantId.Value);
+        }
+
+        if (_requestContext.ActiveStoreId.HasValue)
+        {
+            query = query.Where(s => s.StoreId == _requestContext.ActiveStoreId.Value);
+        }
+
+        return await query
             .Select(s => new SupplierDto
             {
                 Id = s.Id,
                 TenantId = s.TenantId,
+                StoreId = s.StoreId,
                 Name = s.Name,
                 ContactName = s.ContactName,
                 Phone = s.Phone,
@@ -105,12 +141,15 @@ public class SupplierRepository : ISupplierRepository
             .FirstOrDefaultAsync();
     }
 
-
     public async Task AddAsync(CreateSupplierRequest supplier)
     {
+        var storeId = _requestContext.ActiveStoreId
+            ?? throw new InvalidOperationException("Active store is required to create a supplier.");
+
         var entity = new Supplier
         {
             TenantId = supplier.TenantId,
+            StoreId = storeId,
             Name = supplier.Name,
             ContactName = supplier.ContactName,
             Phone = supplier.Phone,
@@ -123,7 +162,6 @@ public class SupplierRepository : ISupplierRepository
         await _context.Suppliers.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
-
 
     public async Task UpdateAsync(int id, UpdateSupplierRequest supplier)
     {

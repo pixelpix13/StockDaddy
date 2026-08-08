@@ -4,5 +4,6 @@ namespace StockDaddy.Domain.Enums;
 public enum CreditPartyType
 {
     Customer,
-    Supplier
+    Supplier,
+    Company
 }

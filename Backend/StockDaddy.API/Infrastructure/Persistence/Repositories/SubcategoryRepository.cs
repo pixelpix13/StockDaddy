@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
@@ -10,16 +11,29 @@ namespace StockDaddy.Infrastructure.Repositories;
 public class SubcategoryRepository : ISubcategoryRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly IRequestContext _requestContext;
 
-    public SubcategoryRepository(ApplicationDbContext context)
+    public SubcategoryRepository(ApplicationDbContext context, IRequestContext requestContext)
     {
         _context = context;
+        _requestContext = requestContext;
     }
 
     public async Task<PagedResult<SubcategoryDto>> GetPagedAsync(PagedQuery query)
     {
         var q = RepositoryPaging.Normalize(query);
         var baseQuery = _context.Subcategories.Where(s => !s.IsDeleted);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            baseQuery = baseQuery.Where(s => s.TenantId == _requestContext.TenantId.Value);
+        }
+
+        var storeFilter = QueryScope.ResolveStoreFilter(q, _requestContext);
+        if (storeFilter.HasValue)
+        {
+            baseQuery = baseQuery.Where(s => s.StoreId == storeFilter.Value);
+        }
 
         if (!string.IsNullOrEmpty(q.Search))
         {

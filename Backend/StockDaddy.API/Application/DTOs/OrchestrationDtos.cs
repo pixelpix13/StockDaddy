@@ -41,13 +41,27 @@ public class CheckoutCustomerRequest
     public string Address { get; set; } = string.Empty;
 }
 
+public class CheckoutCompanyRequest
+{
+    public int? CompanyId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string ContactName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string Gstin { get; set; } = string.Empty;
+}
+
 public class CheckoutSaleRequest
 {
     public int TenantId { get; set; }
     public int StoreId { get; set; }
     public int SoldBy { get; set; }
+    public SaleBuyerType BuyerType { get; set; } = SaleBuyerType.Retail;
     public int? CustomerId { get; set; }
+    public int? CompanyId { get; set; }
     public CheckoutCustomerRequest? Customer { get; set; }
+    public CheckoutCompanyRequest? Company { get; set; }
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
     public decimal DiscountAmount { get; set; }
     public decimal DiscountPercent { get; set; }
@@ -72,7 +86,9 @@ public class CheckoutLineResponse
 public class CheckoutSaleResponse
 {
     public int SaleId { get; set; }
-    public int CustomerId { get; set; }
+    public SaleBuyerType BuyerType { get; set; }
+    public int? CustomerId { get; set; }
+    public int? CompanyId { get; set; }
     public decimal Subtotal { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal DiscountAmount { get; set; }

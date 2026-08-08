@@ -99,4 +99,16 @@ public class RbacController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpPut("users/{userId}/store-assignments")]
+    public async Task<IActionResult> AssignUserStoreAssignments(int userId, [FromBody] AssignUserStoreAssignmentsRequest request)
+    {
+        var result = await _rbacService.AssignUserStoreAssignmentsAsync(userId, request);
+        if (result == null)
+        {
+            return NotFound($"User {userId} not found or invalid store/role assignment.");
+        }
+
+        return Ok(result);
+    }
 }

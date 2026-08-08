@@ -6,6 +6,7 @@ public class CreditLedgerDto
 {
     public int Id { get; set; }
     public int TenantId { get; set; }
+    public int StoreId { get; set; }
     public CreditPartyType PartyType { get; set; }
     public CreditStatus Status { get; set; }
     public int? CustomerId { get; set; }

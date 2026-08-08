@@ -4,6 +4,7 @@ public class CustomerDto
 {
     public int Id { get; set; }
     public int TenantId { get; set; }
+    public int StoreId { get; set; }
 
     public string Name { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;

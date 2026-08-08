@@ -8,6 +8,7 @@ public class Sale
     public int TenantId { get; set; }
     public int? StoreId { get; set; }
     public int? CustomerId { get; set; }
+    public int? CompanyId { get; set; }
     public int SoldBy { get; set; }
 
     public decimal TotalAmount { get; set; }
@@ -27,5 +28,6 @@ public class Sale
     public Tenant? Tenant { get; set; }
     public Store? Store { get; set; }
     public Customer? Customer { get; set; }
+    public Company? Company { get; set; }
     public User? SoldByUser { get; set; }
 }

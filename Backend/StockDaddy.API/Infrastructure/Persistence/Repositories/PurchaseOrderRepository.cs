@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
@@ -11,16 +12,29 @@ namespace StockDaddy.Infrastructure.Repositories;
 public class PurchaseOrderRepository : IPurchaseOrderRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly IRequestContext _requestContext;
 
-    public PurchaseOrderRepository(ApplicationDbContext context)
+    public PurchaseOrderRepository(ApplicationDbContext context, IRequestContext requestContext)
     {
         _context = context;
+        _requestContext = requestContext;
     }
 
     public async Task<PagedResult<PurchaseOrderDto>> GetPagedAsync(PagedQuery query)
     {
         var q = RepositoryPaging.Normalize(query);
         var baseQuery = _context.PurchaseOrders.Where(o => !o.IsDeleted);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            baseQuery = baseQuery.Where(o => o.TenantId == _requestContext.TenantId.Value);
+        }
+
+        var storeFilter = QueryScope.ResolveStoreFilter(q, _requestContext);
+        if (storeFilter.HasValue)
+        {
+            baseQuery = baseQuery.Where(o => o.StoreId == storeFilter.Value);
+        }
 
         if (!string.IsNullOrEmpty(q.Search))
         {

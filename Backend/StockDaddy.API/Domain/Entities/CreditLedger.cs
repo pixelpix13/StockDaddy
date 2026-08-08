@@ -9,12 +9,14 @@ public class CreditLedger
 {
     public int Id { get; set; }
     public int TenantId { get; set; }
+    public int StoreId { get; set; }
 
     public CreditPartyType PartyType { get; set; }
     public CreditStatus Status { get; set; } = CreditStatus.Pending;
 
     public int? CustomerId { get; set; }
     public int? SupplierId { get; set; }
+    public int? CompanyId { get; set; }
     public int? SaleId { get; set; }
     public int? PurchaseOrderId { get; set; }
 
@@ -34,8 +36,10 @@ public class CreditLedger
     public DateTime? DeletedAt { get; set; }
 
     public Tenant? Tenant { get; set; }
+    public Store? Store { get; set; }
     public Customer? Customer { get; set; }
     public Supplier? Supplier { get; set; }
+    public Company? Company { get; set; }
     public Sale? Sale { get; set; }
     public PurchaseOrder? PurchaseOrder { get; set; }
 }

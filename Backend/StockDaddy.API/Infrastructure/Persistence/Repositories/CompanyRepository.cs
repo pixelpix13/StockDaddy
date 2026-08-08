@@ -1,35 +1,35 @@
 using Microsoft.EntityFrameworkCore;
 using StockDaddy.Application.Authorization;
 using StockDaddy.Application.DTOs;
+using StockDaddy.Application.Helpers;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
-using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
-public class CustomerRepository : ICustomerRepository
+public class CompanyRepository : ICompanyRepository
 {
     private readonly ApplicationDbContext _context;
     private readonly IRequestContext _requestContext;
 
-    public CustomerRepository(ApplicationDbContext context, IRequestContext requestContext)
+    public CompanyRepository(ApplicationDbContext context, IRequestContext requestContext)
     {
         _context = context;
         _requestContext = requestContext;
     }
 
-    public async Task<PagedResult<CustomerDto>> GetPagedAsync(PagedQuery query)
+    public async Task<PagedResult<CompanyDto>> GetPagedAsync(PagedQuery query)
     {
         var q = RepositoryPaging.Normalize(query);
-        var baseQuery = _context.Customers.Where(c => !c.IsDeleted);
+        var baseQuery = _context.Companies.Where(c => !c.IsDeleted);
 
         if (_requestContext.TenantId.HasValue)
         {
             baseQuery = baseQuery.Where(c => c.TenantId == _requestContext.TenantId.Value);
         }
 
-        var storeFilter = QueryScope.ResolveStoreFilter(q, _requestContext);
+        var storeFilter = QueryScope.ResolveStoreFilter(query, _requestContext);
         if (storeFilter.HasValue)
         {
             baseQuery = baseQuery.Where(c => c.StoreId == storeFilter.Value);
@@ -38,31 +38,21 @@ public class CustomerRepository : ICustomerRepository
         if (!string.IsNullOrEmpty(q.Search))
         {
             var pattern = $"%{q.Search}%";
-            baseQuery = baseQuery.Where(c => EF.Functions.ILike(c.Name, pattern) || EF.Functions.ILike(c.Email, pattern) || EF.Functions.ILike(c.Phone, pattern));
+            baseQuery = baseQuery.Where(c =>
+                EF.Functions.ILike(c.Name, pattern) ||
+                EF.Functions.ILike(c.Email, pattern) ||
+                EF.Functions.ILike(c.Phone, pattern) ||
+                EF.Functions.ILike(c.ContactName, pattern) ||
+                EF.Functions.ILike(c.Gstin, pattern));
         }
 
         baseQuery = ApplySort(baseQuery, q);
 
-        var projected = baseQuery.Select(c => new CustomerDto
-        {
-                Id = c.Id,
-                TenantId = c.TenantId,
-                StoreId = c.StoreId,
-                Name = c.Name,
-                Phone = c.Phone,
-                Email = c.Email,
-                Address = c.Address,
-                CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt,
-                IsDeleted = c.IsDeleted,
-                DeletedAt = c.DeletedAt
-            
-        });
-
+        var projected = baseQuery.Select(c => MapToDto(c));
         return await RepositoryPaging.ExecuteAsync(projected, q);
     }
 
-    private static IQueryable<Customer> ApplySort(IQueryable<Customer> query, PagedQuery q) =>
+    private static IQueryable<Company> ApplySort(IQueryable<Company> query, PagedQuery q) =>
         (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
         {
             ("name", true) => query.OrderByDescending(c => c.Name),
@@ -75,9 +65,9 @@ public class CustomerRepository : ICustomerRepository
             _ => query.OrderBy(c => c.Id),
         };
 
-    public async Task<List<CustomerDto>> GetAllAsync()
+    public async Task<List<CompanyDto>> GetAllAsync()
     {
-        var query = _context.Customers.Where(c => !c.IsDeleted);
+        var query = _context.Companies.Where(c => !c.IsDeleted);
 
         if (_requestContext.TenantId.HasValue)
         {
@@ -90,26 +80,14 @@ public class CustomerRepository : ICustomerRepository
         }
 
         return await query
-            .Select(c => new CustomerDto
-            {
-                Id = c.Id,
-                TenantId = c.TenantId,
-                StoreId = c.StoreId,
-                Name = c.Name,
-                Phone = c.Phone,
-                Email = c.Email,
-                Address = c.Address,
-                CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt,
-                IsDeleted = c.IsDeleted,
-                DeletedAt = c.DeletedAt
-            })
+            .OrderBy(c => c.Name)
+            .Select(c => MapToDto(c))
             .ToListAsync();
     }
 
-    public async Task<CustomerDto?> GetByIdAsync(int id)
+    public async Task<CompanyDto?> GetByIdAsync(int id)
     {
-        var query = _context.Customers.Where(c => c.Id == id && !c.IsDeleted);
+        var query = _context.Companies.Where(c => c.Id == id && !c.IsDeleted);
 
         if (_requestContext.TenantId.HasValue)
         {
@@ -121,77 +99,65 @@ public class CustomerRepository : ICustomerRepository
             query = query.Where(c => c.StoreId == _requestContext.ActiveStoreId.Value);
         }
 
-        var c = await query.FirstOrDefaultAsync();
-        if (c == null) return null;
-        return new CustomerDto
-        {
-            Id = c.Id,
-            TenantId = c.TenantId,
-            StoreId = c.StoreId,
-            Name = c.Name,
-            Phone = c.Phone,
-            Email = c.Email,
-            Address = c.Address,
-            CreatedAt = c.CreatedAt,
-            UpdatedAt = c.UpdatedAt,
-            IsDeleted = c.IsDeleted,
-            DeletedAt = c.DeletedAt
-        };
+        return await query.Select(c => MapToDto(c)).FirstOrDefaultAsync();
     }
 
-    public async Task AddAsync(CreateCustomerRequest customer)
+    public async Task AddAsync(CreateCompanyRequest company)
     {
         var storeId = _requestContext.ActiveStoreId
-            ?? throw new InvalidOperationException("Active store is required to create a customer.");
+            ?? throw new InvalidOperationException("Active store is required to create a company.");
 
-        var entity = new Customer
+        var entity = new Company
         {
-            TenantId = customer.TenantId,
+            TenantId = company.TenantId,
             StoreId = storeId,
-            Name = customer.Name,
-            Phone = customer.Phone,
-            Email = customer.Email,
-            Address = customer.Address,
+            Name = company.Name,
+            ContactName = company.ContactName,
+            Phone = company.Phone,
+            Email = company.Email,
+            Address = company.Address,
+            Gstin = company.Gstin,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             IsDeleted = false
         };
-        await _context.Customers.AddAsync(entity);
+        await _context.Companies.AddAsync(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(int id, UpdateCustomerRequest customer)
+    public async Task UpdateAsync(int id, UpdateCompanyRequest company)
     {
-        var entity = await _context.Customers.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        var entity = await _context.Companies.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
         if (entity == null) return;
 
-        entity.Name = customer.Name;
-        entity.Phone = customer.Phone;
-        entity.Email = customer.Email;
-        entity.Address = customer.Address;
+        entity.Name = company.Name;
+        entity.ContactName = company.ContactName;
+        entity.Phone = company.Phone;
+        entity.Email = company.Email;
+        entity.Address = company.Address;
+        entity.Gstin = company.Gstin;
         entity.UpdatedAt = DateTime.UtcNow;
-
-        _context.Customers.Update(entity);
+        _context.Companies.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task SoftDeleteAsync(int id)
+    public async Task DeleteAsync(int id)
     {
-        var entity = await _context.Customers.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        var entity = await _context.Companies.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
         if (entity == null) return;
 
         entity.IsDeleted = true;
         entity.DeletedAt = DateTime.UtcNow;
         entity.UpdatedAt = DateTime.UtcNow;
-        _context.Customers.Update(entity);
+        _context.Companies.Update(entity);
         await _context.SaveChangesAsync();
     }
 
-    public async Task<PagedResult<CustomerSaleHistoryDto>> GetSalesHistoryAsync(int customerId, PagedQuery query)
+    public async Task<PagedResult<CustomerSaleHistoryDto>> GetSalesHistoryAsync(int companyId, PagedQuery query)
     {
         var q = RepositoryPaging.Normalize(query);
         var baseQuery = _context.Sales
-            .Where(s => !s.IsDeleted && s.CustomerId == customerId);
+            .Where(s => !s.IsDeleted && s.CompanyId == companyId);
 
         baseQuery = (q.SortBy?.ToLowerInvariant(), RepositoryPaging.IsDescending(q)) switch
         {
@@ -259,4 +225,21 @@ public class CustomerRepository : ICustomerRepository
             TotalCount = totalCount
         };
     }
+
+    private static CompanyDto MapToDto(Company c) => new()
+    {
+        Id = c.Id,
+        TenantId = c.TenantId,
+        StoreId = c.StoreId,
+        Name = c.Name,
+        ContactName = c.ContactName,
+        Phone = c.Phone,
+        Email = c.Email,
+        Address = c.Address,
+        Gstin = c.Gstin,
+        CreatedAt = c.CreatedAt,
+        UpdatedAt = c.UpdatedAt,
+        IsDeleted = c.IsDeleted,
+        DeletedAt = c.DeletedAt
+    };
 }

@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Application.DTOs;
+using StockDaddy.Domain.Enums;
 
 namespace StockDaddy.API.Controllers;
 
@@ -77,11 +79,11 @@ public class AuditLogController : ControllerBase
     private bool CanViewAllActivity() =>
         User.IsInRole("Admin") ||
         User.Claims.Any(c =>
-            c.Type == ClaimTypes.Role &&
-            string.Equals(c.Value, "Admin", StringComparison.OrdinalIgnoreCase));
+            c.Type == PermissionKeys.ClaimType &&
+            string.Equals(c.Value, PermissionKeys.Format("Activity", PermissionAction.Read), StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
-    /// Admins see all users' activity (optional userId filter). Others see only their own.
+    /// Admins and Activity:Read see all users' activity in the active store. Others see only their own.
     /// </summary>
     private void ApplyActivityScope(PagedQuery query, int currentUserId)
     {

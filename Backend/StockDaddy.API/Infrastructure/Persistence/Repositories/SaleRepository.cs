@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
@@ -11,16 +12,29 @@ namespace StockDaddy.Infrastructure.Repositories;
 public class SaleRepository : ISaleRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly IRequestContext _requestContext;
 
-    public SaleRepository(ApplicationDbContext context)
+    public SaleRepository(ApplicationDbContext context, IRequestContext requestContext)
     {
         _context = context;
+        _requestContext = requestContext;
     }
 
     public async Task<PagedResult<SaleDto>> GetPagedAsync(PagedQuery query)
     {
         var q = RepositoryPaging.Normalize(query);
         var baseQuery = _context.Sales.Where(s => !s.IsDeleted);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            baseQuery = baseQuery.Where(s => s.TenantId == _requestContext.TenantId.Value);
+        }
+
+        var storeFilter = QueryScope.ResolveStoreFilter(q, _requestContext);
+        if (storeFilter.HasValue)
+        {
+            baseQuery = baseQuery.Where(s => s.StoreId == storeFilter.Value);
+        }
 
         if (!string.IsNullOrEmpty(q.Search))
         {
@@ -29,12 +43,14 @@ public class SaleRepository : ISaleRepository
             baseQuery = baseQuery.Where(s =>
                 (idMatch && s.Id == searchId) ||
                 (idMatch && s.CustomerId == searchId) ||
+                (idMatch && s.CompanyId == searchId) ||
                 (idMatch && s.SoldBy == searchId) ||
                 EF.Functions.ILike(s.Notes ?? string.Empty, pattern) ||
                 EF.Functions.ILike(s.PaymentMethod.ToString(), pattern) ||
                 EF.Functions.ILike(s.TotalAmount.ToString(), pattern) ||
                 _context.Users.Any(u => u.Id == s.SoldBy && !u.IsDeleted && EF.Functions.ILike(u.Username, pattern)) ||
-                _context.Customers.Any(c => c.Id == s.CustomerId && !c.IsDeleted && EF.Functions.ILike(c.Name, pattern)));
+                _context.Customers.Any(c => c.Id == s.CustomerId && !c.IsDeleted && EF.Functions.ILike(c.Name, pattern)) ||
+                _context.Companies.Any(c => c.Id == s.CompanyId && !c.IsDeleted && EF.Functions.ILike(c.Name, pattern)));
         }
 
         if (!string.IsNullOrEmpty(q.PaymentMethod) &&
@@ -57,6 +73,8 @@ public class SaleRepository : ISaleRepository
                 StoreId = s.StoreId,
                 CustomerId = s.CustomerId,
                 CustomerName = s.Customer != null ? s.Customer.Name : null,
+                CompanyId = s.CompanyId,
+                CompanyName = s.Company != null ? s.Company.Name : null,
                 SoldBy = s.SoldBy,
                 SoldByName = _context.Users
                     .Where(u => u.Id == s.SoldBy && !u.IsDeleted)

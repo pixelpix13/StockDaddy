@@ -101,7 +101,17 @@ public class OrchestrationService
         }
 
         var customerInput = request.Customer;
-        if (customerInput == null || string.IsNullOrWhiteSpace(customerInput.Name) || string.IsNullOrWhiteSpace(customerInput.Phone))
+        var companyInput = request.Company;
+        var isWholesale = request.BuyerType == SaleBuyerType.Wholesale;
+
+        if (isWholesale)
+        {
+            if (companyInput == null || string.IsNullOrWhiteSpace(companyInput.Name) || string.IsNullOrWhiteSpace(companyInput.Phone))
+            {
+                throw new InvalidOperationException("Company name and phone are required for wholesale checkout.");
+            }
+        }
+        else if (customerInput == null || string.IsNullOrWhiteSpace(customerInput.Name) || string.IsNullOrWhiteSpace(customerInput.Phone))
         {
             throw new InvalidOperationException("Customer name and phone are required for checkout.");
         }
@@ -114,7 +124,22 @@ public class OrchestrationService
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var customerId = await ResolveCustomerForCheckoutAsync(request.TenantId, customerInput);
+            int? customerId = null;
+            int? companyId = null;
+
+            if (isWholesale)
+            {
+                companyId = await ResolveCompanyForCheckoutAsync(request.TenantId, companyInput!);
+                if (customerInput != null &&
+                    (!string.IsNullOrWhiteSpace(customerInput.Name) || !string.IsNullOrWhiteSpace(customerInput.Phone)))
+                {
+                    customerId = await ResolveCustomerForCheckoutAsync(request.TenantId, customerInput);
+                }
+            }
+            else
+            {
+                customerId = await ResolveCustomerForCheckoutAsync(request.TenantId, customerInput!);
+            }
 
             var variantIds = request.Items.Select(i => i.ProductVariantId).Distinct().ToList();
             var variants = await _context.ProductVariants
@@ -181,6 +206,7 @@ public class OrchestrationService
                 TenantId = request.TenantId,
                 StoreId = request.StoreId,
                 CustomerId = customerId,
+                CompanyId = companyId,
                 SoldBy = request.SoldBy,
                 SubtotalAmount = subtotal,
                 TaxAmount = taxTotal,
@@ -223,26 +249,58 @@ public class OrchestrationService
             int? creditLedgerId = null;
             if (request.PaymentMethod == PaymentMethod.Credit)
             {
-                var customer = await _context.Customers.FirstAsync(c => c.Id == customerId);
-                var ledger = new CreditLedger
+                CreditLedger ledger;
+
+                if (isWholesale && companyId.HasValue)
                 {
-                    TenantId = request.TenantId,
-                    PartyType = CreditPartyType.Customer,
-                    Status = CreditStatus.Pending,
-                    CustomerId = customerId,
-                    SaleId = sale.Id,
-                    PartyName = customer.Name,
-                    PartyPhone = customer.Phone,
-                    PartyEmail = customer.Email,
-                    PartyAddress = customer.Address,
-                    Amount = totalAmount,
-                    AmountPaid = 0,
-                    DueDate = request.CreditDueDate!.Value.ToUniversalTime(),
-                    Notes = $"Sale #{sale.Id} on credit",
-                    CreatedAt = now,
-                    UpdatedAt = now,
-                    IsDeleted = false
-                };
+                    var company = await _context.Companies.FirstAsync(c => c.Id == companyId.Value);
+                    ledger = new CreditLedger
+                    {
+                        TenantId = request.TenantId,
+                        StoreId = request.StoreId,
+                        PartyType = CreditPartyType.Company,
+                        Status = CreditStatus.Pending,
+                        CompanyId = companyId,
+                        CustomerId = customerId,
+                        SaleId = sale.Id,
+                        PartyName = company.Name,
+                        PartyPhone = company.Phone,
+                        PartyEmail = company.Email,
+                        PartyAddress = company.Address,
+                        Amount = totalAmount,
+                        AmountPaid = 0,
+                        DueDate = request.CreditDueDate!.Value.ToUniversalTime(),
+                        Notes = $"Wholesale sale #{sale.Id} on credit",
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                        IsDeleted = false
+                    };
+                }
+                else
+                {
+                    var customer = await _context.Customers.FirstAsync(c => c.Id == customerId!.Value);
+                    ledger = new CreditLedger
+                    {
+                        TenantId = request.TenantId,
+                        StoreId = request.StoreId,
+                        PartyType = CreditPartyType.Customer,
+                        Status = CreditStatus.Pending,
+                        CustomerId = customerId,
+                        SaleId = sale.Id,
+                        PartyName = customer.Name,
+                        PartyPhone = customer.Phone,
+                        PartyEmail = customer.Email,
+                        PartyAddress = customer.Address,
+                        Amount = totalAmount,
+                        AmountPaid = 0,
+                        DueDate = request.CreditDueDate!.Value.ToUniversalTime(),
+                        Notes = $"Sale #{sale.Id} on credit",
+                        CreatedAt = now,
+                        UpdatedAt = now,
+                        IsDeleted = false
+                    };
+                }
+
                 await _context.CreditLedgers.AddAsync(ledger);
                 await _context.SaveChangesAsync();
                 creditLedgerId = ledger.Id;
@@ -254,7 +312,9 @@ public class OrchestrationService
             return new CheckoutSaleResponse
             {
                 SaleId = sale.Id,
+                BuyerType = request.BuyerType,
                 CustomerId = customerId,
+                CompanyId = companyId,
                 Subtotal = subtotal,
                 TaxAmount = taxTotal,
                 DiscountAmount = discount,
@@ -311,6 +371,65 @@ public class OrchestrationService
         entity.Phone = customer.Phone.Trim();
         entity.Email = customer.Email?.Trim() ?? entity.Email;
         entity.Address = customer.Address?.Trim() ?? entity.Address;
+        entity.UpdatedAt = now;
+        await _context.SaveChangesAsync();
+        return entity.Id;
+    }
+
+    private async Task<int> ResolveCompanyForCheckoutAsync(int tenantId, CheckoutCompanyRequest company)
+    {
+        var now = DateTime.UtcNow;
+        Company? entity = null;
+
+        if (company.CompanyId.HasValue)
+        {
+            entity = await _context.Companies
+                .FirstOrDefaultAsync(c => c.Id == company.CompanyId.Value && c.TenantId == tenantId && !c.IsDeleted);
+        }
+
+        if (entity == null && !string.IsNullOrWhiteSpace(company.Gstin))
+        {
+            var gstin = company.Gstin.Trim().ToUpperInvariant();
+            entity = await _context.Companies
+                .FirstOrDefaultAsync(c => c.TenantId == tenantId && !c.IsDeleted && c.Gstin.ToUpper() == gstin);
+        }
+
+        if (entity == null && !string.IsNullOrWhiteSpace(company.Phone))
+        {
+            var phone = company.Phone.Trim();
+            entity = await _context.Companies
+                .FirstOrDefaultAsync(c => c.TenantId == tenantId && !c.IsDeleted && c.Phone == phone);
+        }
+
+        if (entity == null)
+        {
+            entity = new Company
+            {
+                TenantId = tenantId,
+                Name = company.Name.Trim(),
+                ContactName = company.ContactName?.Trim() ?? string.Empty,
+                Phone = company.Phone.Trim(),
+                Email = company.Email?.Trim() ?? string.Empty,
+                Address = company.Address?.Trim() ?? string.Empty,
+                Gstin = company.Gstin?.Trim().ToUpperInvariant() ?? string.Empty,
+                CreatedAt = now,
+                UpdatedAt = now,
+                IsDeleted = false
+            };
+            await _context.Companies.AddAsync(entity);
+            await _context.SaveChangesAsync();
+            return entity.Id;
+        }
+
+        entity.Name = company.Name.Trim();
+        entity.ContactName = company.ContactName?.Trim() ?? entity.ContactName;
+        entity.Phone = company.Phone.Trim();
+        entity.Email = company.Email?.Trim() ?? entity.Email;
+        entity.Address = company.Address?.Trim() ?? entity.Address;
+        if (!string.IsNullOrWhiteSpace(company.Gstin))
+        {
+            entity.Gstin = company.Gstin.Trim().ToUpperInvariant();
+        }
         entity.UpdatedAt = now;
         await _context.SaveChangesAsync();
         return entity.Id;
@@ -411,6 +530,7 @@ public class OrchestrationService
                     await _context.CreditLedgers.AddAsync(new CreditLedger
                     {
                         TenantId = request.TenantId,
+                        StoreId = request.StoreId,
                         PartyType = CreditPartyType.Supplier,
                         Status = CreditStatus.Pending,
                         SupplierId = supplier.Id,

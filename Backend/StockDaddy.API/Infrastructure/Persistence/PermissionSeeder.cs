@@ -35,7 +35,7 @@ public static class PermissionSeeder
 
         foreach (var module in PermissionKeys.Modules)
         {
-            foreach (PermissionAction action in Enum.GetValues<PermissionAction>())
+            foreach (PermissionAction action in new[] { PermissionAction.Read, PermissionAction.Write, PermissionAction.Update, PermissionAction.Delete })
             {
                 var key = PermissionKeys.Format(module, action);
                 if (existingSet.Contains(key))
@@ -52,6 +52,19 @@ public static class PermissionSeeder
                     IsDeleted = false
                 });
             }
+        }
+
+        var accessAllKey = PermissionKeys.Format("Settings", PermissionAction.AccessAllStores);
+        if (!existingSet.Contains(accessAllKey))
+        {
+            toAdd.Add(new Permission
+            {
+                Module = "Settings",
+                Action = PermissionAction.AccessAllStores,
+                CreatedAt = now,
+                UpdatedAt = now,
+                IsDeleted = false
+            });
         }
 
         if (toAdd.Count > 0)
@@ -114,7 +127,7 @@ public static class PermissionSeeder
             }
 
             foreach (var permission in permissions.Where(p =>
-                         p.Module is "Dashboard" or "Catalog" or "Product" or "Inventory" or "Sales" or "Purchase" or "Supplier" or "Customer"
+                         p.Module is "Dashboard" or "Catalog" or "Product" or "Inventory" or "Sales" or "Purchase" or "Supplier" or "Customer" or "Company"
                          && p.Action == PermissionAction.Read))
             {
                 AddMapping(toAdd, existingSet, managerRole.Id, permission.Id, now);
@@ -123,7 +136,7 @@ public static class PermissionSeeder
 
         if (cashierRole != null)
         {
-            var cashierModules = new[] { "Dashboard", "Product", "Inventory", "Sales", "Customer" };
+            var cashierModules = new[] { "Dashboard", "Product", "Inventory", "Sales", "Customer", "Company" };
             foreach (var permission in permissions.Where(p =>
                          cashierModules.Contains(p.Module) &&
                          p.Action is PermissionAction.Read or PermissionAction.Write))

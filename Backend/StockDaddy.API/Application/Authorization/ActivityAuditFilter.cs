@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 
@@ -24,11 +25,16 @@ public sealed class ActivityAuditFilter : IAsyncActionFilter
     };
 
     private readonly IAuditLogRepository _auditLogRepository;
+    private readonly RequestContextHolder _requestContext;
     private readonly ILogger<ActivityAuditFilter> _logger;
 
-    public ActivityAuditFilter(IAuditLogRepository auditLogRepository, ILogger<ActivityAuditFilter> logger)
+    public ActivityAuditFilter(
+        IAuditLogRepository auditLogRepository,
+        RequestContextHolder requestContext,
+        ILogger<ActivityAuditFilter> logger)
     {
         _auditLogRepository = auditLogRepository;
+        _requestContext = requestContext;
         _logger = logger;
     }
 
@@ -86,11 +92,14 @@ public sealed class ActivityAuditFilter : IAsyncActionFilter
             return;
         }
 
-        int? storeId = null;
-        var storeClaim = http.User.FindFirst("storeId")?.Value;
-        if (int.TryParse(storeClaim, out var parsedStoreId))
+        int? storeId = _requestContext.ActiveStoreId;
+        if (!storeId.HasValue)
         {
-            storeId = parsedStoreId;
+            var storeClaim = http.User.FindFirst("storeId")?.Value;
+            if (int.TryParse(storeClaim, out var parsedStoreId))
+            {
+                storeId = parsedStoreId;
+            }
         }
 
         var auditAction = MapHttpMethod(http.Request.Method);

@@ -30,4 +30,6 @@ public class PagedQuery
     public string? PartyType { get; set; }
     /// <summary>Filter purchase line items by purchase order.</summary>
     public int? PurchaseOrderId { get; set; }
+    /// <summary>Filter by store (defaults to active store from request context when supported).</summary>
+    public int? StoreId { get; set; }
 }

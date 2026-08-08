@@ -21,4 +21,5 @@ public class User
     public Tenant? Tenant { get; set; }
     public Role? Role { get; set; }
     public Store? Store { get; set; }
+    public ICollection<UserStore> UserStores { get; set; } = new List<UserStore>();
 }

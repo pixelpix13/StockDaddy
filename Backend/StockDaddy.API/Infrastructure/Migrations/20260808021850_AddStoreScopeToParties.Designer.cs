@@ -2,18 +2,21 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StockDaddy.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace StockDaddy.Infrastructure.Migrations
+namespace StockDaddy.API.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260808021850_AddStoreScopeToParties")]
+    partial class AddStoreScopeToParties
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1843,12 +1846,7 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<bool>("IsDefault")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("RoleId")
-                        .HasColumnType("integer");
-
                     b.HasKey("UserId", "StoreId");
-
-                    b.HasIndex("RoleId");
 
                     b.HasIndex("StoreId");
 
@@ -2509,12 +2507,6 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.UserStore", b =>
                 {
-                    b.HasOne("StockDaddy.Domain.Entities.Role", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("StockDaddy.Domain.Entities.Store", "Store")
                         .WithMany()
                         .HasForeignKey("StoreId")
@@ -2526,8 +2518,6 @@ namespace StockDaddy.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Role");
 
                     b.Navigation("Store");
 

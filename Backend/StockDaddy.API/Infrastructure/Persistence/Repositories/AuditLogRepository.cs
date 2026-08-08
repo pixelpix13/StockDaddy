@@ -1,19 +1,22 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.DTOs;
+using StockDaddy.Application.Helpers;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
 using StockDaddy.Infrastructure.Persistence;
-using StockDaddy.Application.Helpers;
 
 namespace StockDaddy.Infrastructure.Repositories;
 
 public class AuditLogRepository : IAuditLogRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly IRequestContext _requestContext;
 
-    public AuditLogRepository(ApplicationDbContext context)
+    public AuditLogRepository(ApplicationDbContext context, IRequestContext requestContext)
     {
         _context = context;
+        _requestContext = requestContext;
     }
 
     public async Task<PagedResult<AuditLogDto>> GetPagedAsync(PagedQuery query)
@@ -22,6 +25,12 @@ public class AuditLogRepository : IAuditLogRepository
         var baseQuery = _context.AuditLogs
             .AsNoTracking()
             .Where(a => !a.IsDeleted);
+
+        var storeFilter = QueryScope.ResolveStoreFilter(q, _requestContext);
+        if (storeFilter.HasValue)
+        {
+            baseQuery = baseQuery.Where(a => a.StoreId == storeFilter.Value);
+        }
 
         if (!string.IsNullOrEmpty(q.Search))
         {
@@ -95,9 +104,16 @@ public class AuditLogRepository : IAuditLogRepository
 
     public async Task<List<AuditLogDto>> GetAllAsync()
     {
-        return await _context.AuditLogs
+        var query = _context.AuditLogs
             .AsNoTracking()
-            .Where(a => !a.IsDeleted)
+            .Where(a => !a.IsDeleted);
+
+        if (_requestContext.ActiveStoreId.HasValue)
+        {
+            query = query.Where(a => a.StoreId == _requestContext.ActiveStoreId.Value);
+        }
+
+        return await query
             .OrderByDescending(a => a.Id)
             .Select(a => new AuditLogDto
             {
@@ -122,9 +138,16 @@ public class AuditLogRepository : IAuditLogRepository
 
     public async Task<AuditLogDto?> GetByIdAsync(int id)
     {
-        return await _context.AuditLogs
+        var query = _context.AuditLogs
             .AsNoTracking()
-            .Where(a => a.Id == id && !a.IsDeleted)
+            .Where(a => a.Id == id && !a.IsDeleted);
+
+        if (_requestContext.ActiveStoreId.HasValue)
+        {
+            query = query.Where(a => a.StoreId == _requestContext.ActiveStoreId.Value);
+        }
+
+        return await query
             .Select(a => new AuditLogDto
             {
                 Id = a.Id,

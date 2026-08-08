@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Helpers;
 using StockDaddy.Application.Interfaces;
@@ -11,10 +12,12 @@ namespace StockDaddy.Infrastructure.Repositories;
 public class CreditLedgerRepository : ICreditLedgerRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly IRequestContext _requestContext;
 
-    public CreditLedgerRepository(ApplicationDbContext context)
+    public CreditLedgerRepository(ApplicationDbContext context, IRequestContext requestContext)
     {
         _context = context;
+        _requestContext = requestContext;
     }
 
     public async Task<PagedResult<CreditLedgerDto>> GetPagedAsync(PagedQuery query)
@@ -23,6 +26,17 @@ public class CreditLedgerRepository : ICreditLedgerRepository
 
         var q = RepositoryPaging.Normalize(query);
         var baseQuery = _context.CreditLedgers.Where(c => !c.IsDeleted);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            baseQuery = baseQuery.Where(c => c.TenantId == _requestContext.TenantId.Value);
+        }
+
+        var storeFilter = QueryScope.ResolveStoreFilter(q, _requestContext);
+        if (storeFilter.HasValue)
+        {
+            baseQuery = baseQuery.Where(c => c.StoreId == storeFilter.Value);
+        }
 
         if (!string.IsNullOrEmpty(q.PartyType) &&
             Enum.TryParse<CreditPartyType>(q.PartyType, true, out var partyFilter))
@@ -69,15 +83,25 @@ public class CreditLedgerRepository : ICreditLedgerRepository
     public async Task<CreditLedgerDto?> GetByIdAsync(int id)
     {
         await RefreshOverdueStatusesAsync();
-        return await _context.CreditLedgers
-            .Where(c => c.Id == id && !c.IsDeleted)
-            .Select(MapToDto)
-            .FirstOrDefaultAsync();
+
+        var query = _context.CreditLedgers.Where(c => c.Id == id && !c.IsDeleted);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            query = query.Where(c => c.TenantId == _requestContext.TenantId.Value);
+        }
+
+        if (_requestContext.ActiveStoreId.HasValue)
+        {
+            query = query.Where(c => c.StoreId == _requestContext.ActiveStoreId.Value);
+        }
+
+        return await query.Select(MapToDto).FirstOrDefaultAsync();
     }
 
     public async Task<CreditLedgerDto?> RecordPaymentAsync(int id, RecordCreditPaymentRequest request)
     {
-        var entity = await _context.CreditLedgers.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        var entity = await FindScopedEntityAsync(id);
         if (entity == null) return null;
 
         if (request.Amount <= 0)
@@ -102,7 +126,7 @@ public class CreditLedgerRepository : ICreditLedgerRepository
 
     public async Task<CreditLedgerDto?> UpdateAsync(int id, UpdateCreditLedgerRequest request)
     {
-        var entity = await _context.CreditLedgers.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        var entity = await FindScopedEntityAsync(id);
         if (entity == null) return null;
 
         if (request.DueDate.HasValue) entity.DueDate = request.DueDate.Value;
@@ -118,12 +142,18 @@ public class CreditLedgerRepository : ICreditLedgerRepository
     public async Task RefreshOverdueStatusesAsync()
     {
         var today = DateTime.UtcNow.Date;
-        var overdue = await _context.CreditLedgers
+        var overdueQuery = _context.CreditLedgers
             .Where(c => !c.IsDeleted &&
                         c.AmountPaid < c.Amount &&
                         c.DueDate.Date < today &&
-                        c.Status != CreditStatus.Paid)
-            .ToListAsync();
+                        c.Status != CreditStatus.Paid);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            overdueQuery = overdueQuery.Where(c => c.TenantId == _requestContext.TenantId.Value);
+        }
+
+        var overdue = await overdueQuery.ToListAsync();
 
         if (overdue.Count == 0) return;
 
@@ -134,6 +164,23 @@ public class CreditLedgerRepository : ICreditLedgerRepository
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    private async Task<CreditLedger?> FindScopedEntityAsync(int id)
+    {
+        var query = _context.CreditLedgers.Where(c => c.Id == id && !c.IsDeleted);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            query = query.Where(c => c.TenantId == _requestContext.TenantId.Value);
+        }
+
+        if (_requestContext.ActiveStoreId.HasValue)
+        {
+            query = query.Where(c => c.StoreId == _requestContext.ActiveStoreId.Value);
+        }
+
+        return await query.FirstOrDefaultAsync();
     }
 
     private static CreditStatus ResolveStatus(decimal amount, decimal amountPaid, DateTime dueDate)
@@ -161,6 +208,7 @@ public class CreditLedgerRepository : ICreditLedgerRepository
         {
             Id = c.Id,
             TenantId = c.TenantId,
+            StoreId = c.StoreId,
             PartyType = c.PartyType,
             Status = c.Status,
             CustomerId = c.CustomerId,

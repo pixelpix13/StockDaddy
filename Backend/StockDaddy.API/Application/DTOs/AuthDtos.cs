@@ -11,6 +11,8 @@ public class RegisterRequest
     public int TenantId { get; set; } = 1;
     public int RoleId { get; set; } = 3;
     public int? StoreId { get; set; }
+    public List<int> StoreIds { get; set; } = [];
+    public int? DefaultStoreId { get; set; }
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;

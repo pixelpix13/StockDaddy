@@ -1,5 +1,6 @@
 
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.Helpers;
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
@@ -11,16 +12,32 @@ namespace StockDaddy.Infrastructure.Repositories;
 public class UserRepository : IUserRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly IRequestContext _requestContext;
 
-    public UserRepository(ApplicationDbContext context)
+    public UserRepository(ApplicationDbContext context, IRequestContext requestContext)
     {
         _context = context;
+        _requestContext = requestContext;
     }
 
     public async Task<PagedResult<UserDto>> GetPagedAsync(PagedQuery query)
     {
         var q = RepositoryPaging.Normalize(query);
         var baseQuery = _context.Users.Where(u => !u.IsDeleted);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            var tenantId = _requestContext.TenantId.Value;
+            baseQuery = baseQuery.Where(u => u.TenantId == tenantId);
+        }
+
+        var storeFilter = QueryScope.ResolveStoreFilter(q, _requestContext);
+        if (storeFilter.HasValue)
+        {
+            baseQuery = baseQuery.Where(u =>
+                u.UserStores.Any(us => us.StoreId == storeFilter.Value) ||
+                u.StoreId == storeFilter.Value);
+        }
 
         if (!string.IsNullOrEmpty(q.Search))
         {
@@ -55,7 +72,9 @@ public class UserRepository : IUserRepository
             
         });
 
-        return await RepositoryPaging.ExecuteAsync(projected, q);
+        var result = await RepositoryPaging.ExecuteAsync(projected, q);
+        await EnrichStoreAssignmentsAsync(result.Items);
+        return result;
     }
 
     private static IQueryable<User> ApplySort(IQueryable<User> query, PagedQuery q) =>
@@ -95,7 +114,7 @@ public class UserRepository : IUserRepository
 
     public async Task<UserDto?> GetByIdAsync(int id)
     {
-        return await _context.Users
+        var dto = await _context.Users
             .Where(u => u.Id == id && !u.IsDeleted)
             .Select(u => new UserDto
             {
@@ -111,6 +130,11 @@ public class UserRepository : IUserRepository
                 DeletedAt = u.DeletedAt
             })
             .FirstOrDefaultAsync();
+
+        if (dto == null) return null;
+
+        await EnrichStoreAssignmentsAsync([dto]);
+        return dto;
     }
 
     public async Task AddAsync(CreateUserRequest user)
@@ -131,6 +155,12 @@ public class UserRepository : IUserRepository
         };
         await _context.Users.AddAsync(entity);
         await _context.SaveChangesAsync();
+        await SyncStoreAssignmentsAsync(
+            entity.Id,
+            entity.TenantId,
+            user.RoleId,
+            UserStoreAssignmentHelper.Normalize(user.StoreAssignments, user.StoreIds, user.RoleId, user.DefaultStoreId, user.StoreId),
+            user.DefaultStoreId ?? user.StoreId);
     }
 
     public async Task UpdateAsync(int id, UpdateUserRequest user)
@@ -138,7 +168,6 @@ public class UserRepository : IUserRepository
         var entity = await _context.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
         if (entity == null) return;
         entity.RoleId = user.RoleId;
-        entity.StoreId = user.StoreId;
         entity.Username = user.Username;
         entity.Email = user.Email;
         if (!string.IsNullOrWhiteSpace(user.PasswordHash))
@@ -147,6 +176,90 @@ public class UserRepository : IUserRepository
         }
         entity.UpdatedAt = DateTime.UtcNow;
         _context.Users.Update(entity);
+        await _context.SaveChangesAsync();
+        await SyncStoreAssignmentsAsync(
+            entity.Id,
+            entity.TenantId,
+            user.RoleId,
+            UserStoreAssignmentHelper.Normalize(user.StoreAssignments, user.StoreIds, user.RoleId, user.DefaultStoreId, user.StoreId),
+            user.DefaultStoreId ?? user.StoreId);
+    }
+
+    public async Task SyncStoreAssignmentsAsync(
+        int userId,
+        int tenantId,
+        int fallbackRoleId,
+        List<UserStoreAssignmentDto> assignments,
+        int? defaultStoreId,
+        int? updateFallbackRoleId = null)
+    {
+        var normalized = assignments
+            .Where(a => a.StoreId > 0 && a.RoleId > 0)
+            .GroupBy(a => a.StoreId)
+            .Select(g => g.First())
+            .ToList();
+
+        if (normalized.Count > 0)
+        {
+            var storeIds = normalized.Select(a => a.StoreId).ToList();
+            var validStoreIds = await _context.Stores
+                .Where(s => !s.IsDeleted && s.TenantId == tenantId && storeIds.Contains(s.Id))
+                .Select(s => s.Id)
+                .ToListAsync();
+
+            var roleIds = normalized.Select(a => a.RoleId).Distinct().ToList();
+            var validRoleIds = await _context.Roles
+                .Where(r => !r.IsDeleted && roleIds.Contains(r.Id))
+                .Select(r => r.Id)
+                .ToHashSetAsync();
+
+            normalized = normalized
+                .Where(a => validStoreIds.Contains(a.StoreId) && validRoleIds.Contains(a.RoleId))
+                .ToList();
+        }
+
+        var resolvedDefault = defaultStoreId.HasValue && normalized.Any(a => a.StoreId == defaultStoreId.Value)
+            ? defaultStoreId.Value
+            : normalized.FirstOrDefault(a => a.IsDefault)?.StoreId
+              ?? normalized.FirstOrDefault()?.StoreId;
+
+        if (resolvedDefault.HasValue)
+        {
+            foreach (var assignment in normalized)
+            {
+                assignment.IsDefault = assignment.StoreId == resolvedDefault.Value;
+            }
+        }
+
+        var existing = await _context.UserStores.Where(us => us.UserId == userId).ToListAsync();
+        if (existing.Count > 0)
+        {
+            _context.UserStores.RemoveRange(existing);
+        }
+
+        foreach (var assignment in normalized)
+        {
+            await _context.UserStores.AddAsync(new UserStore
+            {
+                UserId = userId,
+                StoreId = assignment.StoreId,
+                RoleId = assignment.RoleId,
+                IsDefault = assignment.IsDefault
+            });
+        }
+
+        var user = await _context.Users.FirstAsync(u => u.Id == userId);
+        if (updateFallbackRoleId.HasValue)
+        {
+            user.RoleId = updateFallbackRoleId.Value;
+        }
+        else if (fallbackRoleId > 0)
+        {
+            user.RoleId = fallbackRoleId;
+        }
+
+        user.StoreId = resolvedDefault;
+        user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
     }
 
@@ -159,5 +272,60 @@ public class UserRepository : IUserRepository
         user.UpdatedAt = DateTime.UtcNow;
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
+    }
+
+    private async Task EnrichStoreAssignmentsAsync(IReadOnlyList<UserDto> users)
+    {
+        if (users.Count == 0) return;
+
+        var userIds = users.Select(u => u.Id).ToList();
+        var assignments = await _context.UserStores
+            .Where(us => userIds.Contains(us.UserId))
+            .ToListAsync();
+
+        var storeIds = assignments.Select(a => a.StoreId).Distinct().ToList();
+        var roleIds = assignments.Select(a => a.RoleId).Distinct().ToList();
+        var storeNames = await _context.Stores
+            .Where(s => storeIds.Contains(s.Id))
+            .Select(s => new { s.Id, s.Name })
+            .ToDictionaryAsync(s => s.Id, s => s.Name);
+        var roleNames = await _context.Roles
+            .Where(r => roleIds.Contains(r.Id))
+            .Select(r => new { r.Id, r.Name })
+            .ToDictionaryAsync(r => r.Id, r => r.Name);
+
+        foreach (var user in users)
+        {
+            var userAssignments = assignments.Where(a => a.UserId == user.Id).ToList();
+            if (userAssignments.Count > 0)
+            {
+                user.StoreIds = userAssignments.Select(a => a.StoreId).ToList();
+                user.DefaultStoreId = userAssignments.FirstOrDefault(a => a.IsDefault)?.StoreId ?? user.StoreId;
+                user.StoreAssignments = userAssignments.Select(a => new UserStoreAssignmentDto
+                {
+                    StoreId = a.StoreId,
+                    RoleId = a.RoleId,
+                    IsDefault = a.IsDefault,
+                    StoreName = storeNames.GetValueOrDefault(a.StoreId),
+                    RoleName = roleNames.GetValueOrDefault(a.RoleId)
+                }).ToList();
+            }
+            else if (user.StoreId.HasValue)
+            {
+                user.StoreIds = [user.StoreId.Value];
+                user.DefaultStoreId = user.StoreId;
+                user.StoreAssignments =
+                [
+                    new UserStoreAssignmentDto
+                    {
+                        StoreId = user.StoreId.Value,
+                        RoleId = user.RoleId,
+                        IsDefault = true,
+                        StoreName = storeNames.GetValueOrDefault(user.StoreId.Value),
+                        RoleName = roleNames.GetValueOrDefault(user.RoleId)
+                    }
+                ];
+            }
+        }
     }
 }

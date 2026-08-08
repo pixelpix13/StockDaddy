@@ -8,5 +8,6 @@ public interface IUserRepository
     Task<UserDto?> GetByIdAsync(int id);
     Task AddAsync(CreateUserRequest user);
     Task UpdateAsync(int id, UpdateUserRequest user);
+    Task SyncStoreAssignmentsAsync(int userId, int tenantId, int fallbackRoleId, List<UserStoreAssignmentDto> assignments, int? defaultStoreId, int? updateFallbackRoleId = null);
     Task SoftDeleteAsync(int id);
 }

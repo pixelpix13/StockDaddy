@@ -8,6 +8,7 @@ public class SaleDto
     public int TenantId { get; set; }
     public int? StoreId { get; set; }
     public int? CustomerId { get; set; }
+    public int? CompanyId { get; set; }
     public int SoldBy { get; set; }
     public string? SoldByName { get; set; }
 
@@ -18,6 +19,7 @@ public class SaleDto
     public PaymentMethod PaymentMethod { get; set; }
 
     public string? CustomerName { get; set; }
+    public string? CompanyName { get; set; }
     public string? Notes { get; set; }
 
     public DateTime CreatedAt { get; set; }

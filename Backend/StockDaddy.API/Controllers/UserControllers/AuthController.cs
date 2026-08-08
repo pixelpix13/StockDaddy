@@ -69,4 +69,41 @@ public class AuthController : ControllerBase
 
         return Ok(session);
     }
+
+    [HttpGet("me/stores")]
+    [Authorize]
+    [SkipPermissionCheck]
+    public async Task<IActionResult> GetMyStores()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var activeStoreId = User.FindFirst("storeId")?.Value;
+        int? active = int.TryParse(activeStoreId, out var sid) ? sid : null;
+        var stores = await _authService.GetUserStoresAsync(userId, active);
+        return Ok(stores);
+    }
+
+    [HttpPost("switch-store")]
+    [Authorize]
+    [SkipPermissionCheck]
+    public async Task<IActionResult> SwitchStore([FromBody] SwitchStoreRequest request)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var session = await _authService.SwitchStoreAsync(userId, request.StoreId);
+        if (session == null)
+        {
+            return Forbid();
+        }
+
+        return Ok(session);
+    }
 }

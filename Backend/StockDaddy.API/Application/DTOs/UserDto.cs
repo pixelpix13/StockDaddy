@@ -7,6 +7,10 @@ public class UserDto
     public int RoleId { get; set; }
     public string RoleName { get; set; } = string.Empty;
     public int? StoreId { get; set; }
+    public int? DefaultStoreId { get; set; }
+    public List<int> StoreIds { get; set; } = [];
+    public List<UserStoreOptionDto> AssignedStores { get; set; } = [];
+    public List<UserStoreAssignmentDto> StoreAssignments { get; set; } = [];
 
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;

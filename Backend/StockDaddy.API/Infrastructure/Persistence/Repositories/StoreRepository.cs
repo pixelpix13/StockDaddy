@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.DTOs;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Domain.Entities;
@@ -10,16 +11,29 @@ namespace StockDaddy.Infrastructure.Repositories;
 public class StoreRepository : IStoreRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly IRequestContext _requestContext;
 
-    public StoreRepository(ApplicationDbContext context)
+    public StoreRepository(ApplicationDbContext context, IRequestContext requestContext)
     {
-        _context = context; 
+        _context = context;
+        _requestContext = requestContext;
     }
 
     public async Task<PagedResult<StoreDto>> GetPagedAsync(PagedQuery query)
     {
         var q = RepositoryPaging.Normalize(query);
         var baseQuery = _context.Stores.Where(s => !s.IsDeleted);
+
+        if (_requestContext.TenantId.HasValue)
+        {
+            baseQuery = baseQuery.Where(s => s.TenantId == _requestContext.TenantId.Value);
+        }
+
+        if (!_requestContext.CanAccessAllTenantStores && _requestContext.AllowedStoreIds.Count > 0)
+        {
+            var allowed = _requestContext.AllowedStoreIds;
+            baseQuery = baseQuery.Where(s => allowed.Contains(s.Id));
+        }
 
         if (!string.IsNullOrEmpty(q.Search))
         {

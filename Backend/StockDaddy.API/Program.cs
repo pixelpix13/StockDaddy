@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StockDaddy.API.Services;
+using StockDaddy.Application.Authorization;
 using StockDaddy.Application.Interfaces;
 using StockDaddy.Application.Services;
 using StockDaddy.Infrastructure.Persistence;
@@ -57,6 +58,7 @@ builder.Services.AddScoped<IProductImageRepository, ProductImageRepository>();
 builder.Services.AddScoped<IProductAttributeRepository, ProductAttributeRepository>();
 builder.Services.AddScoped<IStockItemRepository, StockItemRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
 builder.Services.AddScoped<ISaleRepository, SaleRepository>();
 builder.Services.AddScoped<ISaleItemRepository, SaleItemRepository>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
@@ -123,6 +125,8 @@ builder.Services.AddScoped<AdjustedInvoiceService>();
 builder.Services.AddScoped<ScheduledPriceRevertService>();
 builder.Services.AddScoped<OrchestrationService>();
 builder.Services.AddScoped<RbacService>();
+builder.Services.AddScoped<RequestContextHolder>();
+builder.Services.AddScoped<IRequestContext>(sp => sp.GetRequiredService<RequestContextHolder>());
 builder.Services.AddHostedService<ScheduledPriceRevertBackgroundService>();
 
 // ===============================
@@ -228,6 +232,7 @@ app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
+app.UseMiddleware<StockDaddy.Application.Authorization.RequestContextMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

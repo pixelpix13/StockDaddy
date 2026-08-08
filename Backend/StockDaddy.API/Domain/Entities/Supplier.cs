@@ -5,6 +5,7 @@ public class Supplier
     public int Id { get; set; }
 
     public int TenantId { get; set; }
+    public int StoreId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string ContactName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
@@ -19,4 +20,5 @@ public class Supplier
 
     // Navigation
     public Tenant? Tenant { get; set; }
+    public Store? Store { get; set; }
 }

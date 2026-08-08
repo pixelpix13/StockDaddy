@@ -2,18 +2,21 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StockDaddy.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace StockDaddy.Infrastructure.Migrations
+namespace StockDaddy.API.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260807183025_AddWholesaleCompanies")]
+    partial class AddWholesaleCompanies
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -302,9 +305,6 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("StoreId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("TenantId")
                         .HasColumnType("integer");
 
@@ -312,8 +312,6 @@ namespace StockDaddy.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("StoreId");
 
                     b.HasIndex("TenantId");
 
@@ -380,9 +378,6 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<int>("StoreId")
-                        .HasColumnType("integer");
-
                     b.Property<int?>("SupplierId")
                         .HasColumnType("integer");
 
@@ -401,8 +396,6 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.HasIndex("PurchaseOrderId");
 
                     b.HasIndex("SaleId");
-
-                    b.HasIndex("StoreId");
 
                     b.HasIndex("SupplierId");
 
@@ -444,9 +437,6 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("StoreId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("TenantId")
                         .HasColumnType("integer");
 
@@ -454,8 +444,6 @@ namespace StockDaddy.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("StoreId");
 
                     b.HasIndex("TenantId");
 
@@ -1691,9 +1679,6 @@ namespace StockDaddy.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("StoreId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("TenantId")
                         .HasColumnType("integer");
 
@@ -1701,8 +1686,6 @@ namespace StockDaddy.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("StoreId");
 
                     b.HasIndex("TenantId");
 
@@ -1832,29 +1815,6 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("StockDaddy.Domain.Entities.UserStore", b =>
-                {
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("StoreId")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("RoleId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("UserId", "StoreId");
-
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("StoreId");
-
-                    b.ToTable("UserStores");
-                });
-
             modelBuilder.Entity("StockDaddy.Domain.Entities.AdjustedInvoice", b =>
                 {
                     b.HasOne("StockDaddy.Domain.Entities.User", "AdjustedByUser")
@@ -1942,19 +1902,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Company", b =>
                 {
-                    b.HasOne("StockDaddy.Domain.Entities.Store", "Store")
-                        .WithMany()
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("StockDaddy.Domain.Entities.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Store");
 
                     b.Navigation("Tenant");
                 });
@@ -1977,12 +1929,6 @@ namespace StockDaddy.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("SaleId");
 
-                    b.HasOne("StockDaddy.Domain.Entities.Store", "Store")
-                        .WithMany()
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("StockDaddy.Domain.Entities.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId");
@@ -2001,8 +1947,6 @@ namespace StockDaddy.Infrastructure.Migrations
 
                     b.Navigation("Sale");
 
-                    b.Navigation("Store");
-
                     b.Navigation("Supplier");
 
                     b.Navigation("Tenant");
@@ -2010,19 +1954,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Customer", b =>
                 {
-                    b.HasOne("StockDaddy.Domain.Entities.Store", "Store")
-                        .WithMany()
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("StockDaddy.Domain.Entities.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Store");
 
                     b.Navigation("Tenant");
                 });
@@ -2448,19 +2384,11 @@ namespace StockDaddy.Infrastructure.Migrations
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Supplier", b =>
                 {
-                    b.HasOne("StockDaddy.Domain.Entities.Store", "Store")
-                        .WithMany()
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("StockDaddy.Domain.Entities.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Store");
 
                     b.Navigation("Tenant");
                 });
@@ -2505,33 +2433,6 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Navigation("Store");
 
                     b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("StockDaddy.Domain.Entities.UserStore", b =>
-                {
-                    b.HasOne("StockDaddy.Domain.Entities.Role", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("StockDaddy.Domain.Entities.Store", "Store")
-                        .WithMany()
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("StockDaddy.Domain.Entities.User", "User")
-                        .WithMany("UserStores")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Role");
-
-                    b.Navigation("Store");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("StockDaddy.Domain.Entities.Category", b =>
@@ -2584,11 +2485,6 @@ namespace StockDaddy.Infrastructure.Migrations
                     b.Navigation("Stores");
 
                     b.Navigation("Users");
-                });
-
-            modelBuilder.Entity("StockDaddy.Domain.Entities.User", b =>
-                {
-                    b.Navigation("UserStores");
                 });
 #pragma warning restore 612, 618
         }

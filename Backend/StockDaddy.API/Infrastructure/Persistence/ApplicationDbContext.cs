@@ -13,6 +13,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Store> Stores => Set<Store>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserStore> UserStores => Set<UserStore>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Subcategory> Subcategories => Set<Subcategory>();
     public DbSet<Product> Products => Set<Product>();
@@ -23,6 +24,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ProductAttribute> ProductAttributes => Set<ProductAttribute>();
     public DbSet<StockItem> StockItems => Set<StockItem>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Company> Companies => Set<Company>();
     public DbSet<Sale> Sales => Set<Sale>();
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
@@ -62,6 +64,27 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<HsnMaster>()
             .HasIndex(h => h.HSNCode)
             .IsUnique();
+
+        modelBuilder.Entity<UserStore>()
+            .HasKey(us => new { us.UserId, us.StoreId });
+
+        modelBuilder.Entity<UserStore>()
+            .HasOne(us => us.User)
+            .WithMany(u => u.UserStores)
+            .HasForeignKey(us => us.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<UserStore>()
+            .HasOne(us => us.Store)
+            .WithMany()
+            .HasForeignKey(us => us.StoreId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<UserStore>()
+            .HasOne(us => us.Role)
+            .WithMany()
+            .HasForeignKey(us => us.RoleId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Add enum conversions if needed here
     }
