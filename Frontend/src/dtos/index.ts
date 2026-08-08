@@ -8,6 +8,7 @@ export * from './user.dto';
 export * from './orchestration.dto';
 export * from './catalog.dto';
 export * from './customer.dto';
+export * from './company.dto';
 export * from './rbac.dto';
 export * from './activity.dto';
 export * from './credit.dto';

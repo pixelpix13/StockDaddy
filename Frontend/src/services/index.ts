@@ -10,6 +10,7 @@ export * from './tenant.service';
 export * from './orchestration.service';
 export * from './catalog.service';
 export * from './customer.service';
+export * from './company.service';
 export * from './product-image.service';
 export * from './rbac.service';
 export * from './activity.service';

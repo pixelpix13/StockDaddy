@@ -1,4 +1,4 @@
-export type CreditPartyType = 'Customer' | 'Supplier';
+export type CreditPartyType = 'Customer' | 'Supplier' | 'Company';
 export type CreditStatus = 'Pending' | 'PartiallyPaid' | 'Paid' | 'Overdue';
 
 export interface CreditLedgerDto {

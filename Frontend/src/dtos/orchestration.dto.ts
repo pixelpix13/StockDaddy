@@ -42,6 +42,18 @@ export interface CheckoutLineRequest {
   quantity: number;
 }
 
+export type SaleBuyerType = 'Retail' | 'Wholesale';
+
+export interface CheckoutCompanyRequest {
+  companyId?: number;
+  name: string;
+  contactName?: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  gstin?: string;
+}
+
 export interface CheckoutCustomerRequest {
   customerId?: number;
   name: string;
@@ -54,8 +66,11 @@ export interface CheckoutSaleRequest {
   tenantId: number;
   storeId: number;
   soldBy: number;
+  buyerType?: SaleBuyerType;
   customerId?: number;
-  customer: CheckoutCustomerRequest;
+  companyId?: number;
+  customer?: CheckoutCustomerRequest;
+  company?: CheckoutCompanyRequest;
   paymentMethod: PaymentMethod;
   discountAmount?: number;
   discountPercent?: number;
@@ -77,7 +92,9 @@ export interface CheckoutLineResponse {
 
 export interface CheckoutSaleResponse {
   saleId: number;
-  customerId: number;
+  buyerType?: SaleBuyerType;
+  customerId?: number | null;
+  companyId?: number | null;
   subtotal: number;
   taxAmount: number;
   discountAmount: number;

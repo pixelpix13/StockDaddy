@@ -15,6 +15,8 @@ export interface SaleDto {
   storeId?: number;
   customerId?: number;
   customerName?: string;
+  companyId?: number;
+  companyName?: string;
   soldBy: number;
   soldByName?: string;
   subtotalAmount?: number;
