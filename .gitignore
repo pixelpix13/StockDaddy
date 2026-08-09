@@ -2,6 +2,7 @@
 **/bin/
 **/obj/
 **/dist/
+publish/
 
 # .NET
 **/*.AssemblyInfo.cs
